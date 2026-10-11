@@ -19,9 +19,7 @@
 
 import { Link, LinkProps } from '@tanstack/react-router';
 
-import { buttonVariants } from '@/components/ui/button-variants';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
+import { railActiveClass, railItemClass } from '@/components/app-rail';
 import { cn } from '@/lib/utils';
 
 export interface SidebarNavProps {
@@ -48,81 +46,61 @@ export interface SidebarNavProps {
 }
 
 export const Sidebar = ({ sections, className, ...props }: SidebarNavProps) => {
-  // Helper function to determine if there are any visible sections after the given index.
-  const visibleRemainingSections = (index: number) =>
-    sections.slice(index + 1).some((section) => section.visible !== false);
-
   return (
-    <nav className={cn('w-full', className)} {...props}>
-      <div className='flex flex-col items-start'>
-        {sections.map((section) => {
-          if (section.visible === false) {
-            return null;
-          }
-          const index = sections.indexOf(section);
-          return (
-            <div key={index} className='w-full'>
-              {section.label && (
-                <Label className='text-muted-foreground mb-1 text-sm'>
-                  {section.label}
-                </Label>
-              )}
-              {section.items.map((item) => {
-                const disabled = item.to === undefined;
-                return item.visible === undefined || item.visible ? (
-                  <Link
-                    key={item.title}
-                    // When a link is disabled, make it point to completely separate
-                    // (but existing) route on the server. Otherwise, all disabled links
-                    // are grouped together with an existing one in the UI.
-                    to={disabled ? '/' : item.to}
-                    disabled={disabled}
-                    params={item.params}
-                    search={item.search}
-                    activeProps={{
-                      className: 'gap-2 bg-muted hover:bg-muted',
-                    }}
-                    inactiveProps={
-                      disabled
-                        ? { className: 'gap-2 text-muted-foreground italic' }
-                        : {
-                            className:
-                              'gap-2 hover:bg-transparent hover:underline',
-                          }
-                    }
-                    activeOptions={{
-                      exact:
-                        item.activeOptions?.exact === undefined
-                          ? true
-                          : item.activeOptions.exact,
-                      includeSearch:
-                        item.activeOptions?.includeSearch === undefined
-                          ? false
-                          : item.activeOptions.includeSearch,
-                      includeHash:
-                        item.activeOptions?.includeHash === undefined
-                          ? false
-                          : item.activeOptions.includeHash,
-                    }}
-                    className={cn(
-                      buttonVariants({ variant: 'ghost' }),
-                      'w-full justify-start'
-                    )}
-                  >
-                    {item.icon && <item.icon />}
-                    {item.title}
-                  </Link>
-                ) : null;
-              })}
-              {sections.length > 1 &&
-                index < sections.length - 1 &&
-                visibleRemainingSections(index) && (
-                  <Separator className='my-2' />
-                )}
-            </div>
-          );
-        })}
-      </div>
+    <nav className={cn('flex w-full flex-col', className)} {...props}>
+      {sections.map((section, index) => {
+        if (section.visible === false) {
+          return null;
+        }
+        return (
+          <div key={index} className='flex flex-col'>
+            {section.label && (
+              <h2 className='text-rail-muted px-5 pt-5 pb-1.5 text-[0.6875rem] leading-4 font-medium tracking-[0.06em] uppercase'>
+                {section.label}
+              </h2>
+            )}
+            {!section.label && index > 0 && <div className='h-3' />}
+            {section.items.map((item) => {
+              const disabled = item.to === undefined;
+              return item.visible === undefined || item.visible ? (
+                <Link
+                  key={item.title}
+                  // When a link is disabled, make it point to completely separate
+                  // (but existing) route on the server. Otherwise, all disabled links
+                  // are grouped together with an existing one in the UI.
+                  to={disabled ? '/' : item.to}
+                  disabled={disabled}
+                  params={item.params}
+                  search={item.search}
+                  activeProps={{ className: railActiveClass }}
+                  inactiveProps={
+                    disabled
+                      ? { className: 'text-rail-muted/70 pointer-events-none' }
+                      : undefined
+                  }
+                  activeOptions={{
+                    exact:
+                      item.activeOptions?.exact === undefined
+                        ? true
+                        : item.activeOptions.exact,
+                    includeSearch:
+                      item.activeOptions?.includeSearch === undefined
+                        ? false
+                        : item.activeOptions.includeSearch,
+                    includeHash:
+                      item.activeOptions?.includeHash === undefined
+                        ? false
+                        : item.activeOptions.includeHash,
+                  }}
+                  className={railItemClass}
+                >
+                  {item.title}
+                </Link>
+              ) : null;
+            })}
+          </div>
+        );
+      })}
     </nav>
   );
 };

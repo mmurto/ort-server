@@ -82,6 +82,9 @@ vi.mock('@/components/statistics-card', () => ({
       </section>
     );
   },
+  StatisticsRow: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
 }));
 
 const statistics: OrtRunStatistics = {
@@ -294,8 +297,6 @@ describe('run statistics boundary', () => {
     );
 
     expect(markup).toContain('Loading data...');
-    expect(markup).toContain('Status');
-    expect(markup).toContain('Statistics');
     expect(markup).toContain('Rule Violations');
     expect(markup).toContain('Vulnerabilities');
     expect(markup).toContain('Issues');

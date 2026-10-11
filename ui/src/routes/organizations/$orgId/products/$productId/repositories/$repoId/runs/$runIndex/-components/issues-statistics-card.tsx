@@ -56,7 +56,7 @@ const IssuesStatisticsCardContent = ({
   return (
     <StatisticsCard
       title='Issues'
-      icon={() => <Bug className={`h-4 w-4 ${getStatusFontColor(status)}`} />}
+      icon={() => <Bug className={`size-3.5 ${getStatusFontColor(status)}`} />}
       value={value}
       total={statistics?.issuesCountTotal ?? undefined}
       description={description}
@@ -71,7 +71,6 @@ const IssuesStatisticsCardContent = ({
             )
           : []
       }
-      className='hover:bg-muted/50 h-full'
     />
   );
 };

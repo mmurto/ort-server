@@ -57,7 +57,7 @@ const PackagesStatisticsCardContent = ({
     <StatisticsCard
       title='Packages'
       icon={() => (
-        <ListTree className={`h-4 w-4 ${getStatusFontColor(status)}`} />
+        <ListTree className={`size-3.5 ${getStatusFontColor(status)}`} />
       )}
       value={value}
       description={description}
@@ -66,7 +66,6 @@ const PackagesStatisticsCardContent = ({
         count,
         color: getEcosystemBackgroundColor(name),
       }))}
-      className='hover:bg-muted/50 h-full'
     />
   );
 };

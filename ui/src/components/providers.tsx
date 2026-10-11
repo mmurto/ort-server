@@ -50,12 +50,7 @@ export const Providers = ({ children }: { children: ReactNode }) => {
   return (
     <AuthProvider {...oidcConfig} skipSigninCallback={skipSigninCallback}>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider
-          defaultMode='light'
-          storageKeyMode='vite-ui-theme'
-          defaultColorTheme='default'
-          storageKeyColorTheme='vite-ui-theme-color'
-        >
+        <ThemeProvider defaultMode='light' storageKeyMode='vite-ui-theme'>
           <HomeDataProvider>
             <TooltipProvider>{children}</TooltipProvider>
           </HomeDataProvider>

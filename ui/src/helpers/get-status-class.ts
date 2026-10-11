@@ -40,51 +40,52 @@ export const vulnerabilityRatings = {
 const STATUS_BACKGROUND_COLOR: {
   [K in Exclude<Status, undefined>]: string;
 } = {
-  CREATED: 'bg-gray-500',
-  SCHEDULED: 'bg-blue-300 text-black',
-  RUNNING: 'bg-blue-500 text-black',
-  ACTIVE: 'bg-blue-500 text-black',
-  FAILED: 'bg-traffic-light-red text-black',
-  FINISHED: 'bg-traffic-light-green text-black',
-  FINISHED_WITH_ISSUES: 'bg-traffic-light-yellow text-black',
+  CREATED: 'bg-neutral-soft text-muted-foreground',
+  SCHEDULED: 'bg-input text-foreground',
+  RUNNING: 'bg-brand text-brand-foreground',
+  ACTIVE: 'bg-brand text-brand-foreground',
+  FAILED: 'bg-err text-background',
+  FINISHED: 'bg-ok text-background',
+  FINISHED_WITH_ISSUES: 'bg-warn text-background',
 } as const;
 
 const STATUS_FONT_COLOR: { [K in Exclude<Status, undefined>]: string } = {
-  CREATED: 'text-gray-500',
-  SCHEDULED: 'text-blue-300',
-  RUNNING: 'text-blue-500',
-  ACTIVE: 'text-blue-500',
-  FAILED: 'text-traffic-light-red',
-  FINISHED: 'text-traffic-light-green',
-  FINISHED_WITH_ISSUES: 'text-traffic-light-yellow',
+  CREATED: 'text-muted-foreground',
+  SCHEDULED: 'text-muted-foreground',
+  RUNNING: 'text-brand',
+  ACTIVE: 'text-brand',
+  FAILED: 'text-err',
+  FINISHED: 'text-ok',
+  FINISHED_WITH_ISSUES: 'text-warn',
 } as const;
 
+// Job statuses are drawn as short flat segments of a run's trajectory.
 const STATUS_CLASS: {
   [K in Exclude<Status, undefined>]: string;
 } = {
-  CREATED: 'w-3 h-3 rounded-full',
-  SCHEDULED: 'w-3 h-3 rounded-full',
-  RUNNING: 'w-3 h-3 rounded-full animate-pulse',
-  ACTIVE: 'w-3 h-3 rounded-full animate-pulse',
-  FAILED: 'w-3 h-3 rounded-full',
-  FINISHED: 'w-3 h-3 rounded-full',
-  FINISHED_WITH_ISSUES: 'w-3 h-3 rounded-full',
+  CREATED: 'block h-1.5 w-4',
+  SCHEDULED: 'block h-1.5 w-4',
+  RUNNING: 'block h-1.5 w-4 animate-pulse',
+  ACTIVE: 'block h-1.5 w-4 animate-pulse',
+  FAILED: 'block h-1.5 w-4',
+  FINISHED: 'block h-1.5 w-4',
+  FINISHED_WITH_ISSUES: 'block h-1.5 w-4',
 } as const;
 
 const RULE_VIOLATION_SEVERITY_BG_COLOR: {
   [K in Severity]: string;
 } = {
-  ERROR: 'bg-traffic-light-red text-black',
-  WARNING: 'bg-traffic-light-yellow text-black',
-  HINT: 'bg-blue-300 text-black',
+  ERROR: 'bg-err text-background',
+  WARNING: 'bg-warn text-background',
+  HINT: 'bg-muted-foreground text-background',
 } as const;
 
 const ISSUE_SEVERITY_BG_COLOR: {
   [K in Severity]: string;
 } = {
-  ERROR: 'bg-traffic-light-red text-black',
-  WARNING: 'bg-traffic-light-yellow text-black',
-  HINT: 'bg-blue-300 text-black',
+  ERROR: 'bg-err text-background',
+  WARNING: 'bg-warn text-background',
+  HINT: 'bg-muted-foreground text-background',
 } as const;
 
 // TailwindCSS class accessor functions
@@ -97,7 +98,7 @@ const ISSUE_SEVERITY_BG_COLOR: {
 // Get the color class for coloring the background of elements
 export function getStatusBackgroundColor(status: Status): string {
   if (status === undefined) {
-    return 'bg-gray-300 text-black';
+    return 'bg-border text-muted-foreground';
   }
   return STATUS_BACKGROUND_COLOR[status];
 }
@@ -105,7 +106,7 @@ export function getStatusBackgroundColor(status: Status): string {
 // Get the color class for font coloring
 export function getStatusFontColor(status: Status): string {
   if (status === undefined) {
-    return 'text-gray-300';
+    return 'text-muted-foreground/60';
   }
   return STATUS_FONT_COLOR[status];
 }
@@ -113,7 +114,7 @@ export function getStatusFontColor(status: Status): string {
 // Get the general class for the elements
 export function getStatusClass(status: Status): string {
   if (status === undefined) {
-    return 'w-3 h-3 rounded-full';
+    return 'block h-1.5 w-4';
   }
   return STATUS_CLASS[status];
 }
@@ -124,16 +125,16 @@ export function getVulnerabilityRatingBackgroundColor(
 ): string {
   switch (rating) {
     case 'CRITICAL':
-      return 'bg-traffic-light-red text-black';
+      return 'bg-sev-critical text-background';
     case 'HIGH':
-      return 'bg-orange-400 text-black';
+      return 'bg-sev-high text-background';
     case 'MEDIUM':
-      return 'bg-traffic-light-yellow text-black';
+      return 'bg-sev-medium text-[#16171b]';
     case 'LOW':
-      return 'bg-yellow-300 text-black';
+      return 'bg-sev-low text-[#16171b]';
     case 'NONE':
     default:
-      return 'bg-neutral-300 text-black';
+      return 'bg-neutral-soft text-muted-foreground';
   }
 }
 
@@ -228,6 +229,6 @@ export function getEcosystemBackgroundColor(ecosystem: string): string {
     case 'Yarn2':
       return 'bg-teal-700';
     default:
-      return 'bg-neutral-300'; // Fallback for undefined ecosystems
+      return 'bg-input'; // Fallback for undefined ecosystems
   }
 }

@@ -66,7 +66,7 @@ export function DataTableHeader<TData extends RowData>({
                       asChild
                       variant='ghost'
                       size='narrow'
-                      className='ml-4'
+                      className='text-muted-foreground hover:text-foreground ml-1 h-6 px-1'
                       onClick={column.getToggleSortingHandler()}
                     >
                       <Link
@@ -79,11 +79,11 @@ export function DataTableHeader<TData extends RowData>({
                         })}
                       >
                         {column.getIsSorted() === 'asc' ? (
-                          <ChevronUp className='h-4 w-4 text-blue-500' />
+                          <ChevronUp className='text-foreground size-3.5' />
                         ) : column.getIsSorted() === 'desc' ? (
-                          <ChevronDown className='h-4 w-4 text-blue-500' />
+                          <ChevronDown className='text-foreground size-3.5' />
                         ) : (
-                          <ChevronsUpDown className='h-4 w-4' />
+                          <ChevronsUpDown className='size-3.5 opacity-60' />
                         )}
                       </Link>
                     </Button>

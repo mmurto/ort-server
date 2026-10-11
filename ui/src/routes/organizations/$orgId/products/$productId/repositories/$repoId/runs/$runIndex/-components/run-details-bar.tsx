@@ -19,7 +19,7 @@
 
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link, useLocation } from '@tanstack/react-router';
-import { ArrowBigLeft, ArrowBigRight, ArrowBigUp, Repeat } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Repeat } from 'lucide-react';
 
 import {
   getRepositoryRunOptions,
@@ -29,17 +29,15 @@ import { RunFavoriteButton } from '@/components/favorite-button';
 import { OrtRunJobStatus } from '@/components/ort-run-job-status';
 import { RunDuration } from '@/components/run-duration';
 import { Sha1Component } from '@/components/sha1-component';
+import { StatusMark } from '@/components/status-mark';
 import { TimestampWithUTC } from '@/components/timestamp-with-utc';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { config } from '@/config';
-import { getStatusBackgroundColor } from '@/helpers/get-status-class';
 import { useRepositoryPermission } from '@/hooks/use-authorization';
 import { cn } from '@/lib/utils';
 
@@ -119,67 +117,149 @@ export const RunDetailsBar = ({ className }: RunDetailsBarProps) => {
     return location.searchStr ? `${pathname}${location.searchStr}` : pathname;
   };
 
+  const isOverview = location.pathname
+    .replace(/\/$/, '')
+    .endsWith(`/runs/${params.runIndex}`);
+
   return (
-    <div
-      className={cn('flex flex-col justify-between p-4 md:flex-row', className)}
-    >
-      <div className='flex items-start'>
-        <Button asChild variant='ghost'>
-          <Link
-            to={hasPrevious ? buildRunPath(previousIndex!) : '#'}
-            disabled={!hasPrevious}
-          >
-            <ArrowBigLeft className='h-5 w-5' />
-            <div className='text-muted-foreground text-xs'>Previous</div>
-          </Link>
-        </Button>
-        <Button
-          asChild
-          variant='ghost'
-          className='flex flex-col items-center gap-0.5'
-        >
-          <Link
-            to='/organizations/$orgId/products/$productId/repositories/$repoId/runs'
-            params={params}
-          >
-            <ArrowBigUp className='h-5 w-5' />
-            <div className='text-muted-foreground text-xs'>All</div>
-          </Link>
-        </Button>
-        <Button asChild variant='ghost'>
-          <Link
-            to={hasNext ? buildRunPath(nextIndex!) : '#'}
-            disabled={!hasNext}
-          >
-            <div className='text-muted-foreground text-xs'>Next</div>
-            <ArrowBigRight className='h-5 w-5' />
-          </Link>
-        </Button>
-      </div>
-      <div className='flex gap-4'>
-        <div className='flex flex-col gap-2'>
-          <Badge
-            className={`border ${getStatusBackgroundColor(ortRun.status)}`}
-          >
-            {ortRun.status}
-          </Badge>
-          <OrtRunJobStatus
-            jobs={ortRun.jobs}
-            orgId={params.orgId}
-            productId={params.productId}
-            repoId={params.repoId}
-            runIndex={params.runIndex}
-          />
+    <header className={cn('flex flex-col gap-3 pb-6', className)}>
+      <div className='flex flex-wrap items-start justify-between gap-x-8 gap-y-4'>
+        <div className='flex min-w-0 flex-col gap-2'>
+          <div className='flex items-center gap-3'>
+            <h1 className='text-2xl font-semibold tracking-[-0.015em]'>
+              Run {ortRun.index}
+            </h1>
+            <StatusMark status={ortRun.status} />
+            <RunFavoriteButton
+              organizationId={params.orgId}
+              productId={params.productId}
+              repositoryId={params.repoId}
+              run={ortRun}
+              size='xs'
+              variant='ghost'
+              className='size-7 p-0'
+            />
+          </div>
+          <dl className='text-muted-foreground flex flex-wrap items-center gap-x-6 gap-y-1 text-[0.8125rem]'>
+            <div className='flex items-center gap-1.5'>
+              <dt>Revision</dt>
+              <dd className='text-foreground flex items-center gap-1.5 font-medium'>
+                {ortRun.revision}
+                {ortRun.resolvedRevision &&
+                  ortRun.revision !== ortRun.resolvedRevision && (
+                    <>
+                      <span className='text-muted-foreground font-normal'>
+                        @
+                      </span>
+                      <Sha1Component sha1={ortRun.resolvedRevision} />
+                    </>
+                  )}
+              </dd>
+            </div>
+            {ortRun.userDisplayName && (
+              <div className='flex items-center gap-1.5'>
+                <dt>Created by</dt>
+                <dd className='text-foreground font-medium'>
+                  {ortRun.userDisplayName.username ? (
+                    <Tooltip>
+                      <TooltipTrigger className='cursor-default'>
+                        {ortRun.userDisplayName.fullName ||
+                          ortRun.userDisplayName.username}
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {ortRun.userDisplayName.username}
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    ortRun.userDisplayName.fullName
+                  )}
+                </dd>
+              </div>
+            )}
+            <div className='flex items-center gap-1.5'>
+              <dt className='sr-only'>Created at</dt>
+              <dd className='text-foreground'>
+                <TimestampWithUTC timestamp={ortRun.createdAt} />
+              </dd>
+            </div>
+            <div className='flex items-center gap-1.5'>
+              <dt>Duration</dt>
+              <dd className='text-foreground font-medium'>
+                <RunDuration
+                  createdAt={ortRun.createdAt}
+                  finishedAt={ortRun.finishedAt ?? undefined}
+                />
+              </dd>
+            </div>
+            <div className='flex items-center gap-1.5'>
+              <dt>Run ID</dt>
+              <dd className='text-foreground font-medium'>{ortRun.id}</dd>
+            </div>
+            {!isOverview && (
+              <div className='flex items-center gap-1.5'>
+                <dt className='sr-only'>Jobs</dt>
+                <dd>
+                  <OrtRunJobStatus
+                    jobs={ortRun.jobs}
+                    orgId={params.orgId}
+                    productId={params.productId}
+                    repoId={params.repoId}
+                    runIndex={params.runIndex}
+                  />
+                </dd>
+              </div>
+            )}
+          </dl>
         </div>
-        <div className='flex items-start gap-2'>
+        <div className='flex items-center gap-2'>
+          <nav aria-label='Runs' className='flex items-center'>
+            <Button
+              asChild
+              variant='outline'
+              size='icon'
+              className='rounded-r-none'
+              disabled={!hasPrevious}
+            >
+              <Link
+                to={hasPrevious ? buildRunPath(previousIndex!) : '#'}
+                disabled={!hasPrevious}
+                aria-label='Previous run'
+                className='aria-disabled:opacity-40'
+              >
+                <ChevronLeft />
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant='outline'
+              className='-ml-px rounded-none px-3'
+            >
+              <Link
+                to='/organizations/$orgId/products/$productId/repositories/$repoId/runs'
+                params={params}
+              >
+                All runs
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant='outline'
+              size='icon'
+              className='-ml-px rounded-l-none'
+            >
+              <Link
+                to={hasNext ? buildRunPath(nextIndex!) : '#'}
+                disabled={!hasNext}
+                aria-label='Next run'
+                className='aria-disabled:opacity-40'
+              >
+                <ChevronRight />
+              </Link>
+            </Button>
+          </nav>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                variant='outline'
-                asChild
-                size='sm'
-                disabled={canTriggerRun === false}
-              >
+              <Button asChild disabled={canTriggerRun === false}>
                 <Link
                   to='/organizations/$orgId/products/$productId/repositories/$repoId/create-run'
                   params={{
@@ -191,7 +271,7 @@ export const RunDetailsBar = ({ className }: RunDetailsBarProps) => {
                     rerunIndex: ortRun.index,
                   }}
                 >
-                  <Repeat className='mr-1 h-4 w-4' />
+                  <Repeat />
                   Rerun
                 </Link>
               </Button>
@@ -202,59 +282,6 @@ export const RunDetailsBar = ({ className }: RunDetailsBarProps) => {
           </Tooltip>
         </div>
       </div>
-      <div className='flex flex-col'>
-        <div className='flex items-center gap-2 text-sm'>
-          <Label className='font-semibold'>Run ID:</Label>
-          <div>{ortRun.id}</div>
-          <RunFavoriteButton
-            organizationId={params.orgId}
-            productId={params.productId}
-            repositoryId={params.repoId}
-            run={ortRun}
-            size='xs'
-            variant='ghost'
-            className='size-6 p-0'
-          />
-        </div>
-        <div className='flex gap-2 text-sm'>
-          <Label className='font-semibold'>Revision:</Label> {ortRun.revision}
-          {ortRun.resolvedRevision &&
-            ortRun.revision !== ortRun.resolvedRevision && (
-              <Sha1Component sha1={ortRun.resolvedRevision} />
-            )}
-        </div>
-      </div>
-      <div className='flex flex-col'>
-        {ortRun.userDisplayName && (
-          <div className='flex items-center gap-2 text-sm'>
-            <Label className='font-semibold'>Created by:</Label>
-            {ortRun.userDisplayName.username ? (
-              <Tooltip>
-                <TooltipTrigger className='cursor-pointer'>
-                  {ortRun.userDisplayName.fullName ||
-                    ortRun.userDisplayName.username}
-                </TooltipTrigger>
-                <TooltipContent>
-                  {ortRun.userDisplayName.username}
-                </TooltipContent>
-              </Tooltip>
-            ) : (
-              <span>{ortRun.userDisplayName.fullName}</span>
-            )}
-          </div>
-        )}
-        <div className='flex items-center gap-2 text-sm'>
-          <Label className='font-semibold'>Created at:</Label>
-          <TimestampWithUTC timestamp={ortRun.createdAt} />
-        </div>
-        <div className='flex items-center gap-2 text-sm'>
-          <Label className='font-semibold'>Duration:</Label>
-          <RunDuration
-            createdAt={ortRun.createdAt}
-            finishedAt={ortRun.finishedAt ?? undefined}
-          />
-        </div>
-      </div>
-    </div>
+    </header>
   );
 };

@@ -23,7 +23,6 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { ColorThemeToggle } from '@/components/color-theme-toggle';
 import { ModeToggle } from '@/components/mode-toggle';
 import { ThemeProvider } from '@/components/theme-provider';
 import { useTheme } from '@/components/theme-provider-context';
@@ -32,17 +31,13 @@ import { isCompiledByReactCompiler } from '../fixtures/react-compiler';
 const root = document.documentElement;
 
 const ThemeConsumer = () => {
-  const { mode, setMode, colorTheme, setColorTheme } = useTheme();
+  const { mode, setMode } = useTheme();
 
   return (
     <>
-      <span>
-        {mode} {colorTheme}
-      </span>
+      <span>{mode}</span>
       <button onClick={() => setMode('dark')}>Dark</button>
       <button onClick={() => setMode('system')}>System</button>
-      <button onClick={() => setColorTheme('shadcn')}>Shadcn</button>
-      <button onClick={() => setColorTheme('default')}>Default</button>
     </>
   );
 };
@@ -65,14 +60,12 @@ describe('ThemeProvider', () => {
   afterEach(() => {
     localStorage.clear();
     root.className = '';
-    root.removeAttribute('data-theme');
     vi.restoreAllMocks();
   });
 
   it.each([
     ['ThemeProvider', ThemeProvider],
     ['ModeToggle', ModeToggle],
-    ['ColorThemeToggle', ColorThemeToggle],
   ])('compiles %s with React Compiler', (_, component) => {
     expect(isCompiledByReactCompiler(component)).toBe(true);
   });
@@ -85,7 +78,7 @@ describe('ThemeProvider', () => {
 
     await user.click(screen.getByRole('button', { name: 'Dark' }));
 
-    expect(screen.getByText('dark default')).toBeInTheDocument();
+    expect(screen.getByText('dark')).toBeInTheDocument();
     expect(root).toHaveClass('dark');
     expect(root).not.toHaveClass('light');
     expect(localStorage.getItem('vite-ui-theme')).toBe('dark');
@@ -98,23 +91,8 @@ describe('ThemeProvider', () => {
 
     await user.click(screen.getByRole('button', { name: 'System' }));
 
-    expect(screen.getByText('system default')).toBeInTheDocument();
+    expect(screen.getByText('system')).toBeInTheDocument();
     expect(root).toHaveClass('dark');
-  });
-
-  it('sets and clears the color theme of the document', async () => {
-    const user = userEvent.setup();
-    renderThemeProvider();
-
-    await user.click(screen.getByRole('button', { name: 'Shadcn' }));
-
-    expect(screen.getByText('light shadcn')).toBeInTheDocument();
-    expect(root).toHaveAttribute('data-theme', 'shadcn');
-    expect(localStorage.getItem('vite-ui-theme-color')).toBe('shadcn');
-
-    await user.click(screen.getByRole('button', { name: 'Default' }));
-
-    expect(root).not.toHaveAttribute('data-theme');
   });
 
   it('changes the mode of the document from the mode menu', async () => {

@@ -80,7 +80,7 @@ export function DataTablePagination({
             navigate(options);
           }}
         >
-          <SelectTrigger className='h-8 w-[4.5rem]'>
+          <SelectTrigger size='sm' className='h-7 w-[4.25rem]'>
             <SelectValue placeholder={pageSize} />
           </SelectTrigger>
           <SelectContent side='top'>
@@ -91,10 +91,12 @@ export function DataTablePagination({
             ))}
           </SelectContent>
         </Select>
-        <p className='text-sm font-medium whitespace-nowrap'>items per page</p>
+        <p className='text-muted-foreground text-[0.8125rem] whitespace-nowrap'>
+          per page
+        </p>
       </div>
       <div className='flex items-center space-x-2'>
-        <div className='flex items-center text-sm font-medium whitespace-nowrap'>
+        <div className='text-muted-foreground flex items-center text-[0.8125rem] whitespace-nowrap'>
           Page{' '}
           <form
             className='flex items-center'
@@ -115,7 +117,7 @@ export function DataTablePagination({
                   value > totalPages ? totalPages : value < 1 ? 1 : value
                 );
               }}
-              className='mx-2 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
+              className='text-foreground mx-2 h-7 w-12 [appearance:textfield] px-1.5 text-center [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
               max={totalPages}
               min={1}
             />{' '}
@@ -127,7 +129,7 @@ export function DataTablePagination({
             asChild
             aria-label='Go to first page'
             variant='outline'
-            className='hidden size-8 p-0 lg:flex'
+            className='hidden size-7 p-0 lg:flex'
           >
             <Link
               {...setCurrentPageOptions(1)}
@@ -150,7 +152,7 @@ export function DataTablePagination({
             aria-label='Go to previous page'
             variant='outline'
             size='icon'
-            className='size-8'
+            className='size-7'
           >
             <Link
               {...setCurrentPageOptions(currentPage - 1)}
@@ -173,7 +175,7 @@ export function DataTablePagination({
             aria-label='Go to next page'
             variant='outline'
             size='icon'
-            className='size-8'
+            className='size-7'
           >
             <Link
               {...setCurrentPageOptions(currentPage + 1)}
@@ -196,7 +198,7 @@ export function DataTablePagination({
             aria-label='Go to last page'
             variant='outline'
             size='icon'
-            className='hidden size-8 lg:flex'
+            className='hidden size-7 lg:flex'
           >
             <Link
               {...setCurrentPageOptions(totalPages)}

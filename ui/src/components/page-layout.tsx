@@ -17,8 +17,10 @@
  * License-Filename: LICENSE
  */
 
+import { createPortal } from 'react-dom';
+
+import { useRail } from '@/components/rail-context';
 import { Sidebar, SidebarNavProps } from '@/components/sidebar';
-import { Bar, Content, Page, Pane } from '@/components/ui/layout';
 
 interface PageLayoutProps {
   sections: SidebarNavProps['sections'] | undefined;
@@ -26,27 +28,18 @@ interface PageLayoutProps {
   children: React.ReactNode;
 }
 
-export const PageLayout = ({
-  sections,
-  topBar,
+/**
+ * Lays out a scoped page: its section navigation goes into the app rail, the optional top bar
+ * heads the work sheet, and the content fills the rest.
+ */
+export const PageLayout = ({ sections, topBar, children }: PageLayoutProps) => {
+  const { slot } = useRail();
 
-  children,
-}: PageLayoutProps) => {
   return (
     <>
-      {topBar && (
-        <Bar className='-mt-8 flex flex-col justify-center md:flex-row'>
-          <Content className='w-full max-w-[1400px]'>{topBar}</Content>
-        </Bar>
-      )}
-      <Page className='flex flex-col justify-center gap-4 md:flex-row'>
-        {sections && (
-          <Pane className='w-full md:w-52'>
-            <Sidebar sections={sections} />
-          </Pane>
-        )}
-        <Content className='w-full md:max-w-6xl'>{children}</Content>
-      </Page>
+      {sections && slot && createPortal(<Sidebar sections={sections} />, slot)}
+      {topBar && <div className='w-full'>{topBar}</div>}
+      <div className='flex w-full flex-col gap-6'>{children}</div>
     </>
   );
 };

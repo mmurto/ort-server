@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>ORT Server - Run 12 - Graphite Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--g:#15171A;--p:#1B1E22;--r:#23272C;--h:#2C3036;--t:#E6E8EB;--s:#9BA1A9;--c:#D0446A;--cd:#A72145;--err:#F2555A;--warn:#E5A04B;--ok:#4FB3A9;--info:#7AA2F7;
+--an:rgb(0,175,170);--ad:rgb(153,123,183);--sc:rgb(209,78,96);--ev:rgb(51,153,204);--rp:rgb(242,144,86)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1440px;height:900px;overflow:hidden;background:var(--g);color:var(--t);font:13px/1.4 'Geist',system-ui,sans-serif}
+.mono{font-family:'Geist Mono',ui-monospace,monospace}
+.cap{font-variant:small-caps;font-size:11px;letter-spacing:.09em;color:var(--s);font-weight:500;text-transform:lowercase}
+button{font:500 13px 'Geist',sans-serif;height:30px;padding:0 14px;border-radius:5px;cursor:pointer;background:transparent;color:var(--t);border:1px solid var(--h)}
+button.pri{background:var(--cd);border-color:var(--cd);color:#fff}
+button.out{border-color:#3A4047}
+button.del{border-color:#5A2A33;color:var(--err)}
+.app{display:grid;grid-template-columns:200px 860px 380px;grid-template-rows:44px 856px;gap:1px;background:var(--h);width:1440px;height:900px}
+.top{grid-column:1/4;background:var(--g);display:flex;align-items:center;gap:16px;padding:0 14px}
+.logo{display:flex;align-items:center;gap:9px;font-weight:600;font-size:14px;width:172px}
+.top input{margin-left:auto;width:260px;height:28px;background:var(--p);border:1px solid var(--h);border-radius:5px;color:var(--t);padding:0 10px;font:13px 'Geist Mono',monospace}
+.top input::placeholder{color:var(--s)}
+.tg{width:28px;height:28px;border:1px solid var(--h);border-radius:5px;display:grid;place-items:center;color:var(--s)}
+.av{width:28px;height:28px;border-radius:50%;background:var(--cd);display:grid;place-items:center;font-size:11px;font-weight:600}
+nav{background:var(--p);padding:12px 8px;overflow:hidden}
+nav .cap{display:block;padding:14px 10px 5px}
+nav a{display:flex;align-items:center;gap:9px;height:28px;padding:0 10px;border-radius:5px;color:var(--s);font-size:13px}
+nav a i{width:12px;height:12px;border:1.5px solid currentColor;border-radius:3px;opacity:.7}
+nav a.on{background:var(--r);color:var(--t);box-shadow:inset 2px 0 0 var(--c)}
+nav a b{margin-left:auto;font:400 11px 'Geist Mono';color:var(--s)}
+main{background:var(--p);display:flex;flex-direction:column;overflow:hidden}
+.bc{padding:12px 20px 0;color:var(--s);font-size:12px}.bc span{color:var(--h);margin:0 6px}.bc em{color:var(--t);font-style:normal}
+.hd{display:flex;align-items:flex-start;padding:10px 20px 14px;gap:10px}
+h1{font-size:20px;font-weight:600;letter-spacing:-.01em}
+.meta{color:var(--s);font-size:12.5px;margin-top:4px}.meta b{color:var(--t);font-weight:400}
+.st{display:inline-block;margin-left:10px;padding:1px 8px;border:1px solid var(--warn);color:var(--warn);border-radius:10px;font-size:11px;font-weight:500;vertical-align:3px}
+.acts{margin-left:auto;display:flex;gap:8px}
+.pipe{display:flex;gap:2px;margin:0 20px;border:1px solid var(--h);border-radius:6px;overflow:hidden;background:var(--h)}
+.pipe div{background:var(--r);padding:8px 10px 9px;border-top:3px solid var(--k);min-width:96px}
+.pipe div.x{background:#2B2326}
+.pipe b{display:block;font-weight:500;font-size:12.5px}.pipe small{font:400 11.5px 'Geist Mono';color:var(--s)}
+.pipe .w{color:var(--err)}
+.sum{display:flex;gap:22px;padding:13px 20px;color:var(--s);font-size:12.5px;border-bottom:1px solid var(--h)}
+.sum span b{font:500 13px 'Geist Mono';color:var(--t);margin-right:5px}
+.sum .l{color:var(--t)}
+.th{display:flex;align-items:center;padding:12px 20px 8px;gap:12px}
+.th h2{font-size:14px;font-weight:600}
+.tabs{display:flex;gap:2px;margin-left:auto}
+.tabs span{padding:3px 10px;border-radius:5px;color:var(--s);font-size:12px}.tabs .on{background:var(--r);color:var(--t)}
+table{border-collapse:collapse;width:100%;table-layout:fixed}
+th{text-align:left;font:500 11px 'Geist';font-variant:small-caps;text-transform:lowercase;letter-spacing:.09em;color:var(--s);padding:7px 10px;border-top:1px solid var(--h);border-bottom:1px solid var(--h);background:var(--g)}
+th:first-child,td:first-child{padding-left:20px}
+th::after{content:" \2195";opacity:.4}
+td{padding:0 10px;height:34px;border-bottom:1px solid var(--h);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+td:nth-child(3),td:nth-child(4){font:400 12px 'Geist Mono'}
+td:nth-child(4){color:var(--s)}
+tr.sel td{background:#2A2024}tr.sel td:first-child{box-shadow:inset 3px 0 0 var(--c)}
+.sv{font:500 11px 'Geist Mono';letter-spacing:.04em}
+.E{color:var(--err)}.W{color:var(--warn)}.H{color:var(--info)}
+.foot{margin-top:auto;padding:9px 20px;border-top:1px solid var(--h);color:var(--s);font-size:12px;display:flex;justify-content:space-between}
+aside{background:var(--p);padding:16px 20px;display:flex;flex-direction:column;overflow:hidden}
+aside .cap{display:flex;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid var(--h)}
+aside h3{font:500 15px 'Geist Mono';margin:14px 0 4px;word-break:break-all}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 4px}
+.chips span{border:1px solid var(--h);background:var(--r);border-radius:4px;padding:2px 8px;font:400 12px 'Geist Mono'}
+.chips .cv{border-color:var(--err);color:var(--err)}
+.kv{display:grid;grid-template-columns:96px 1fr;gap:7px 10px;margin:14px 0;padding:12px 0;border-top:1px solid var(--h);border-bottom:1px solid var(--h);font-size:12.5px}
+.kv dt{color:var(--s)}.kv dd{font-family:'Geist Mono';font-size:12px}
+aside p{font-size:13px;line-height:1.55;color:var(--t);margin:6px 0 16px}
+aside p.s{color:var(--s)}
+.fix{background:var(--r);border:1px solid var(--h);border-radius:5px;padding:10px 12px;margin-bottom:14px;font-size:12.5px;color:var(--s)}
+.fix code{font:400 12px 'Geist Mono';color:var(--t)}
+.ra{display:flex;gap:8px}
+.danger{margin-top:auto;padding-top:16px;border-top:1px solid var(--h);display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--s)}
+</style></head><body><div class="app">
+<header class="top"><div class="logo"><svg width="22" height="22" viewBox="0 0 24 24"><polygon points="12,3 20,9 12,13" fill="#DC6A2E"/><polygon points="12,3 4,9 12,13" fill="#B43038"/><polygon points="4,9 12,13 12,21" fill="#66A1D6"/><ellipse cx="12" cy="12" rx="11" ry="4.5" fill="none" stroke="#9BA1A9" stroke-width="1" transform="rotate(-20 12 12)"/></svg>ORT Server</div>
+<input placeholder="Go to run ID..." aria-label="Run ID lookup"><div class="tg">&#9680;</div><div class="av">AD</div></header>
+<nav><a class="on"><i></i>Overview</a>
+<span class="cap">compliance</span><a class="on" style="background:var(--r)"><i></i>Rule violations<b>14</b></a><a><i></i>Detected licenses<b>27</b></a><a><i></i>Detected snippets</a><a><i></i>Vulnerabilities<b>23</b></a>
+<span class="cap">components</span><a><i></i>Projects</a><a><i></i>Packages<b>412</b></a><a><i></i>Dependency graphs</a>
+<span class="cap">reports</span><a><i></i>SBOMs</a><a><i></i>Other</a>
+<span class="cap">technical</span><a><i></i>Issues<b>61</b></a><a><i></i>Logs</a><a><i></i>Configuration</a></nav>
+<main>
+<div class="bc">NIIS<span>/</span>X-Road<span>/</span>github.com/nordic-institute/misp2<span>/</span><em>Run 12</em></div>
+<div class="hd"><div><h1>Run 12<span class="st">FINISHED WITH ISSUES</span></h1>
+<div class="meta">Revision <b class="mono">develop @ 3f9c2e1</b> &middot; created by <b>admin</b> &middot; <b class="mono">11 Oct 2026 16:51</b> &middot; duration <b class="mono">11m 35s</b></div></div>
+<div class="acts"><button class="out">Download reports</button><button class="pri">Rerun</button></div></div>
+<div class="pipe">
+<div style="--k:var(--an);flex:124"><b>Analyzer</b><small>2m 04s &middot; ok</small></div>
+<div style="--k:var(--ad);flex:41"><b>Advisor</b><small>0m 41s &middot; ok</small></div>
+<div style="--k:var(--sc);flex:412"><b>Scanner</b><small>6m 52s &middot; ok</small></div>
+<div class="x" style="--k:var(--ev);flex:60;min-width:150px"><b>Evaluator</b><small>0m 18s &middot; <span class="w">14 violations</span></small></div>
+<div style="--k:var(--rp);flex:100"><b>Reporter</b><small>1m 40s &middot; ok</small></div></div>
+<div class="sum"><span><b>412</b>packages (38 direct)</span><span class="l"><b>14</b>rule violations <span class="E">3 err</span> &middot; <span class="W">9 warn</span> &middot; <span class="H">2 hint</span></span><span><b>23</b>vulnerabilities (2 crit, 6 high)</span><span><b>61</b>issues</span><span><b>27</b>licenses</span></div>
+<div class="th"><h2>Rule violations</h2><div class="tabs"><span class="on">All 14</span><span>Errors 3</span><span>Warnings 9</span><span>Hints 2</span></div></div>
+<table><colgroup><col style="width:92px"><col style="width:190px"><col style="width:360px"><col></colgroup>
+<thead><tr><th>Severity</th><th>Rule</th><th>Package</th><th>Detail</th></tr></thead><tbody>
+<tr><td><span class="sv E">ERROR</span></td><td>COPYLEFT_IN_SOURCE</td><td>Maven:org.mariadb.jdbc:mariadb-java-client:2.7.4</td><td>LGPL-2.1-or-later</td></tr>
+<tr class="sel"><td><span class="sv E">ERROR</span></td><td>VULNERABILITY_IN_PACKAGE</td><td>Maven:org.apache.commons:commons-text:1.9</td><td>CVE-2022-42889 (CVSS 9.8)</td></tr>
+<tr><td><span class="sv E">ERROR</span></td><td>UNHANDLED_LICENSE</td><td>NPM::left-pad:1.3.0</td><td>WTFPL</td></tr>
+<tr><td><span class="sv W">WARN</span></td><td>MISSING_CONTRIBUTING</td><td>Maven:org.nordic-institute:misp2-web:2.6.1</td><td>-</td></tr>
+<tr><td><span class="sv W">WARN</span></td><td>HIGH_SEVERITY_VULN</td><td>Maven:com.fasterxml.jackson.core:jackson-databind:2.13.2</td><td>CVE-2022-42003 (CVSS 7.5)</td></tr>
+<tr><td><span class="sv W">WARN</span></td><td>DEPRECATED_LICENSE</td><td>Maven:javax.mail:mail:1.4.7</td><td>GPL-2.0-with-classpath-exception</td></tr>
+<tr><td><span class="sv H">HINT</span></td><td>COPYLEFT_LIMITED_IN_DEPS</td><td>Maven:org.eclipse.jetty:jetty-server:9.4.48</td><td>EPL-2.0 OR Apache-2.0</td></tr>
+</tbody></table>
+<div class="foot"><span>Showing 7 of 14</span><span class="mono">Page 1 / 2</span></div>
+</main>
+<aside><span class="cap"><span>selected finding</span><span class="mono" style="font-variant:normal">2 / 14</span></span>
+<h3>VULNERABILITY_IN_PACKAGE</h3>
+<div class="chips"><span>commons-text 1.9</span><span class="cv">ERROR</span><span class="cv">CVE-2022-42889 &middot; CVSS 9.8</span></div>
+<dl class="kv"><dt>Package</dt><dd>Maven:org.apache.commons:commons-text:1.9</dd><dt>Found by</dt><dd>Evaluator</dd><dt>Advisory</dt><dd>CVE-2022-42889</dd><dt>Severity</dt><dd>Critical (9.8)</dd></dl>
+<span class="cap" style="border:0;padding:0">message</span>
+<p>The package commons-text:1.9 has a vulnerability with severity CRITICAL (CVSS 9.8) that violates the policy: CVE-2022-42889 allows remote code execution through insecure string interpolation.</p>
+<span class="cap" style="border:0;padding:0">how to fix</span>
+<p class="s">Upgrade to a patched version, or resolve the finding if the vulnerable lookups are not reachable.</p>
+<div class="fix">Upgrade to <code>commons-text 1.10.0</code> or later, then rerun the analysis.</div>
+<div class="ra"><button class="out">Resolve</button></div>
+<div class="danger"><span>Run 12 &middot; permanent</span><button class="del">Delete run</button></div>
+</aside></div></body></html>

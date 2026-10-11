@@ -115,13 +115,13 @@ describe('RunDetailsBar', () => {
     const { container } = renderBar(3);
 
     expect(
-      await screen.findByRole('link', { name: 'Previous' })
+      await screen.findByRole('link', { name: 'Previous run' })
     ).toHaveAttribute('href', `${runPath}/1/config?tab=jobs`);
-    expect(screen.getByRole('link', { name: 'All' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'All runs' })).toHaveAttribute(
       'href',
       runPath
     );
-    expect(screen.getByRole('link', { name: 'Next' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Next run' })).toHaveAttribute(
       'href',
       `${runPath}/5/config?tab=jobs`
     );
@@ -140,10 +140,9 @@ describe('RunDetailsBar', () => {
     async ({ runIndex, name }) => {
       renderBar(runIndex, '');
 
-      expect((await screen.findByText(name)).closest('a')).toHaveAttribute(
-        'aria-disabled',
-        'true'
-      );
+      expect(
+        await screen.findByRole('link', { name: `${name} run` })
+      ).toHaveAttribute('aria-disabled', 'true');
     }
   );
 

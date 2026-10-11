@@ -69,7 +69,7 @@ describe('OrganizationProductsStatisticsCard', () => {
   it('renders the product total and add action', async () => {
     const markup = await renderCard();
 
-    expect(markup).toContain('Products');
+    expect(markup).toContain('products');
     expect(markup).toContain('>12<');
     expect(markup).toContain('Add product');
     expect(markup).toContain('href="/organizations/42/create-product"');

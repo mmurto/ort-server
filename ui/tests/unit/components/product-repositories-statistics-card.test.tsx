@@ -75,7 +75,7 @@ describe('ProductRepositoriesStatisticsCard', () => {
   it('renders the repository total and add action', async () => {
     const markup = await renderCard();
 
-    expect(markup).toContain('Repositories');
+    expect(markup).toContain('repositories');
     expect(markup).toContain('>12<');
     expect(markup).toContain('Add repository');
     expect(markup).toContain(

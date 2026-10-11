@@ -20,18 +20,16 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
-import { Home, Menu } from 'lucide-react';
+import { Menu, Search } from 'lucide-react';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 import { getServerSettingByKeyOptions } from '@/api/@tanstack/react-query.gen';
-import homeIcon from '@/assets/home-icon.svg';
-import { ColorThemeToggle } from '@/components/color-theme-toggle';
-import { LoadingIndicator } from '@/components/loading-indicator';
+import { PRODUCT_NAME } from '@/components/app-rail';
 import { ModeToggle } from '@/components/mode-toggle';
+import { useRail } from '@/components/rail-context';
 import { Siblings } from '@/components/siblings';
-import { useTheme } from '@/components/theme-provider-context';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   Breadcrumb,
@@ -48,18 +46,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { extractInitials } from '@/helpers/extract-initials.ts';
 import { setCustomFavicon } from '@/helpers/set-custom-favicon';
 import { useUser } from '@/hooks/use-user';
 import { toastError } from '@/lib/toast';
-
-const PRODUCT_NAME = 'ORT Server';
 
 const formSchema = z.object({
   id: z.string().min(1),
@@ -68,29 +58,10 @@ const formSchema = z.object({
 export const Header = () => {
   const user = useUser();
   const navigate = useNavigate();
-  const mode = useTheme().mode;
-
-  const {
-    data: dbHomeIcon,
-    isPending: isHomeIconPending,
-    isError: isHomeIconError,
-    error: homeIconError,
-  } = useQuery({
-    ...getServerSettingByKeyOptions({ path: { key: 'HOME_ICON_URL' } }),
-  });
-
-  const {
-    data: dbHomeIconDark,
-    isPending: isHomeIconDarkPending,
-    isError: isHomeIconDarkError,
-    error: homeIconDarkError,
-  } = useQuery({
-    ...getServerSettingByKeyOptions({ path: { key: 'HOME_ICON_URL_DARK' } }),
-  });
+  const { setOpen } = useRail();
 
   const {
     data: dbProductName,
-    isPending: isProductNamePending,
     isError: isProductNameError,
     error: productNameError,
   } = useQuery({
@@ -196,96 +167,25 @@ export const Header = () => {
     isFaviconError,
   ]);
 
-  if (
-    isHomeIconPending ||
-    isHomeIconDarkPending ||
-    isProductNamePending ||
-    isFaviconPending
-  ) {
-    return <LoadingIndicator />;
-  }
-
-  if (
-    isHomeIconError ||
-    isHomeIconDarkError ||
-    isProductNameError ||
-    isFaviconError
-  ) {
-    toastError(
-      'Unable to load data',
-      homeIconError || homeIconDarkError || productNameError || faviconError
-    );
-    return;
-  }
-
-  // The logic for showing the home icon is as follows:
-  // - if custom icons are not enabled, fall back to using the default icon
-  // - if the active theme is light, use the light mode icon, otherwise use the dark mode icon,
-  //   using the default icon as a final fallback
-  // - if the active theme is dark, use the dark mode icon, otherwise use the light mode icon,
-  //   using the default icon as a final fallback
-  // - in the case of formally correct but invalid icon URLs being provided, fall back to showing
-  //   the configured or default product name instead
-  let homeIconSrc;
-  if (dbHomeIcon.isEnabled) {
-    if (mode === 'light') {
-      homeIconSrc = dbHomeIcon.value || dbHomeIconDark.value || homeIcon;
-    } else {
-      homeIconSrc = dbHomeIconDark.value || dbHomeIcon.value || homeIcon;
+  useEffect(() => {
+    if (isProductNameError || isFaviconError) {
+      toastError('Unable to load data', productNameError || faviconError);
     }
-  } else {
-    homeIconSrc = homeIcon;
-  }
+  }, [isProductNameError, isFaviconError, productNameError, faviconError]);
 
   return (
-    <header className='bg-background sticky top-0 z-50 flex h-16 justify-between gap-4 border-b px-4 md:px-6'>
-      <div className='flex flex-row items-center gap-4'>
-        <nav className='hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6'>
-          <Tooltip>
-            <TooltipTrigger>
-              <Link
-                to='/'
-                className='flex items-center gap-2 text-lg font-semibold md:text-base'
-              >
-                <img
-                  src={homeIconSrc}
-                  alt={
-                    dbProductName.isEnabled && dbProductName.value
-                      ? dbProductName.value
-                      : PRODUCT_NAME
-                  }
-                  className='h-6'
-                />
-                <span className='sr-only'>Home</span>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent>Home</TooltipContent>
-          </Tooltip>
-        </nav>
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button
-              variant='outline'
-              size='icon'
-              className='shrink-0 md:hidden'
-            >
-              <Menu className='h-5 w-5' />
-              <span className='sr-only'>Toggle navigation menu</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side='left'>
-            <nav className='grid gap-6 text-lg font-medium'>
-              <Link
-                to='/'
-                className='flex items-center gap-2 text-lg font-semibold'
-              >
-                <Home className='h-6 w-6' />
-                <span className='sr-only'>Home</span>
-              </Link>
-            </nav>
-          </SheetContent>
-        </Sheet>
-        <Breadcrumb>
+    <header className='bg-background/95 supports-[backdrop-filter]:bg-background/80 sticky top-0 z-30 flex h-12 shrink-0 items-center justify-between gap-4 border-b px-4 backdrop-blur md:rounded-t-sm md:px-8'>
+      <div className='flex min-w-0 flex-row items-center gap-3'>
+        <Button
+          variant='ghost'
+          size='icon'
+          className='-ml-2 shrink-0 md:hidden'
+          onClick={() => setOpen(true)}
+        >
+          <Menu className='size-4' />
+          <span className='sr-only'>Open navigation</span>
+        </Button>
+        <Breadcrumb className='min-w-0 overflow-hidden'>
           <BreadcrumbList>
             {organizationMatch?.context &&
               organizationMatch.context.breadcrumbs.organization !==
@@ -326,22 +226,30 @@ export const Header = () => {
           </BreadcrumbList>
         </Breadcrumb>
       </div>
-      <div className='flex items-center gap-4 md:ml-auto md:gap-2 lg:gap-4'>
+      <div className='flex shrink-0 items-center gap-2'>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className='hidden sm:block'
+          >
             <FormField
               control={form.control}
               name='id'
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
-                    <Input
-                      {...field}
-                      type='text'
-                      name='runId'
-                      placeholder='Enter Run ID'
-                      className='w-28 text-xs'
-                    />
+                    <div className='relative'>
+                      <Search className='text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2' />
+                      <Input
+                        {...field}
+                        type='text'
+                        name='runId'
+                        inputMode='numeric'
+                        aria-label='Go to run ID'
+                        placeholder='Go to run ID'
+                        className='h-8 w-36 pl-8 text-[0.8125rem]'
+                      />
+                    </div>
                   </FormControl>
                 </FormItem>
               )}
@@ -350,16 +258,11 @@ export const Header = () => {
           </form>
         </Form>
         <ModeToggle />
-        <ColorThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              variant='secondary'
-              size='icon'
-              className='ml-auto rounded-full'
-            >
-              <Avatar className='h-8 w-8'>
-                <AvatarFallback className='h-8 w-8 bg-red-400'>
+            <Button variant='ghost' size='icon' className='ml-1'>
+              <Avatar className='size-8'>
+                <AvatarFallback className='bg-primary text-primary-foreground size-8 rounded-sm text-xs font-semibold'>
                   {extractInitials(user.fullName) ??
                     user.username?.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
@@ -369,8 +272,8 @@ export const Header = () => {
           </DropdownMenuTrigger>
           <DropdownMenuContent align='end'>
             <DropdownMenuItem className='flex gap-2' disabled>
-              <Avatar className='h-8 w-8'>
-                <AvatarFallback className='h-8 w-8 bg-red-400'>
+              <Avatar className='size-8'>
+                <AvatarFallback className='bg-primary text-primary-foreground size-8 rounded-sm text-xs font-semibold'>
                   {extractInitials(user.fullName) ??
                     user.username?.slice(0, 2).toUpperCase()}
                 </AvatarFallback>

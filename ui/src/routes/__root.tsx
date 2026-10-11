@@ -19,12 +19,14 @@
 
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router';
-import React, { Suspense } from 'react';
+import React, { Suspense, useState } from 'react';
 
 import { getServerSettingByKeyOptions } from '@/api/@tanstack/react-query.gen';
 import { RouterContext } from '@/app';
+import { AppRail } from '@/components/app-rail';
 import { Footer } from '@/components/footer';
 import { Header } from '@/components/header';
+import { RailContext } from '@/components/rail-context';
 import { setCustomFavicon } from '@/helpers/set-custom-favicon';
 
 // Don't use Router devtools in production.
@@ -37,20 +39,28 @@ const TanStackRouterDevtools = import.meta.env.PROD
     );
 
 const RootComponent = () => {
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
+  const [open, setOpen] = useState(false);
+
   return (
-    <>
+    <RailContext.Provider value={{ slot, open, setOpen }}>
       <ReactQueryDevtools initialIsOpen={false} />
-      <div className='flex min-h-screen w-full flex-col'>
-        <Header />
-        <main className='flex h-full flex-col gap-4 p-4 md:w-full md:items-center md:gap-8 md:p-8'>
-          <Outlet />
-        </main>
-        <Footer />
+      <div className='flex min-h-screen w-full'>
+        <AppRail slotRef={setSlot} />
+        <div className='flex min-w-0 flex-1 flex-col md:p-2 md:pl-2'>
+          <div className='bg-background flex min-h-[calc(100vh-1rem)] flex-1 flex-col md:rounded-sm md:border'>
+            <Header />
+            <main className='mx-auto flex w-full max-w-[1680px] flex-1 flex-col gap-6 px-4 py-6 md:px-8'>
+              <Outlet />
+            </main>
+            <Footer />
+          </div>
+        </div>
       </div>
       <Suspense>
         <TanStackRouterDevtools />
       </Suspense>
-    </>
+    </RailContext.Provider>
   );
 };
 

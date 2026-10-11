@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>ORT Server - Run 12</title>
+<style>
+:root{--w:#fff;--c:#F6F8FA;--b:#D0D7DE;--t:#1F2328;--s:#59636E;--a:#0969DA;--d:#CF222E;--at:#9A6700;--ok:#1A7F37}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1440px;height:900px;overflow:hidden}
+body{font:14px/20px -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;color:var(--t);background:var(--w)}
+.mono{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:12px}
+header{height:56px;background:var(--c);border-bottom:1px solid var(--b);display:flex;align-items:center;padding:0 16px;gap:12px}
+header b{font-size:14px;font-weight:600}
+.crumb{color:var(--s);margin-left:8px;display:flex;gap:6px;font-size:13px}
+.crumb i{font-style:normal;color:var(--b)}.crumb em{font-style:normal;color:var(--t);font-weight:600}
+.sp{flex:1}
+input{font:inherit;font-size:13px;height:32px;border:1px solid var(--b);border-radius:6px;padding:0 10px;background:var(--w);color:var(--t)}
+input::placeholder{color:var(--s)}
+.av{width:32px;height:32px;border-radius:50%;background:#DDF4FF;color:var(--a);font-size:12px;font-weight:600;display:grid;place-items:center;border:1px solid var(--b)}
+.theme{width:32px;height:32px;border:1px solid var(--b);border-radius:6px;background:var(--w);display:grid;place-items:center}
+.wrap{display:flex;height:844px}
+aside{width:240px;border-right:1px solid var(--b);background:var(--c);padding:12px 8px;overflow:hidden}
+aside h6{font-size:12px;font-weight:600;color:var(--s);padding:12px 8px 4px}
+aside a{display:flex;justify-content:space-between;height:32px;align-items:center;padding:0 8px;border-radius:6px;color:var(--t);font-size:14px}
+aside a.on{background:#EAEEF2;font-weight:600;position:relative}
+aside a.on:before{content:"";position:absolute;left:-8px;top:6px;bottom:6px;width:3px;border-radius:2px;background:var(--a)}
+aside a span{font-size:12px;color:var(--s)}
+main{flex:1;padding:24px 32px;overflow:hidden}
+.top{display:flex;align-items:flex-start;gap:12px}
+h1{font-size:24px;line-height:32px;font-weight:600}
+.lab{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;font-size:12px;font-weight:600;border:1px solid}
+.lab.at{color:var(--at);border-color:#D4A72C;background:#FFF8C5}
+.lab.er{color:var(--d);border-color:#FF818266;background:#FFEBE9}
+.lab.wa{color:var(--at);border-color:#D4A72C66;background:#FFF8C5}
+.lab.hi{color:var(--s);border-color:var(--b);background:var(--c)}
+.meta{color:var(--s);font-size:13px;margin-top:6px;display:flex;gap:16px}
+.meta b{color:var(--t);font-weight:500}
+.btn{height:32px;padding:0 14px;border-radius:6px;border:1px solid var(--b);background:var(--c);font:inherit;font-size:14px;font-weight:600;color:var(--t)}
+.btn.p{background:var(--a);border-color:#0757BA;color:#fff}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--b);margin-top:20px}
+.tabs a{padding:8px 12px;font-size:14px;color:var(--t);display:flex;gap:8px;align-items:center;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs a.on{font-weight:600;border-color:#FD8C73}
+.tabs span{background:#AFB8C133;border-radius:999px;font-size:12px;padding:0 7px;line-height:18px;font-weight:500}
+.jobs{display:flex;border:1px solid var(--b);border-radius:6px;margin-top:16px;background:var(--w)}
+.job{flex:1;padding:10px 14px;display:flex;gap:10px;align-items:center;border-right:1px solid var(--b)}
+.job:last-child{border:0}
+.job b{display:block;font-size:13px;font-weight:600}
+.job small{font-size:12px;color:var(--s)}
+.job.w{background:#FFF8C5}.job.w small{color:var(--at)}
+.panel{border:1px solid var(--b);border-radius:6px;margin-top:16px;overflow:hidden}
+.ph{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--c);border-bottom:1px solid var(--b)}
+.ph h2{font-size:14px;font-weight:600}
+.ph .cnt{color:var(--s);font-size:13px}
+.seg{display:flex;gap:6px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-weight:600;font-size:12px;color:var(--s);padding:8px 16px;border-bottom:1px solid var(--b);background:var(--w);white-space:nowrap}
+th.s{color:var(--t)}th svg{vertical-align:-2px;margin-left:4px}
+td{padding:0 16px;height:40px;border-bottom:1px solid #D8DEE4}
+tr:last-child td{border:0}
+tbody tr:hover{background:var(--c)}
+td a{color:var(--a)}
+.foot{display:flex;justify-content:space-between;padding:10px 16px;border-top:1px solid var(--b);background:var(--c);font-size:12px;color:var(--s)}
+</style></head><body>
+<header>
+<svg width="24" height="24" viewBox="0 0 24 24"><ellipse cx="12" cy="13" rx="11" ry="4.5" fill="none" stroke="#66A1D6" stroke-width="1.3" transform="rotate(-20 12 13)"/><path d="M12 3 5 12l7 3z" fill="#DC6A2E"/><path d="M12 3l7 9-7 3z" fill="#B43038"/><path d="M5 12l7 3 7-3-7 8z" fill="#66A1D6"/></svg>
+<b>ORT Server</b>
+<nav class="crumb"><span>NIIS</span><i>/</i><span>X-Road</span><i>/</i><span>github.com/nordic-institute/misp2</span><i>/</i><em>Run 12</em></nav>
+<div class="sp"></div>
+<input placeholder="Go to run ID..." style="width:240px" aria-label="Run ID lookup">
+<div class="theme"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#59636E" stroke-width="1.4"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6 13 13M3 13l1.4-1.4M11.6 4.4 13 3"/></svg></div>
+<div class="av">AD</div>
+</header>
+<div class="wrap">
+<aside>
+<a class="on">Overview</a>
+<h6>Compliance</h6><a>Rule violations<span>14</span></a><a>Detected licenses<span>27</span></a><a>Detected snippets</a><a>Vulnerabilities<span>23</span></a>
+<h6>Components</h6><a>Projects</a><a>Packages<span>412</span></a><a>Dependency graphs</a>
+<h6>Reports</h6><a>SBOMs</a><a>Other</a>
+<h6>Technical</h6><a>Issues<span>61</span></a><a>Logs</a><a>Configuration</a>
+</aside>
+<main>
+<div class="top">
+<div style="flex:1">
+<div style="display:flex;align-items:center;gap:12px"><h1>Run 12</h1><span class="lab at"><svg width="12" height="12" viewBox="0 0 16 16" fill="#9A6700"><path d="M8 1 .5 14h15zM7.3 6h1.4v4H7.3zm0 5h1.4v1.4H7.3z" fill-rule="evenodd"/></svg>Finished with issues</span></div>
+<div class="meta"><span>Revision <b class="mono">develop @ 3f9c2e1</b></span><span>Created by <b>admin</b></span><span>11 Oct 2026 16:51</span><span>Duration <b>11m 35s</b></span></div>
+</div>
+<button class="btn p">Rerun</button><button class="btn">Download reports</button>
+</div>
+<div class="tabs"><a>Overview</a><a class="on">Rule violations <span>14</span></a><a>Vulnerabilities <span>23</span></a><a>Licenses <span>27</span></a><a>Packages <span>412</span></a><a>Issues <span>61</span></a></div>
+<div class="jobs">
+<div class="job"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="#1A7F37"/><path d="m4.8 8.2 2.2 2.2 4.2-4.4" stroke="#fff" stroke-width="1.6" fill="none"/></svg><div><b>Analyzer</b><small>2m 04s</small></div></div>
+<div class="job"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="#1A7F37"/><path d="m4.8 8.2 2.2 2.2 4.2-4.4" stroke="#fff" stroke-width="1.6" fill="none"/></svg><div><b>Advisor</b><small>0m 41s</small></div></div>
+<div class="job"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="#1A7F37"/><path d="m4.8 8.2 2.2 2.2 4.2-4.4" stroke="#fff" stroke-width="1.6" fill="none"/></svg><div><b>Scanner</b><small>6m 52s</small></div></div>
+<div class="job w"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M8 1 .5 14h15z" fill="#9A6700"/><path d="M7.3 6h1.4v4H7.3zm0 5h1.4v1.4H7.3z" fill="#fff"/></svg><div><b>Evaluator</b><small>0m 18s - 14 rule violations</small></div></div>
+<div class="job"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="#1A7F37"/><path d="m4.8 8.2 2.2 2.2 4.2-4.4" stroke="#fff" stroke-width="1.6" fill="none"/></svg><div><b>Reporter</b><small>1m 40s</small></div></div>
+</div>
+<div class="panel">
+<div class="ph"><h2>Rule violations</h2><span class="cnt">14 total</span><span class="lab er">3 errors</span><span class="lab wa">9 warnings</span><span class="lab hi">2 hints</span><div class="sp"></div><input placeholder="Filter by rule, package or license" style="width:300px"></div>
+<table>
+<thead><tr><th class="s" style="width:120px">Severity<svg width="10" height="10" viewBox="0 0 10 10" fill="#1F2328"><path d="M5 1 9 6H1z"/></svg></th><th style="width:230px">Rule<svg width="10" height="10" viewBox="0 0 10 10" fill="#8C959F"><path d="M5 1 8 4H2zM5 9 2 6h6z"/></svg></th><th>Package<svg width="10" height="10" viewBox="0 0 10 10" fill="#8C959F"><path d="M5 1 8 4H2zM5 9 2 6h6z"/></svg></th><th style="width:280px">License / Advisory<svg width="10" height="10" viewBox="0 0 10 10" fill="#8C959F"><path d="M5 1 8 4H2zM5 9 2 6h6z"/></svg></th></tr></thead>
+<tbody>
+<tr><td><span class="lab er">Error</span></td><td class="mono">COPYLEFT_IN_SOURCE</td><td class="mono"><a>Maven:org.mariadb.jdbc:mariadb-java-client:2.7.4</a></td><td class="mono">LGPL-2.1-or-later</td></tr>
+<tr><td><span class="lab er">Error</span></td><td class="mono">VULNERABILITY_IN_PACKAGE</td><td class="mono"><a>Maven:org.apache.commons:commons-text:1.9</a></td><td class="mono">CVE-2022-42889 (CVSS 9.8)</td></tr>
+<tr><td><span class="lab er">Error</span></td><td class="mono">UNHANDLED_LICENSE</td><td class="mono"><a>NPM::left-pad:1.3.0</a></td><td class="mono">WTFPL</td></tr>
+<tr><td><span class="lab wa">Warning</span></td><td class="mono">MISSING_CONTRIBUTING</td><td class="mono"><a>Maven:org.nordic-institute:misp2-web:2.6.1</a></td><td class="mono" style="color:var(--s)">-</td></tr>
+<tr><td><span class="lab wa">Warning</span></td><td class="mono">HIGH_SEVERITY_VULN</td><td class="mono"><a>Maven:com.fasterxml.jackson.core:jackson-databind:2.13.2</a></td><td class="mono">CVE-2022-42003 (CVSS 7.5)</td></tr>
+<tr><td><span class="lab wa">Warning</span></td><td class="mono">DEPRECATED_LICENSE</td><td class="mono"><a>Maven:javax.mail:mail:1.4.7</a></td><td class="mono">GPL-2.0-with-classpath-exception</td></tr>
+<tr><td><span class="lab hi">Hint</span></td><td class="mono">COPYLEFT_LIMITED_IN_DEPS</td><td class="mono"><a>Maven:org.eclipse.jetty:jetty-server:9.4.48</a></td><td class="mono">EPL-2.0 OR Apache-2.0</td></tr>
+</tbody></table>
+<div class="foot"><span>Showing 1-7 of 14</span><span>Rows per page: 7 &nbsp; Page 1 of 2</span></div>
+</div>
+</main></div>
+</body></html>

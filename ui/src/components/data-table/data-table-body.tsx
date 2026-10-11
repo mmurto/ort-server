@@ -82,7 +82,9 @@ export function DataTableBody<TData extends RowData>({
         <TableRow>
           <TableCell colSpan={columnCount || 1} className='h-24 text-center'>
             {noResultsContent ?? (
-              <div className='text-muted-foreground text-sm'>No results.</div>
+              <div className='text-muted-foreground text-[0.8125rem]'>
+                Nothing matches the current filters.
+              </div>
             )}
           </TableCell>
         </TableRow>

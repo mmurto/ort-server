@@ -19,17 +19,17 @@
 
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { Files, PlusIcon } from 'lucide-react';
+import { PlusIcon } from 'lucide-react';
 
 import { getProductRepositoriesOptions } from '@/api/@tanstack/react-query.gen';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useProductPermission } from '@/hooks/use-authorization';
+import { cn } from '@/lib/utils';
 
 type ProductRepositoriesStatisticsCardProps = {
   orgId: string;
@@ -57,46 +57,37 @@ export const ProductRepositoriesStatisticsCard = ({
   const repositoriesTotal = data.pagination.totalCount;
 
   return (
-    <Card className={className}>
-      <CardHeader>
-        <CardTitle>
-          <div className='flex items-center justify-between'>
-            <span className='text-sm font-semibold'>Repositories</span>
-            <Files className='h-4 w-4' />
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className='text-sm'>
-        <div className='flex'>
-          <div className='text-2xl font-bold'>{repositoriesTotal}</div>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                asChild
-                size='sm'
-                className='ml-auto gap-1'
-                disabled={canCreateRepository === false}
-              >
-                <Link
-                  to='/organizations/$orgId/products/$productId/create-repository'
-                  params={{
-                    orgId: orgId,
-                    productId: productId,
-                  }}
-                >
-                  Add repository
-                  <PlusIcon className='h-4 w-4' />
-                </Link>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              {canCreateRepository !== false
-                ? 'Add a repository for managing compliance runs'
-                : 'Insufficient permissions.'}
-            </TooltipContent>
-          </Tooltip>
-        </div>
-      </CardContent>
-    </Card>
+    <div className={cn('flex items-center gap-4', className)}>
+      <span className='text-muted-foreground text-[0.8125rem]'>
+        <span className='text-foreground font-medium'>{repositoriesTotal}</span>{' '}
+        repositories
+      </span>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            asChild
+            size='sm'
+            className='gap-1.5'
+            disabled={canCreateRepository === false}
+          >
+            <Link
+              to='/organizations/$orgId/products/$productId/create-repository'
+              params={{
+                orgId: orgId,
+                productId: productId,
+              }}
+            >
+              Add repository
+              <PlusIcon className='h-4 w-4' />
+            </Link>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          {canCreateRepository !== false
+            ? 'Add a repository for managing compliance runs'
+            : 'Insufficient permissions.'}
+        </TooltipContent>
+      </Tooltip>
+    </div>
   );
 };

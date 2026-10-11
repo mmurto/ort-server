@@ -56,7 +56,9 @@ const RuleViolationsStatisticsCardContent = ({
   return (
     <StatisticsCard
       title='Rule Violations'
-      icon={() => <Scale className={`h-4 w-4 ${getStatusFontColor(status)}`} />}
+      icon={() => (
+        <Scale className={`size-3.5 ${getStatusFontColor(status)}`} />
+      )}
       value={value}
       total={statistics?.ruleViolationsCountTotal ?? undefined}
       description={description}
@@ -73,7 +75,6 @@ const RuleViolationsStatisticsCardContent = ({
             )
           : []
       }
-      className='hover:bg-muted/50 h-full'
     />
   );
 };

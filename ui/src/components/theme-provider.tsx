@@ -20,35 +20,24 @@
 import { useEffect, useState } from 'react';
 
 import { ThemeProviderContext } from '@/components/theme-provider-context';
-import { ColorTheme } from '@/lib/types';
 
 export type Mode = 'dark' | 'light' | 'system';
 
 type ThemeProviderProps = {
   children: React.ReactNode;
   defaultMode?: Mode;
-  defaultColorTheme?: ColorTheme;
   storageKeyMode?: string;
-  storageKeyColorTheme?: string;
 };
 
 export function ThemeProvider({
   children,
   defaultMode = 'light',
-  defaultColorTheme = 'default',
   storageKeyMode = 'vite-ui-theme',
-  storageKeyColorTheme = 'vite-ui-theme-color',
   ...props
 }: ThemeProviderProps) {
   const [mode, setMode] = useState<Mode>(
     () => (localStorage.getItem(storageKeyMode) as Mode | null) || defaultMode
   );
-  const [colorTheme, setColorTheme] = useState<ColorTheme>(
-    () =>
-      (localStorage.getItem(storageKeyColorTheme) as ColorTheme | null) ||
-      defaultColorTheme
-  );
-
   // Set mode classes.
   useEffect(() => {
     const root = window.document.documentElement;
@@ -68,28 +57,11 @@ export function ThemeProvider({
     root.classList.add(mode);
   }, [mode]);
 
-  // Set color theme classes.
-  useEffect(() => {
-    const root = window.document.documentElement;
-
-    // If color theme is 'default', remove all color theme classes.
-    if (colorTheme === 'default') {
-      root.removeAttribute('data-theme');
-    } else {
-      root.setAttribute('data-theme', colorTheme);
-    }
-  }, [colorTheme]);
-
   const value = {
     mode,
     setMode: (mode: Mode) => {
       localStorage.setItem(storageKeyMode, mode);
       setMode(mode);
-    },
-    colorTheme,
-    setColorTheme: (colorTheme: ColorTheme) => {
-      localStorage.setItem(storageKeyColorTheme, colorTheme);
-      setColorTheme(colorTheme);
     },
   };
 

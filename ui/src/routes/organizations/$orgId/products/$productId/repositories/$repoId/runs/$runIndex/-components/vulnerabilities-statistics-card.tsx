@@ -57,7 +57,7 @@ const VulnerabilitiesStatisticsCardContent = ({
     <StatisticsCard
       title='Vulnerabilities'
       icon={() => (
-        <ShieldQuestion className={`h-4 w-4 ${getStatusFontColor(status)}`} />
+        <ShieldQuestion className={`size-3.5 ${getStatusFontColor(status)}`} />
       )}
       value={value}
       total={statistics?.vulnerabilitiesCountTotal ?? undefined}
@@ -75,7 +75,6 @@ const VulnerabilitiesStatisticsCardContent = ({
             )
           : []
       }
-      className='hover:bg-muted/50 h-full'
     />
   );
 };

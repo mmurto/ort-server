@@ -230,13 +230,3 @@ export function getPluginTypeLabel(type: PluginType | string): string {
   }
   return type ? `"${type}"` : 'Unknown';
 }
-
-// Type and constant for color themes. New themes can be added to the project
-// by extending these definitions, and adding the corresponding CSS definitions
-// and labeling them with the `data-theme` attribute.
-export type ColorTheme = 'material-design' | 'shadcn' | 'default';
-export const colorThemes: ColorTheme[] = [
-  'material-design',
-  'shadcn',
-  'default',
-];

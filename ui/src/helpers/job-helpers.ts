@@ -50,7 +50,7 @@ export const jobStatusTexts = (
       ? finished
         ? { value: total, description: '' }
         : { value: '...', description: 'Running' }
-      : { value: '-', description: 'Not started' }
+      : { value: '—', description: 'Not started' }
     : { value: 'Skipped', description: 'Enable the job for results' };
   return { value, description };
 };

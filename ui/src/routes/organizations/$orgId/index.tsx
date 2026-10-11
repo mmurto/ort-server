@@ -19,22 +19,16 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { Boxes, Bug, Files, Scale, ShieldQuestion } from 'lucide-react';
+import { Boxes, Bug, Scale, ShieldQuestion } from 'lucide-react';
 import type { ReactNode } from 'react';
 import z from 'zod';
 
 import { getOrganizationOptions } from '@/api/@tanstack/react-query.gen';
 import { OrganizationFavoriteButton } from '@/components/favorite-button';
 import { LoadingIndicator } from '@/components/loading-indicator';
+import { PageHeader, SheetSection } from '@/components/page-header';
 import { QueryBoundary, QueryErrorFallback } from '@/components/query-boundary';
-import { StatisticsCard } from '@/components/statistics-card';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { StatisticsCard, StatisticsRow } from '@/components/statistics-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toastError } from '@/lib/toast';
 import {
@@ -55,48 +49,32 @@ type StatisticsFallbackProps = {
 const OrganizationProductsStatisticsFallback = ({
   value,
 }: StatisticsFallbackProps) => (
-  <Card className='col-span-2'>
-    <CardHeader>
-      <CardTitle>
-        <div className='flex items-center justify-between'>
-          <span className='text-sm font-semibold'>Products</span>
-          <Files className='h-4 w-4' />
-        </div>
-      </CardTitle>
-    </CardHeader>
-    <CardContent className='text-sm'>
-      <div className='flex min-h-8 items-center'>{value}</div>
-    </CardContent>
-  </Card>
+  <div className='flex h-8 items-center'>{value}</div>
 );
 
 const OrganizationStatisticsFallback = ({ value }: StatisticsFallbackProps) => (
-  <div className='grid grid-cols-4 gap-2'>
+  <StatisticsRow>
     <StatisticsCard
       title='Vulnerabilities'
-      icon={() => <ShieldQuestion className='h-4 w-4 text-orange-500' />}
+      icon={() => <ShieldQuestion className='size-3.5' />}
       value={value}
-      className='hover:bg-muted/50 h-full'
     />
     <StatisticsCard
       title='Issues'
-      icon={() => <Bug className='h-4 w-4 text-orange-500' />}
+      icon={() => <Bug className='size-3.5' />}
       value={value}
-      className='hover:bg-muted/50 h-full'
     />
     <StatisticsCard
       title='Rule Violations'
-      icon={() => <Scale className='h-4 w-4 text-orange-500' />}
+      icon={() => <Scale className='size-3.5' />}
       value={value}
-      className='hover:bg-muted/50 h-full'
     />
     <StatisticsCard
       title='Packages'
-      icon={() => <Boxes className='h-4 w-4 text-orange-500' />}
+      icon={() => <Boxes className='size-3.5' />}
       value={value}
-      className='hover:bg-muted/50 h-full'
     />
-  </div>
+  </StatisticsRow>
 );
 
 const OrganizationComponent = () => {
@@ -123,43 +101,36 @@ const OrganizationComponent = () => {
   }
 
   return (
-    <div className='flex flex-col gap-2'>
-      <div className='grid grid-cols-4 gap-2'>
-        <Card className='col-span-2'>
-          <CardHeader>
-            <div>
-              <div className='flex items-center gap-1.5'>
-                <CardTitle>{organization.name}</CardTitle>
-                <OrganizationFavoriteButton
-                  organization={organization}
-                  size='xs'
-                  variant='ghost'
-                  className='size-6 p-0'
-                />
-              </div>
-              <CardDescription>{organization.description}</CardDescription>
-            </div>
-          </CardHeader>
-        </Card>
-        <QueryBoundary
-          fallback={
-            <OrganizationProductsStatisticsFallback
-              value={<Skeleton className='h-8 w-12' />}
-            />
-          }
-          errorFallback={(props) => (
-            <OrganizationProductsStatisticsFallback
-              value={<QueryErrorFallback {...props} />}
-            />
-          )}
-          resetKey={`${organization.id}-products`}
-        >
-          <OrganizationProductsStatisticsCard
-            className='col-span-2'
-            orgId={params.orgId}
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title={organization.name}
+        adornment={
+          <OrganizationFavoriteButton
+            organization={organization}
+            size='xs'
+            variant='ghost'
+            className='size-6 p-0'
           />
-        </QueryBoundary>
-      </div>
+        }
+        description={organization.description}
+        actions={
+          <QueryBoundary
+            fallback={
+              <OrganizationProductsStatisticsFallback
+                value={<Skeleton className='h-8 w-12' />}
+              />
+            }
+            errorFallback={(props) => (
+              <OrganizationProductsStatisticsFallback
+                value={<QueryErrorFallback {...props} />}
+              />
+            )}
+            resetKey={`${organization.id}-products`}
+          >
+            <OrganizationProductsStatisticsCard orgId={params.orgId} />
+          </QueryBoundary>
+        }
+      />
       <QueryBoundary
         fallback={
           <OrganizationStatisticsFallback
@@ -173,7 +144,7 @@ const OrganizationComponent = () => {
         )}
         resetKey={`${organization.id}-statistics`}
       >
-        <div className='grid grid-cols-4 gap-2'>
+        <StatisticsRow className='[&>a:hover]:bg-muted/60'>
           <Link
             to='/organizations/$orgId/vulnerabilities'
             params={{
@@ -188,7 +159,6 @@ const OrganizationComponent = () => {
           >
             <OrganizationVulnerabilitiesStatisticsCard
               organizationId={organization.id}
-              className='hover:bg-muted/50 h-full'
             />
           </Link>
           <OrganizationIssuesStatisticsCard organizationId={organization.id} />
@@ -198,13 +168,11 @@ const OrganizationComponent = () => {
           <OrganizationPackagesStatisticsCard
             organizationId={organization.id}
           />
-        </div>
+        </StatisticsRow>
       </QueryBoundary>
-      <Card>
-        <CardContent className='my-4'>
-          <OrganizationProductTable />
-        </CardContent>
-      </Card>
+      <SheetSection title='Products'>
+        <OrganizationProductTable />
+      </SheetSection>
     </div>
   );
 };

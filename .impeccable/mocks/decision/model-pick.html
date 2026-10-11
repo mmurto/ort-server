@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>ORT Server - Run 12 - Rule violations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#111;--crimson:#A72145;--err:#D92D20;--warn:#C4610A;--hint:#5B6472;--grey:#F2F2F2;--line:#D9D9D9;
+--an:rgb(0,175,170);--ad:rgb(153,123,183);--sc:rgb(209,78,96);--ev:rgb(51,153,204);--re:rgb(242,144,86)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1440px;height:900px;overflow:hidden;background:#fff;color:var(--ink);font:400 14px/1.4 'Inter Tight',Helvetica,Arial,sans-serif;font-variant-numeric:tabular-nums}
+.mono{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
+button,input{font:inherit}
+/* sign band */
+.band{height:56px;background:var(--ink);color:#fff;display:flex;align-items:center;padding:0 20px;gap:14px}
+.band .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;letter-spacing:-.01em;width:200px}
+.crumb{display:flex;gap:10px;font-weight:500;font-size:14px;color:#fff;flex:1}
+.crumb i{font-style:normal;color:#777}.crumb b{font-weight:800}
+.band input{width:190px;height:32px;background:#262626;border:1px solid #444;color:#fff;padding:0 10px;border-radius:3px;font-size:13px}
+.band input::placeholder{color:#999}
+.band .theme{height:32px;padding:0 12px;background:none;border:1px solid #555;color:#fff;border-radius:3px;font-weight:500;font-size:13px}
+.av{width:32px;height:32px;border-radius:50%;background:var(--crimson);display:grid;place-items:center;font-weight:800;font-size:12px}
+/* layout */
+.wrap{display:flex;height:844px}
+nav{width:220px;border-right:1px solid var(--line);padding:16px 0;font-size:14px}
+nav h6{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--hint);padding:14px 20px 6px}
+nav a{display:flex;align-items:center;gap:12px;height:32px;padding:0 20px;color:var(--ink);text-decoration:none;font-weight:500}
+nav a:before{content:"";width:10px;height:10px;border-radius:50%;border:2px solid #aaa;background:#fff}
+nav a.on{font-weight:800;background:var(--grey)}nav a.on:before{background:var(--crimson);border-color:var(--crimson)}
+nav a em{margin-left:auto;font-style:normal;font-size:12px;color:var(--hint)}
+main{flex:1;padding:20px 28px;overflow:hidden}
+/* run header */
+.rh{display:flex;align-items:flex-end;gap:18px;padding-bottom:14px}
+.rh h1{font-size:40px;line-height:1;font-weight:800;letter-spacing:-.02em}
+.rh .meta{flex:1;font-size:13px;color:var(--hint);padding-bottom:3px}.rh .meta b{color:var(--ink);font-weight:700}
+.btn{height:36px;padding:0 16px;border-radius:3px;font-weight:700;font-size:14px;border:2px solid var(--ink);background:#fff;color:var(--ink)}
+.btn.p{background:var(--crimson);border-color:var(--crimson);color:#fff}
+/* transit diagram */
+.line{display:grid;grid-template-columns:repeat(5,1fr) 210px;border-top:1px solid var(--line);margin-top:2px}
+.st{position:relative;height:128px;--c:var(--an)}
+.st:before{content:"";position:absolute;left:36px;right:0;top:56px;height:8px;background:var(--c)}
+.st:after{content:"";position:absolute;left:24px;top:48px;width:24px;height:24px;border:3px solid var(--ink);border-radius:50%;background:#fff}
+.st h3{position:absolute;left:24px;top:16px;font-size:16px;font-weight:800;text-transform:uppercase;letter-spacing:.02em}
+.st p{position:absolute;left:24px;top:84px;font-size:12px;color:var(--hint)}.st p b{display:block;font-size:13px;color:var(--ink);font-weight:700}
+.st.ev .flag{position:absolute;left:24px;top:98px}
+.flag{display:inline-flex;align-items:center;gap:6px;background:var(--err);color:#fff;font-weight:800;font-size:12px;padding:2px 10px 2px 3px;border-radius:12px}
+.flag s{width:18px;height:18px;border-radius:50%;background:#fff;color:var(--err);display:grid;place-items:center;text-decoration:none;font-size:12px}
+.term{position:relative;height:128px}
+.term:before{content:"";position:absolute;left:0;top:44px;width:10px;height:32px;background:var(--ink)}
+.term h3{position:absolute;left:22px;top:16px;font-size:14px;font-weight:800;line-height:1.2;width:180px}
+.term p{position:absolute;left:22px;top:84px;font-size:12px;color:var(--hint);width:180px}
+/* summary strip */
+.sum{display:flex;gap:26px;align-items:center;height:48px;background:var(--grey);padding:0 16px;margin:0 0 18px;border-radius:3px}
+.sum span{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500}
+.sq{min-width:34px;height:24px;border-radius:3px;color:#fff;font-weight:800;font-size:13px;display:inline-grid;place-items:center;padding:0 6px}
+/* table */
+.tb{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.tb h2{font-size:20px;font-weight:800;margin-right:8px}
+.tb input{width:300px;height:32px;border:1px solid #aaa;border-radius:3px;padding:0 10px;font-size:13px}
+.seg{display:flex;border:2px solid var(--ink);border-radius:3px;overflow:hidden;margin-left:auto}
+.seg button{height:28px;padding:0 14px;border:0;border-left:1px solid var(--ink);background:#fff;font-weight:700;font-size:13px}
+.seg button:first-child{border-left:0}.seg .on{background:var(--ink);color:#fff}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--grey);text-align:left;font-weight:800;font-size:12px;letter-spacing:.04em;text-transform:uppercase;height:32px;padding:0 12px;border-bottom:2px solid var(--ink);white-space:nowrap}
+th:after{content:" \2195";color:#999;font-weight:400}th.s:after{content:" \2193";color:var(--ink)}
+td{height:36px;padding:0 12px;border-bottom:1px solid var(--line)}
+td.r{font-weight:700;font-size:12.5px}td .mono{font-size:12px}
+.b{width:22px;height:22px;border-radius:50%;color:#fff;font-weight:800;font-size:12px;display:inline-grid;place-items:center;vertical-align:middle;margin-right:8px}
+.E{background:var(--err)}.W{background:var(--warn)}.H{background:var(--hint)}
+.foot{font-size:12px;color:var(--hint);padding-top:8px}
+</style></head><body>
+<header class="band">
+ <div class="brand"><svg width="22" height="22" viewBox="0 0 22 22"><polygon points="11,2 19,9 11,11" fill="#DC6A2E"/><polygon points="3,9 11,2 11,11" fill="#B43038"/><polygon points="3,9 19,9 11,20" fill="#66A1D6"/><ellipse cx="11" cy="11" rx="10.5" ry="4" fill="none" stroke="#fff" stroke-width="1.2" transform="rotate(-20 11 11)"/></svg>ORT Server</div>
+ <div class="crumb"><span>NIIS</span><i>/</i><span>X-Road</span><i>/</i><span>github.com/nordic-institute/misp2</span><i>/</i><b>Run 12</b></div>
+ <input placeholder="Go to run ID" aria-label="Run ID lookup"><button class="theme">Theme</button><div class="av">AD</div>
+</header>
+<div class="wrap">
+<nav>
+ <a href="#">Overview</a>
+ <h6>Compliance</h6><a class="on" href="#">Rule violations<em>14</em></a><a href="#">Detected licenses<em>27</em></a><a href="#">Detected snippets</a><a href="#">Vulnerabilities<em>23</em></a>
+ <h6>Components</h6><a href="#">Projects</a><a href="#">Packages<em>412</em></a><a href="#">Dependency graphs</a>
+ <h6>Reports</h6><a href="#">SBOMs</a><a href="#">Other</a>
+ <h6>Technical</h6><a href="#">Issues<em>61</em></a><a href="#">Logs</a><a href="#">Configuration</a>
+</nav>
+<main>
+ <div class="rh"><h1>Run 12</h1>
+  <div class="meta"><b>develop @ <span class="mono">3f9c2e1</span></b> &nbsp;·&nbsp; created by <b>admin</b> &nbsp;·&nbsp; 11 Oct 2026 16:51 &nbsp;·&nbsp; 11m 35s &nbsp;·&nbsp; <b style="color:var(--warn)">FINISHED WITH ISSUES</b></div>
+  <button class="btn p">Rerun</button><button class="btn">Download reports</button></div>
+ <div class="line">
+  <div class="st"><h3>Analyzer</h3><p><b class="mono">2m 04s</b>OK</p></div>
+  <div class="st" style="--c:var(--ad)"><h3>Advisor</h3><p><b class="mono">0m 41s</b>OK</p></div>
+  <div class="st" style="--c:var(--sc)"><h3>Scanner</h3><p><b class="mono">6m 52s</b>OK</p></div>
+  <div class="st ev" style="--c:var(--ev)"><h3>Evaluator</h3><p><b class="mono">0m 18s</b></p><span class="flag"><s>!</s>14 violations</span></div>
+  <div class="st" style="--c:var(--re)"><h3>Reporter</h3><p><b class="mono">1m 40s</b>OK</p></div>
+  <div class="term"><h3>Finished with issues &middot; 11m 35s</h3><p>Terminus, Run 12</p></div>
+ </div>
+ <div class="sum">
+  <span><i class="sq" style="background:var(--ink)">412</i>packages (38 direct)</span>
+  <span><i class="sq" style="background:var(--err)">14</i>violations</span>
+  <span><i class="sq" style="background:var(--warn)">23</i>vulnerabilities</span>
+  <span><i class="sq" style="background:var(--hint)">61</i>issues</span>
+  <span><i class="sq" style="background:var(--crimson)">27</i>licenses</span></div>
+ <div class="tb"><h2>Rule violations</h2><input placeholder="Filter by rule, package or license" aria-label="Filter">
+  <div class="seg"><button class="on">All 14</button><button>Errors 3</button><button>Warnings 9</button><button>Hints 2</button></div></div>
+ <table>
+  <tr><th class="s" style="width:120px">Severity</th><th style="width:230px">Rule</th><th>Package</th><th style="width:270px">Detail</th></tr>
+  <tr><td><span class="b E">E</span>Error</td><td class="r">COPYLEFT_IN_SOURCE</td><td class="mono">Maven:org.mariadb.jdbc:mariadb-java-client:2.7.4</td><td>LGPL-2.1-or-later</td></tr>
+  <tr><td><span class="b E">E</span>Error</td><td class="r">VULNERABILITY_IN_PACKAGE</td><td class="mono">Maven:org.apache.commons:commons-text:1.9</td><td>CVE-2022-42889 (CVSS 9.8)</td></tr>
+  <tr><td><span class="b E">E</span>Error</td><td class="r">UNHANDLED_LICENSE</td><td class="mono">NPM::left-pad:1.3.0</td><td>WTFPL</td></tr>
+  <tr><td><span class="b W">W</span>Warning</td><td class="r">MISSING_CONTRIBUTING</td><td class="mono">Maven:org.nordic-institute:misp2-web:2.6.1</td><td>-</td></tr>
+  <tr><td><span class="b W">W</span>Warning</td><td class="r">HIGH_SEVERITY_VULN</td><td class="mono">Maven:com.fasterxml.jackson.core:jackson-databind:2.13.2</td><td>CVE-2022-42003 (CVSS 7.5)</td></tr>
+  <tr><td><span class="b W">W</span>Warning</td><td class="r">DEPRECATED_LICENSE</td><td class="mono">Maven:javax.mail:mail:1.4.7</td><td>GPL-2.0-with-classpath-exception</td></tr>
+  <tr><td><span class="b H">H</span>Hint</td><td class="r">COPYLEFT_LIMITED_IN_DEPS</td><td class="mono">Maven:org.eclipse.jetty:jetty-server:9.4.48</td><td>EPL-2.0 OR Apache-2.0</td></tr>
+ </table>
+ <div class="foot">Showing 7 of 14 rule violations</div>
+</main></div>
+</body></html>
