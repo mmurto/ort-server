@@ -165,8 +165,15 @@ export function FindingPanel({
       >
         <SheetContent
           data-slot='finding-panel'
+          // Focus the details themselves, not the first button of the
+          // toolbar, which would open its tooltip.
+          tabIndex={-1}
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+            (event.currentTarget as HTMLElement).focus();
+          }}
           side='right'
-          className='w-full gap-0 overflow-y-auto p-0 sm:max-w-full [&>button:last-child]:hidden'
+          className='w-full gap-0 overflow-y-auto p-0 outline-none sm:max-w-full [&>button:last-child]:hidden'
         >
           <SheetTitle className='sr-only'>Details</SheetTitle>
           <SheetDescription className='sr-only'>
