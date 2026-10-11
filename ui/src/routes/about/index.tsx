@@ -78,13 +78,13 @@ export const About = () => {
                       rel='noopener noreferrer'
                       className='ml-1 inline-block'
                     >
-                      <ExternalLink className='h-4 w-4 text-blue-400' />
+                      <ExternalLink className='link h-4 w-4' />
                     </Link>
                   </div>
                 </div>
                 <Link
                   to={info.releaseUrl}
-                  className='font-semibold text-blue-400 hover:underline'
+                  className='link hover:underline'
                   target='_blank'
                   rel='noopener noreferrer'
                 >
@@ -100,7 +100,7 @@ export const About = () => {
             <div className='text-muted-foreground font-semibold'>Linux</div>
             <a
               href={`${baseUrl}/osc-cli-linux-x64.tar.gz`}
-              className='font-semibold text-blue-400 hover:underline'
+              className='link hover:underline'
               target='_blank'
               rel='noopener noreferrer'
             >
@@ -111,7 +111,7 @@ export const About = () => {
             </div>
             <a
               href={`${baseUrl}/osc-cli-macos-arm64.tar.gz`}
-              className='font-semibold text-blue-400 hover:underline'
+              className='link hover:underline'
               target='_blank'
               rel='noopener noreferrer'
             >
@@ -122,7 +122,7 @@ export const About = () => {
             </div>
             <a
               href={`${baseUrl}/osc-cli-macos-x64.tar.gz`}
-              className='font-semibold text-blue-400 hover:underline'
+              className='link hover:underline'
               target='_blank'
               rel='noopener noreferrer'
             >
@@ -131,7 +131,7 @@ export const About = () => {
             <div className='text-muted-foreground font-semibold'>Windows</div>
             <a
               href={`${baseUrl}/osc-cli-windows-x64.zip`}
-              className='font-semibold text-blue-400 hover:underline'
+              className='link hover:underline'
               target='_blank'
               rel='noopener noreferrer'
             >

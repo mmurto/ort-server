@@ -121,7 +121,7 @@ const ReportComponent = () => {
                   <div key={filename} className='flex flex-col pb-2'>
                     <Button
                       variant='outline'
-                      className='h-auto font-semibold whitespace-normal text-blue-400'
+                      className='link h-auto font-semibold whitespace-normal'
                       onClick={() => handleDownload(ortRun.id, filename)}
                     >
                       <div className='break-all'>

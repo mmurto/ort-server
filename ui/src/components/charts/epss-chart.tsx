@@ -61,7 +61,7 @@ export const EpssChart = ({ epssData }: EpssChartProps) => {
           <CardTitle>
             EPSS Score (
             <a
-              className='font-normal text-blue-400 hover:underline'
+              className='link font-normal hover:underline'
               href='https://www.first.org/epss/articles/prob_percentile_bins'
               target='_blank'
             >
@@ -147,7 +147,7 @@ export const EpssChart = ({ epssData }: EpssChartProps) => {
           <CardTitle>
             EPSS Percentile (
             <a
-              className='font-normal text-blue-400 hover:underline'
+              className='link font-normal hover:underline'
               href='https://www.first.org/epss/articles/prob_percentile_bins'
               target='_blank'
             >

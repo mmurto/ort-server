@@ -312,3 +312,20 @@
     }
   }
 }
+
+/* Entity links in tables and text: ink, not blue; the underline arrives on hover. */
+@utility link {
+  color: var(--foreground);
+  font-weight: 500;
+  text-decoration-line: none;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  &:hover {
+    text-decoration-line: underline;
+    text-decoration-color: color-mix(
+      in srgb,
+      var(--foreground) 45%,
+      transparent
+    );
+  }
+}

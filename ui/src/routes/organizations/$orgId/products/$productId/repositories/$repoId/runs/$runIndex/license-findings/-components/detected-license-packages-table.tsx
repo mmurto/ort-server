@@ -101,7 +101,7 @@ const PackageIdCell = ({
       <Tooltip>
         <TooltipTrigger asChild>
           <Link
-            className='text-left font-semibold text-blue-400 hover:underline'
+            className='link text-left hover:underline'
             to='/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/packages'
             params={params}
             search={{ pkgId: id, pkgIdType: idType, marked: '0' }}

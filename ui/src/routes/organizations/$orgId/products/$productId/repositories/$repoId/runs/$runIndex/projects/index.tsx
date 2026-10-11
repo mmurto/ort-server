@@ -110,7 +110,7 @@ const ProjectCard = ({ project }: { project: Project }) => {
             href={project.homepageUrl}
             target='_blank'
             rel='noopener noreferrer'
-            className='text-blue-400 hover:underline'
+            className='link hover:underline'
           >
             {project.homepageUrl}
           </a>

@@ -114,10 +114,7 @@ export function FilterMultiSelect<TValue>({
         <Button variant='ghost' size='narrow' className='font-medium'>
           {showTitle && <span className='text-sm'>{title}</span>}
           <Filter
-            className={cn(
-              'size-4',
-              selected.length > 0 ? 'text-blue-500' : undefined
-            )}
+            className={cn('size-4', selected.length > 0 ? 'link' : undefined)}
           />
         </Button>
       </PopoverTrigger>

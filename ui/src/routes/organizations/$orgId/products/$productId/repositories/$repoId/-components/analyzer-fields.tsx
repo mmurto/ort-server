@@ -184,7 +184,7 @@ export const AnalyzerFields = ({
               environment variables that are required by the build process. In
               case of Gradle, this can also be used to{' '}
               <a
-                className='text-blue-400 hover:underline'
+                className='link hover:underline'
                 href={
                   'https://docs.gradle.org/current/userguide/build_environment.html#setting_a_project_property'
                 }

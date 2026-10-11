@@ -72,7 +72,7 @@ const SortChip = ({
       aria-label={`Sort by ${label}`}
       className='gap-1.5'
     >
-      <Icon className={cn('size-3.5', direction !== null && 'text-blue-500')} />
+      <Icon className={cn('size-3.5', direction !== null && 'link')} />
       {label}
       {priority !== undefined && (
         <span className='text-muted-foreground text-xs'>{priority}</span>

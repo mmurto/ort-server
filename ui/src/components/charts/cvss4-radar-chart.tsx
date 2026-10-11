@@ -89,7 +89,7 @@ export const Cvss4RadarChart = ({ cvssScore }: Cvss4RadarChartProps) => {
         <CardTitle>
           {nomenclature} {version} Severity Radar (
           <a
-            className='font-normal break-all text-blue-400 hover:underline'
+            className='link font-normal break-all hover:underline'
             href={url}
             target='_blank'
           >

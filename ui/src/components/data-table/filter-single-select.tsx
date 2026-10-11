@@ -72,7 +72,7 @@ export function FilterSingleSelect<TValue>({
           <Filter
             className={cn(
               'size-4',
-              selected !== undefined ? 'text-blue-500' : undefined
+              selected !== undefined ? 'link' : undefined
             )}
           />
         </Button>

@@ -60,7 +60,7 @@ const SnippetProvenance = ({ snippet }: { snippet: SnippetSource }) => {
         href={snippet.artifactUrl}
         target='_blank'
         rel='noopener noreferrer'
-        className='text-blue-400 hover:underline'
+        className='link hover:underline'
       >
         <BreakableString text={snippet.artifactUrl} />
       </a>
@@ -74,7 +74,7 @@ const SnippetProvenance = ({ snippet }: { snippet: SnippetSource }) => {
           href={snippet.vcsUrl}
           target='_blank'
           rel='noopener noreferrer'
-          className='text-blue-400 hover:underline'
+          className='link hover:underline'
         >
           <BreakableString text={snippet.vcsUrl} />
         </a>

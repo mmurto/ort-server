@@ -164,7 +164,7 @@ const SBOMComponent = () => {
                         <div>
                           <Button
                             variant='outline'
-                            className='h-auto font-semibold whitespace-normal text-blue-400'
+                            className='link h-auto font-semibold whitespace-normal'
                             onClick={() => handleDownload(ortRun.id, filename)}
                           >
                             <Download />
@@ -229,7 +229,7 @@ const SBOMComponent = () => {
                         <div>
                           <Button
                             variant='outline'
-                            className='h-auto font-semibold whitespace-normal text-blue-400'
+                            className='link h-auto font-semibold whitespace-normal'
                             onClick={() => handleDownload(ortRun.id, filename)}
                           >
                             <Download />

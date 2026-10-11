@@ -128,7 +128,7 @@ const RecentRunListItem = ({ recentRun }: { recentRun: RecentRunItem }) => {
           params={params as LinkProps['params']}
           className='min-w-0 font-medium hover:underline'
         >
-          <span className='text-blue-400'>Run {recentRun.runIndex}</span>
+          <span className='link'>Run {recentRun.runIndex}</span>
           <span className='text-muted-foreground'> of </span>
           <span className='break-words'>
             {recentRun.organizationName} / {recentRun.productName} /{' '}

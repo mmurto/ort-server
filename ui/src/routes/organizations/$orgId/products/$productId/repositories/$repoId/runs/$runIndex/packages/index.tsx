@@ -150,7 +150,7 @@ const PackageCard = ({ pkg }: { pkg: Package }) => {
           href={pkg.homepageUrl}
           target='_blank'
           rel='noopener noreferrer'
-          className='max-w-1/2 min-w-0 text-right wrap-break-word text-blue-400 hover:underline'
+          className='link max-w-1/2 min-w-0 text-right wrap-break-word hover:underline'
         >
           {pkg.homepageUrl}
         </a>

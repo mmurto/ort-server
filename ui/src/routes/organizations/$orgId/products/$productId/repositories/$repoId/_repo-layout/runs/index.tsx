@@ -103,7 +103,7 @@ const RepositoryRunsComponent = () => {
                   {getRepositoryTypeLabel(repo.type)} repository
                 </span>{' '}
                 <Link
-                  className='text-sm font-semibold break-all hover:text-blue-400 hover:underline'
+                  className='hover:link text-sm font-semibold break-all hover:underline'
                   to={repo.url}
                   target='_blank'
                 >

@@ -54,7 +54,7 @@ export const Cvss4VectorCard = ({ macroVector }: Cvss4VectorCardProps) => {
           <div>
             CVSS 4.0 Macro Vector (
             <a
-              className='font-normal text-blue-400 hover:underline'
+              className='link font-normal hover:underline'
               href='https://www.first.org/cvss/v4-0/specification-document'
               target='_blank'
             >

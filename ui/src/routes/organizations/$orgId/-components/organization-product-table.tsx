@@ -190,7 +190,7 @@ export const OrganizationProductTable = () => {
         <>
           <div className='flex items-center gap-1.5'>
             <Link
-              className='font-semibold text-blue-400 hover:underline'
+              className='link hover:underline'
               to={`/organizations/$orgId/products/$productId`}
               params={{
                 orgId: row.original.organizationId.toString(),

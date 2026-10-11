@@ -57,9 +57,7 @@ export function FilterText({
       <PopoverTrigger asChild>
         <Button variant='ghost' size='narrow'>
           {showTitle && <span className='text-sm'>{title}</span>}
-          <Filter
-            className={cn('size-4', value.length > 0 && 'text-blue-500')}
-          />
+          <Filter className={cn('size-4', value.length > 0 && 'link')} />
         </Button>
       </PopoverTrigger>
       <PopoverContent>

@@ -82,7 +82,7 @@ const ProvenanceDetails = ({
           href={provenance.artifactUrl}
           target='_blank'
           rel='noopener noreferrer'
-          className='text-blue-400 hover:underline'
+          className='link hover:underline'
         >
           <BreakableString text={provenance.artifactUrl} />
         </a>
@@ -97,7 +97,7 @@ const ProvenanceDetails = ({
           href={provenance.vcsUrl}
           target='_blank'
           rel='noopener noreferrer'
-          className='text-blue-400 hover:underline'
+          className='link hover:underline'
         >
           <BreakableString text={provenance.vcsUrl} />
         </a>

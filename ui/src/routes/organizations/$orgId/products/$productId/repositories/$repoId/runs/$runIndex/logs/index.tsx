@@ -124,7 +124,7 @@ const ReportComponent = () => {
             disabled={isPending}
             onClick={() => handleLevelChoice(level)}
             variant='outline'
-            className={'rounded-r-none font-semibold text-blue-400'}
+            className={'link rounded-r-none'}
           >
             {isPending ? (
               <>

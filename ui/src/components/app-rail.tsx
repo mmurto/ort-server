@@ -18,41 +18,24 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { Link, LinkProps, useRouterState } from '@tanstack/react-router';
+import { Link, useRouterState } from '@tanstack/react-router';
 import { X } from 'lucide-react';
 import { useEffect } from 'react';
 
 import { getServerSettingByKeyOptions } from '@/api/@tanstack/react-query.gen';
 import homeIcon from '@/assets/home-icon.svg';
+import { OrgSwitcher } from '@/components/org-switcher';
 import { useRail } from '@/components/rail-context';
 import { useTheme } from '@/components/theme-provider-context';
-import { useUser } from '@/hooks/use-user';
 import { cn } from '@/lib/utils';
 
 export const PRODUCT_NAME = 'ORT Server';
-
-type RailLinkProps = {
-  to: LinkProps['to'];
-  exact?: boolean;
-  children: React.ReactNode;
-};
 
 export const railItemClass =
   'relative flex h-8 w-full items-center gap-2 px-5 text-[0.8125rem] text-rail-foreground transition-colors duration-100 hover:bg-rail-active hover:text-white focus-visible:outline-offset-[-2px]';
 
 export const railActiveClass =
   'bg-rail-active font-medium text-white before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-brand';
-
-const RailLink = ({ to, exact = false, children }: RailLinkProps) => (
-  <Link
-    to={to}
-    activeOptions={{ exact }}
-    className={railItemClass}
-    activeProps={{ className: railActiveClass }}
-  >
-    {children}
-  </Link>
-);
 
 const Brand = () => {
   const { mode } = useTheme();
@@ -94,7 +77,6 @@ export const AppRail = ({
 }: {
   slotRef: (element: HTMLDivElement | null) => void;
 }) => {
-  const user = useUser();
   const { open, setOpen } = useRail();
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
@@ -133,15 +115,7 @@ export const AppRail = ({
             <span className='sr-only'>Close navigation</span>
           </button>
         </div>
-        <nav className='flex flex-col pb-2'>
-          <RailLink to='/' exact>
-            Home
-          </RailLink>
-          <RailLink to='/organizations' exact>
-            Organizations
-          </RailLink>
-          {user.isSuperuser && <RailLink to='/admin'>Administration</RailLink>}
-        </nav>
+        <OrgSwitcher />
         <div ref={slotRef} className='flex flex-col pb-6' />
       </aside>
     </>

@@ -125,7 +125,7 @@ const VulnerabilityCard = ({
         <Tooltip>
           <TooltipTrigger asChild>
             <Link
-              className='flex gap-1 text-blue-400 hover:underline'
+              className='link flex gap-1 hover:underline'
               to='/organizations/$orgId/search-package'
               params={{ orgId: organizationId }}
               search={{ pkgId: id }}
@@ -197,7 +197,7 @@ const renderSubComponent = ({
                 <TableCell>
                   {
                     <Link
-                      className='font-semibold break-all text-blue-400 hover:underline'
+                      className='link font-semibold break-all hover:underline'
                       to={reference.url}
                       target='_blank'
                     >

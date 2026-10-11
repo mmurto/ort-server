@@ -268,7 +268,7 @@ const FavoriteListItem = ({ favorite }: { favorite: FavoriteItem }) => {
       <Link
         to={favorite.to as LinkProps['to']}
         params={favorite.params as LinkProps['params']}
-        className='min-w-0 flex-1 text-sm break-words text-blue-400 hover:underline'
+        className='link min-w-0 flex-1 text-sm break-words hover:underline'
       >
         {favorite.breadcrumbs.join(' / ')}
       </Link>

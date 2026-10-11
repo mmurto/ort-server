@@ -27,14 +27,8 @@ import { getOrganizationsOptions } from '@/api/@tanstack/react-query.gen';
 import { DataTable } from '@/components/data-table/data-table';
 import { OrganizationFavoriteButton } from '@/components/favorite-button';
 import { LoadingIndicator } from '@/components/loading-indicator';
+import { PageHeader, SheetSection } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   Tooltip,
   TooltipContent,
@@ -93,12 +87,12 @@ export const OrganizationsPage = () => {
   const columns = columnHelper.columns([
     columnHelper.accessor('name', {
       id: 'organization',
-      header: 'Organizations',
+      header: 'Organization',
       cell: ({ row }) => (
         <>
           <div className='flex items-center gap-1.5'>
             <Link
-              className='font-semibold text-blue-400 hover:underline'
+              className='link hover:underline'
               to={`/organizations/$orgId`}
               params={{ orgId: row.original.id.toString() }}
             >
@@ -112,7 +106,7 @@ export const OrganizationsPage = () => {
             />
           </div>
 
-          <div className='text-muted-foreground hidden text-sm md:inline'>
+          <div className='text-muted-foreground hidden text-[0.8125rem] md:block'>
             {row.original.description}
           </div>
         </>
@@ -164,27 +158,17 @@ export const OrganizationsPage = () => {
   const matching = `, ${organizations.pagination.totalCount} matching filters`;
 
   return (
-    <Card className='mx-auto w-full max-w-4xl'>
-      <CardHeader>
-        <CardTitle>
-          Organizations ({totalOrganizations.pagination.totalCount} in total
-          {filtersInUse && matching})
-        </CardTitle>
-        <CardDescription>
-          Browse your organizations or create a new one
-        </CardDescription>
-        <div className='py-2'>
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title='Organizations'
+        description='Browse your organizations or create a new one'
+        actions={
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                asChild
-                size='sm'
-                className='ml-auto gap-1'
-                disabled={isSuperuser === false}
-              >
+              <Button asChild disabled={isSuperuser === false}>
                 <Link to='/create-organization'>
+                  <PlusIcon />
                   Add organization
-                  <PlusIcon className='h-4 w-4' />
                 </Link>
               </Button>
             </TooltipTrigger>
@@ -194,9 +178,12 @@ export const OrganizationsPage = () => {
                 : 'Insufficient permissions.'}
             </TooltipContent>
           </Tooltip>
-        </div>
-      </CardHeader>
-      <CardContent>
+        }
+      />
+      <SheetSection
+        title='All organizations'
+        meta={`${totalOrganizations.pagination.totalCount} in total${filtersInUse ? matching : ''}`}
+      >
         <DataTable
           table={table}
           setCurrentPageOptions={(currentPage) => {
@@ -214,8 +201,8 @@ export const OrganizationsPage = () => {
             };
           }}
         />
-      </CardContent>
-    </Card>
+      </SheetSection>
+    </div>
   );
 };
 

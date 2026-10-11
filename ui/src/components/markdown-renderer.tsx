@@ -91,7 +91,7 @@ export const MarkdownRenderer = ({
               href={href}
               target='_blank'
               rel='noopener noreferrer'
-              className='font-semibold text-blue-400 hover:underline'
+              className='link hover:underline'
             >
               {children}
             </a>

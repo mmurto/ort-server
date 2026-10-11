@@ -103,7 +103,7 @@ export const ProductRepositoryTable = () => {
             <>
               <div className='flex flex-wrap items-center gap-1.5'>
                 <Link
-                  className='font-semibold text-blue-400 hover:underline'
+                  className='link hover:underline'
                   to={
                     '/organizations/$orgId/products/$productId/repositories/$repoId'
                   }
@@ -126,7 +126,7 @@ export const ProductRepositoryTable = () => {
               </div>
               {row.original.name && (
                 <Link
-                  className='block font-semibold text-blue-400 hover:underline'
+                  className='link block hover:underline'
                   to={
                     '/organizations/$orgId/products/$productId/repositories/$repoId'
                   }
@@ -168,7 +168,7 @@ export const ProductRepositoryTable = () => {
             productId: row.original.productId.toString(),
             repoId: row.original.id.toString(),
           }}
-          className='font-semibold text-blue-400 hover:underline'
+          className='link hover:underline'
         >
           <TotalRuns repoId={row.original.id} />
         </Link>

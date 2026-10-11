@@ -80,7 +80,7 @@ export function DataTableCardsSort<TData extends RowData>({
                 >
                   <div className='text-sm font-medium'>Sort</div>
                   <ChevronDown
-                    className={cn('size-4', isSortingActive && 'text-blue-500')}
+                    className={cn('size-4', isSortingActive && 'link')}
                   />
                 </Button>
               </div>
@@ -104,9 +104,9 @@ export function DataTableCardsSort<TData extends RowData>({
                         >
                           <DropdownMenuItem>
                             {isSorted === 'asc' ? (
-                              <ChevronUp className='mr-2 h-4 w-4 text-blue-500' />
+                              <ChevronUp className='link mr-2 h-4 w-4' />
                             ) : isSorted === 'desc' ? (
-                              <ChevronDown className='mr-2 h-4 w-4 text-blue-500' />
+                              <ChevronDown className='link mr-2 h-4 w-4' />
                             ) : (
                               <ChevronsUpDown className='mr-2 h-4 w-4' />
                             )}

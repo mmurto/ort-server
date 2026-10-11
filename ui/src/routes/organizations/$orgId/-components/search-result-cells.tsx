@@ -41,7 +41,7 @@ export const SearchResultProductCell = ({ run }: { run: SearchResultRun }) => {
   return (
     <div>
       <Link
-        className='block text-blue-400 hover:underline'
+        className='link block hover:underline'
         to={'/organizations/$orgId/products/$productId'}
         params={{
           orgId: run.organizationId.toString(),
@@ -68,7 +68,7 @@ export const SearchResultRepositoryCell = ({
   return (
     <div>
       <Link
-        className='block text-blue-400 hover:underline'
+        className='link block hover:underline'
         to={
           '/organizations/$orgId/products/$productId/repositories/$repoId/runs'
         }

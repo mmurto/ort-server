@@ -90,7 +90,7 @@ export const FormattedValue = <T,>({
         href={result}
         target='_blank'
         rel='noopener noreferrer'
-        className='text-blue-400 hover:underline'
+        className='link hover:underline'
       >
         {result}
       </a>

@@ -358,7 +358,7 @@ export const Siblings = ({ entity, pathName }: SiblingsProps) => {
       {currentRepoUrl && (
         <Button variant='ghost' size='icon' className='h-4 w-4' asChild>
           <Link to={currentRepoUrl} target='_blank' rel='noopener noreferrer'>
-            <ExternalLink className='h-3 w-3 text-blue-400' />
+            <ExternalLink className='link h-3 w-3' />
           </Link>
         </Button>
       )}
