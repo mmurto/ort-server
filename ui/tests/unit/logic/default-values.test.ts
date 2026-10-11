@@ -653,3 +653,15 @@ it('reruns the requested revision unless the resolved revision is chosen', () =>
     ).revision
   ).toBe('main');
 });
+
+it('defaults the lists edited as field arrays to empty lists', () => {
+  // The field arrays write an empty list for `undefined` when they mount, which would count as
+  // a change if the defaults differed.
+  for (const ortRun of [null, createOrtRun({ jobConfigs: { analyzer: {} } })]) {
+    const defaults = defaultValues(ortRun, [], [], [], false, [], [], []);
+
+    expect(defaults.jobConfigs.analyzer.environmentVariables).toEqual([]);
+    expect(defaults.jobConfigs.parameters).toEqual([]);
+    expect(defaults.labels).toEqual([]);
+  }
+});

@@ -110,6 +110,8 @@ export function defaultValues(
   );
 
   // Default values for the form: edit only these, not the defaultValues object.
+  // Lists edited with a field array default to an empty list rather than `undefined`: the
+  // field array writes an empty list when it mounts, which would otherwise count as a change.
   const baseDefaults: CreateRunFormValues = {
     revision: '',
     path: '',
@@ -127,6 +129,7 @@ export function defaultValues(
         packageManagers: defaultPackageManagers,
         packageManagerConfig: packageManagerPluginDefaultValues,
         packageManagerMustRunAfter: {},
+        environmentVariables: [],
       },
       advisor: {
         enabled: true,
@@ -168,9 +171,10 @@ export function defaultValues(
         recipientAddresses: [],
         keepAliveWorker: false,
       },
+      parameters: [],
       ruleSet: '',
     },
-    labels: undefined,
+    labels: [],
     jobConfigContext: '',
     environmentConfigPath: '',
   };
@@ -233,7 +237,8 @@ export function defaultValues(
               : undefined,
             environmentVariables:
               ortRun.jobConfigs.analyzer?.environmentConfig
-                ?.environmentVariables || undefined,
+                ?.environmentVariables ??
+              baseDefaults.jobConfigs.analyzer.environmentVariables,
             packageCurationProviders:
               packageCurationProviderFormValues.selectedPluginIds,
             packageCurationProviderConfig: mergePluginConfigs(

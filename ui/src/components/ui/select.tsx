@@ -14,9 +14,26 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 
 function Select({
+  onValueChange,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Root>) {
-  return <SelectPrimitive.Root data-slot='select' {...props} />;
+  return (
+    <SelectPrimitive.Root
+      data-slot='select'
+      // Radix Select mirrors its value in a hidden native select. If the value changes before
+      // the item with that value is registered, e.g. when a form fills in values after the
+      // select mounted, the native select falls back to '' and reports it as a change. An item
+      // cannot have the value '', so '' never comes from the user and is ignored; otherwise it
+      // would overwrite the value and mark it as changed.
+      onValueChange={
+        onValueChange &&
+        ((value) => {
+          if (value !== '') onValueChange(value);
+        })
+      }
+      {...props}
+    />
+  );
 }
 
 function SelectGroup({

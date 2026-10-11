@@ -429,7 +429,8 @@ describe('CreateRunForm', () => {
         },
         advisor: {
           skipExcluded: true,
-          advisors: ['OSV', 'VulnerableCode'],
+          // The default advisor 'VulnerableCode' is not available.
+          advisors: ['OSV'],
           config: {
             OSV: {
               options: { serverUrl: 'https://osv.dev' },
@@ -785,8 +786,22 @@ describe('CreateRunForm', () => {
   });
 
   it('summarizes the values of each section in its header', async () => {
+    const vulnerableCode = createPluginDescriptor({
+      id: 'VulnerableCode',
+      type: 'ADVISOR',
+      displayName: 'VulnerableCode',
+    });
+    const reporters = ['CycloneDX', 'SpdxDocument', 'WebApp'].map((id) =>
+      createPluginDescriptor({ id, type: 'REPORTER', displayName: id })
+    );
     const { user } = renderSwappableForm(
-      [advisorPlugin, scannerPlugin, ...packageManagerPlugins],
+      [
+        advisorPlugin,
+        vulnerableCode,
+        scannerPlugin,
+        ...reporters,
+        ...packageManagerPlugins,
+      ],
       [],
       vi.fn(),
       null
@@ -866,6 +881,146 @@ describe('CreateRunForm', () => {
     await screen.findByRole('button', { name: 'Start run' });
     expect(screen.queryByText(/Configuration copied from/)).toBeNull();
     expect(screen.queryByText(/Based on run/)).toBeNull();
+  });
+
+  describe('leaving an untouched rerun', () => {
+    const enumOption = (name: string, entries: string[]) => ({
+      name,
+      type: 'ENUM' as const,
+      enumEntries: entries,
+      defaultValue: entries[0],
+      description: `The ${name}.`,
+      isFixed: false,
+      isNullable: false,
+      isRequired: false,
+    });
+    const reporterPlugins = [
+      createPluginDescriptor({
+        id: 'CycloneDX',
+        type: 'REPORTER',
+        displayName: 'CycloneDX',
+        options: [
+          enumOption('schemaVersion', ['1.6', '1.5']),
+          enumOption('singleBomComponentType', ['APPLICATION', 'FILE']),
+        ],
+      }),
+      createPluginDescriptor({
+        id: 'SpdxDocument',
+        type: 'REPORTER',
+        displayName: 'SPDX Document',
+        options: [enumOption('spdxVersion', ['SPDX-2.2', 'SPDX-2.3'])],
+      }),
+    ];
+    const reporterRerun = createOrtRun({
+      index: 2,
+      jobConfigs: {
+        analyzer: {
+          environmentConfig: {
+            environmentVariables: [{ name: 'MODE', value: 'ci' }],
+          },
+        },
+        reporter: {
+          formats: ['CycloneDX', 'SpdxDocument'],
+          config: {
+            CycloneDX: { options: { schemaVersion: '1.5' }, secrets: {} },
+          },
+        },
+      },
+    });
+    const runsPath =
+      '/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex';
+
+    const renderRerun = (run: OrtRun | null, pluginsLoadLater: boolean) => {
+      const Harness = () => {
+        const [loaded, setLoaded] = useState(!pluginsLoadLater);
+        return (
+          <>
+            <button onClick={() => setLoaded(true)}>Load plugins</button>
+            <CreateRunForm
+              isSubmitting={false}
+              isSuperuser={false}
+              onSubmit={vi.fn()}
+              permissions={permissions}
+              plugins={
+                loaded ? [advisorPlugin, scannerPlugin, ...reporterPlugins] : []
+              }
+              pluginsLoading={!loaded}
+              rerun={run}
+              secrets={secrets}
+            />
+          </>
+        );
+      };
+      return renderInteractiveWithRouter(<Harness />, {
+        path: createRunPath,
+        routes: [
+          {
+            path: '/organizations/$orgId/products/$productId/repositories/$repoId/create-run',
+          },
+          { path: runsPath, component: () => <p>Run page</p> },
+        ],
+      });
+    };
+
+    const leave = async (router: ReturnType<typeof renderRerun>['router']) => {
+      await router.navigate({
+        to: runsPath,
+        params: { orgId: '1', productId: '2', repoId: '3', runIndex: '2' },
+      });
+    };
+
+    it.each([
+      ['loaded before the form', false],
+      ['loaded after the form', true],
+    ])(
+      'does not ask to discard changes with plugins %s',
+      async (_, pluginsLoadLater) => {
+        const { router, user } = renderRerun(reporterRerun, pluginsLoadLater);
+        if (pluginsLoadLater) {
+          await screen.findByLabelText('Revision');
+          await user.click(
+            screen.getByRole('button', { name: 'Load plugins' })
+          );
+        }
+        expect(
+          await screen.findByText(/^schemaVersion/, { selector: 'label' })
+        ).toBeInTheDocument();
+
+        await leave(router);
+
+        expect(await screen.findByText('Run page')).toBeVisible();
+        expect(screen.queryByRole('alertdialog')).toBeNull();
+      }
+    );
+
+    it('asks to discard changes after an edit, but not after reverting it', async () => {
+      // Without environment variables, which the form fills in as an empty list.
+      const { router, user } = renderRerun(
+        createOrtRun({
+          ...reporterRerun,
+          jobConfigs: { reporter: reporterRerun.jobConfigs.reporter },
+        }),
+        true
+      );
+      await screen.findByLabelText('Revision');
+      await user.click(screen.getByRole('button', { name: 'Load plugins' }));
+      await screen.findByText(/^schemaVersion/, { selector: 'label' });
+      const revision = screen.getByLabelText('Revision');
+
+      await user.type(revision, 'x');
+      void leave(router);
+      expect(
+        await screen.findByRole('alertdialog', {
+          name: 'Discard unsaved changes?',
+        })
+      ).toBeVisible();
+      await user.click(screen.getByRole('button', { name: 'Stay' }));
+      await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
+
+      await user.type(revision, '{Backspace}');
+      await leave(router);
+      expect(await screen.findByText('Run page')).toBeVisible();
+    });
   });
 
   it('shows and hides the request from the action bar', async () => {

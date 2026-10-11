@@ -28,6 +28,7 @@ import {
   useWatch,
   type Control,
   type FieldPath,
+  type PathValue,
   type UseFormReturn,
 } from 'react-hook-form';
 import { z } from 'zod';
@@ -95,6 +96,7 @@ import {
   summarizeKeyValues,
   summarizeSource,
 } from './section-summaries';
+import { withoutUnavailablePlugins } from './unavailable-plugins';
 
 type CreateRunPermissions = {
   organization: OrganizationPermissions | undefined;
@@ -103,6 +105,25 @@ type CreateRunPermissions = {
 };
 
 type FormControlOf = Control<CreateRunFormValues>;
+
+/** The fields that refer to plugins and are cleaned up when plugins become unavailable. */
+type PluginReferencePath =
+  | 'jobConfigs.analyzer.packageManagers'
+  | 'jobConfigs.analyzer.packageManagerConfig'
+  | 'jobConfigs.analyzer.packageManagerMustRunAfter'
+  | 'jobConfigs.analyzer.packageCurationProviders'
+  | 'jobConfigs.analyzer.packageCurationProviderConfig'
+  | 'jobConfigs.advisor.advisors'
+  | 'jobConfigs.advisor.config'
+  | 'jobConfigs.scanner.scanners'
+  | 'jobConfigs.scanner.scannerScopes'
+  | 'jobConfigs.scanner.config'
+  | 'jobConfigs.evaluator.packageConfigurationProviders'
+  | 'jobConfigs.evaluator.packageConfigurationProviderConfig'
+  | 'jobConfigs.reporter.formats'
+  | 'jobConfigs.reporter.config'
+  | 'jobConfigs.reporter.packageConfigurationProviders'
+  | 'jobConfigs.reporter.packageConfigurationProviderConfig';
 
 const REQUEST_PREVIEW_ID = 'create-run-request';
 
@@ -223,20 +244,24 @@ export const CreateRunForm = ({
 
   // `values` lets React Hook Form update untouched fields when the plugins change.
   // Memoize them so unrelated form renders do not trigger a reset.
-  const pluginDefaults = useMemo(
-    () =>
-      defaultValues(
-        rerun,
-        pluginGroups.advisorPlugins,
-        pluginGroups.scannerPlugins,
-        pluginGroups.reporterPlugins,
-        isSuperuser,
-        pluginGroups.packageCurationProviderPlugins,
-        pluginGroups.packageConfigurationProviderPlugins,
-        pluginGroups.packageManagerPlugins
-      ),
-    [pluginGroups, rerun, isSuperuser]
-  );
+  // Once the plugins are known, leave out the unavailable ones, as the form removes them from
+  // its values (see below); otherwise removing them would count as a change. While the plugins
+  // load, keep them, so that the plugins of a rerun show their configuration once they load.
+  const pluginDefaults = useMemo(() => {
+    const defaults = defaultValues(
+      rerun,
+      pluginGroups.advisorPlugins,
+      pluginGroups.scannerPlugins,
+      pluginGroups.reporterPlugins,
+      isSuperuser,
+      pluginGroups.packageCurationProviderPlugins,
+      pluginGroups.packageConfigurationProviderPlugins,
+      pluginGroups.packageManagerPlugins
+    );
+    return pluginsUnavailable
+      ? defaults
+      : withoutUnavailablePlugins(defaults, pluginGroups);
+  }, [pluginGroups, rerun, isSuperuser, pluginsUnavailable]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -248,113 +273,63 @@ export const CreateRunForm = ({
   });
 
   // Dirty values kept by React Hook Form can still refer to removed plugins.
+  // Prune these references even when their section is collapsed / unmounted.
   const appliedPluginGroups = useRef(pluginGroups);
   useEffect(() => {
     if (appliedPluginGroups.current === pluginGroups) return;
     appliedPluginGroups.current = pluginGroups;
 
-    // Prune these references even when their section is collapsed / unmounted.
-    const ids = (descriptors: PreconfiguredPluginDescriptor[]) =>
-      new Set(descriptors.map((plugin) => plugin.id));
-    const pruneSelection = (
-      path:
-        | 'jobConfigs.analyzer.packageManagers'
-        | 'jobConfigs.analyzer.packageCurationProviders'
-        | 'jobConfigs.advisor.advisors'
-        | 'jobConfigs.scanner.scanners'
-        | 'jobConfigs.evaluator.packageConfigurationProviders'
-        | 'jobConfigs.reporter.packageConfigurationProviders'
-        | 'jobConfigs.reporter.formats',
-      available: Set<string>
+    const current = form.getValues();
+    const pruned = withoutUnavailablePlugins(current, pluginGroups);
+    const update = <P extends PluginReferencePath>(
+      path: P,
+      value: PathValue<CreateRunFormValues, P>
     ) => {
-      const selected = form.getValues(path);
-      const retained = selected.filter((id) => available.has(id));
-      if (retained.length !== selected.length) form.setValue(path, retained);
+      if (value !== form.getValues(path)) form.setValue(path, value);
     };
-    const pruneMap = (
-      path:
-        | 'jobConfigs.analyzer.packageManagerConfig'
-        | 'jobConfigs.analyzer.packageCurationProviderConfig'
-        | 'jobConfigs.advisor.config'
-        | 'jobConfigs.scanner.config'
-        | 'jobConfigs.scanner.scannerScopes'
-        | 'jobConfigs.evaluator.packageConfigurationProviderConfig'
-        | 'jobConfigs.reporter.packageConfigurationProviderConfig'
-        | 'jobConfigs.reporter.config',
-      available: Set<string>
-    ) => {
-      const current = form.getValues(path);
-      if (!current) return;
-      const retained = Object.fromEntries(
-        Object.entries(current).filter(([id]) => available.has(id))
-      );
-      if (Object.keys(retained).length !== Object.keys(current).length) {
-        form.setValue(path, retained);
-      }
-    };
+    const { analyzer, advisor, scanner, evaluator, reporter } =
+      pruned.jobConfigs;
 
-    const managerIds = ids(pluginGroups.packageManagerPlugins);
-    const advisorIds = ids(pluginGroups.advisorPlugins);
-    const scannerIds = ids(pluginGroups.scannerPlugins);
-    const reporterIds = ids(pluginGroups.reporterPlugins);
-    const curationIds = ids(pluginGroups.packageCurationProviderPlugins);
-    const configurationIds = ids(
-      pluginGroups.packageConfigurationProviderPlugins
+    update('jobConfigs.analyzer.packageManagers', analyzer.packageManagers);
+    update(
+      'jobConfigs.analyzer.packageManagerConfig',
+      analyzer.packageManagerConfig
     );
-
-    pruneSelection('jobConfigs.analyzer.packageManagers', managerIds);
-    pruneSelection('jobConfigs.analyzer.packageCurationProviders', curationIds);
-    pruneSelection('jobConfigs.advisor.advisors', advisorIds);
-    pruneSelection('jobConfigs.scanner.scanners', scannerIds);
-    pruneSelection(
+    update(
+      'jobConfigs.analyzer.packageManagerMustRunAfter',
+      analyzer.packageManagerMustRunAfter
+    );
+    update(
+      'jobConfigs.analyzer.packageCurationProviders',
+      analyzer.packageCurationProviders
+    );
+    update(
+      'jobConfigs.analyzer.packageCurationProviderConfig',
+      analyzer.packageCurationProviderConfig
+    );
+    update('jobConfigs.advisor.advisors', advisor.advisors);
+    update('jobConfigs.advisor.config', advisor.config);
+    update('jobConfigs.scanner.scanners', scanner.scanners);
+    update('jobConfigs.scanner.scannerScopes', scanner.scannerScopes);
+    update('jobConfigs.scanner.config', scanner.config);
+    update(
       'jobConfigs.evaluator.packageConfigurationProviders',
-      configurationIds
+      evaluator.packageConfigurationProviders
     );
-    pruneSelection(
-      'jobConfigs.reporter.packageConfigurationProviders',
-      configurationIds
-    );
-    pruneSelection('jobConfigs.reporter.formats', reporterIds);
-
-    pruneMap('jobConfigs.analyzer.packageManagerConfig', managerIds);
-    pruneMap('jobConfigs.analyzer.packageCurationProviderConfig', curationIds);
-    pruneMap('jobConfigs.advisor.config', advisorIds);
-    pruneMap('jobConfigs.scanner.config', scannerIds);
-    pruneMap('jobConfigs.scanner.scannerScopes', scannerIds);
-    pruneMap(
+    update(
       'jobConfigs.evaluator.packageConfigurationProviderConfig',
-      configurationIds
+      evaluator.packageConfigurationProviderConfig
     );
-    pruneMap(
+    update('jobConfigs.reporter.formats', reporter.formats);
+    update('jobConfigs.reporter.config', reporter.config);
+    update(
+      'jobConfigs.reporter.packageConfigurationProviders',
+      reporter.packageConfigurationProviders
+    );
+    update(
       'jobConfigs.reporter.packageConfigurationProviderConfig',
-      configurationIds
+      reporter.packageConfigurationProviderConfig
     );
-    pruneMap('jobConfigs.reporter.config', reporterIds);
-
-    const mustRunAfter = form.getValues(
-      'jobConfigs.analyzer.packageManagerMustRunAfter'
-    );
-    const retainedMustRunAfter = Object.fromEntries(
-      Object.entries(mustRunAfter)
-        .filter(([id]) => managerIds.has(id))
-        .map(([id, dependencies]) => [
-          id,
-          dependencies?.filter((dependency) => managerIds.has(dependency)),
-        ])
-    );
-    const mustRunAfterChanged =
-      Object.keys(retainedMustRunAfter).length !==
-        Object.keys(mustRunAfter).length ||
-      Object.entries(mustRunAfter).some(
-        ([id, dependencies]) =>
-          retainedMustRunAfter[id]?.length !== dependencies?.length
-      );
-    if (mustRunAfterChanged) {
-      form.setValue(
-        'jobConfigs.analyzer.packageManagerMustRunAfter',
-        retainedMustRunAfter
-      );
-    }
   }, [pluginGroups, form]);
 
   // Reload the available plugins when the configuration context changes, as it
