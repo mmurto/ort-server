@@ -301,14 +301,14 @@ const createColumns = (
     columnHelper.display({
       id: 'status',
       header: 'Status',
-      size: 170,
+      size: 150,
       cell: ({ row }) => <StatusMark status={row.original.status} />,
       enableColumnFilter: false,
     }),
     columnHelper.display({
       id: 'jobs',
       header: 'Jobs',
-      size: 120,
+      size: 104,
       cell: ({ row }) => (
         <OrtRunJobStatus
           jobs={row.original.jobs}
@@ -323,13 +323,14 @@ const createColumns = (
     columnHelper.display({
       id: 'findings',
       header: 'Findings',
-      size: 210,
+      size: 190,
       cell: ({ row }) => <RunItemCounts summary={row.original} />,
       enableColumnFilter: false,
     }),
     columnHelper.display({
       id: 'revision',
       header: 'Revision',
+      minSize: 220,
       cell: ({ row }) => (
         <RevisionCell summary={row.original} comparison={comparison} />
       ),
@@ -341,14 +342,14 @@ const createColumns = (
     columnHelper.display({
       id: 'created',
       header: 'Created',
-      size: 180,
+      size: 160,
       cell: ({ row }) => <CreatedCell summary={row.original} />,
       enableColumnFilter: false,
     }),
     columnHelper.display({
       id: 'duration',
       header: 'Duration',
-      size: 100,
+      size: 92,
       cell: ({ row }) => (
         <div className='text-muted-foreground text-[0.8125rem] tabular-nums'>
           <RunDuration
