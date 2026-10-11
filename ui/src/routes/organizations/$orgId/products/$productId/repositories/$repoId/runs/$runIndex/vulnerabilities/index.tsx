@@ -38,6 +38,7 @@ import {
   CopyableValue,
   EmptyValue,
   FindingText,
+  MiddleTruncate,
   ResolvedMark,
   SeverityMark,
 } from '@/components/data-table-cards/findings-cells';
@@ -143,7 +144,7 @@ const VulnerabilityPackage = ({
       <Tooltip>
         <TooltipTrigger asChild>
           <Link
-            className='link'
+            className='link flex min-w-0'
             to='/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/packages'
             params={{
               orgId: params.orgId,
@@ -153,7 +154,7 @@ const VulnerabilityPackage = ({
             }}
             search={{ pkgId: id, pkgIdType: idType, marked: '0' }}
           >
-            {id}
+            <MiddleTruncate value={id} />
           </Link>
         </TooltipTrigger>
         <TooltipContent>
@@ -228,7 +229,7 @@ const VulnerabilitiesComponent = () => {
           <div className='flex min-w-0 items-center gap-2'>
             <FindingText
               resolved={resolved}
-              className='truncate font-mono text-xs font-medium'
+              className='font-mono text-xs font-medium whitespace-nowrap'
             >
               {row.original.vulnerability.externalId}
             </FindingText>

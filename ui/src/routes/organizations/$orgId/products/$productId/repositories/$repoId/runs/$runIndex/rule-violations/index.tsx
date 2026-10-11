@@ -35,6 +35,7 @@ import { DataTableCards } from '@/components/data-table-cards/data-table-cards';
 import {
   CopyableValue,
   FindingText,
+  MiddleTruncate,
   ResolvedMark,
   SeverityMark,
 } from '@/components/data-table-cards/findings-cells';
@@ -132,21 +133,21 @@ const RuleViolationPackage = ({
         <TooltipTrigger asChild>
           {ruleViolation.purl != null ? (
             <Link
-              className='link'
+              className='link flex min-w-0'
               to='/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/packages'
               params={linkParams}
               search={{ pkgId: id, pkgIdType: idType, marked: '0' }}
             >
-              {id}
+              <MiddleTruncate value={id} />
             </Link>
           ) : (
             <Link
-              className='link'
+              className='link flex min-w-0'
               to='/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/projects'
               params={linkParams}
               search={{ projectId: id, marked: id }}
             >
-              {id}
+              <MiddleTruncate value={id} />
             </Link>
           )}
         </TooltipTrigger>

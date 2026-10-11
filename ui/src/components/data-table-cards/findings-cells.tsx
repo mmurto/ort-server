@@ -77,6 +77,32 @@ export const EmptyValue = () => (
 );
 
 /**
+ * Splits a package identifier where it can be shortened: before the name and version, which must
+ * stay readable. Handles ORT ids (`Maven:org.apache.commons:commons-text:1.9`) and purls
+ * (`pkg:maven/org.apache.commons/commons-text@1.9`).
+ */
+const splitIdentifier = (value: string): [string, string] => {
+  const slash = value.lastIndexOf('/');
+  if (slash > 0) return [value.slice(0, slash + 1), value.slice(slash + 1)];
+  const last = value.lastIndexOf(':');
+  const cut = last > 0 ? value.lastIndexOf(':', last - 1) : -1;
+  return cut > 0
+    ? [value.slice(0, cut + 1), value.slice(cut + 1)]
+    : ['', value];
+};
+
+/** A long identifier truncated in the middle, so its name and version stay visible. */
+export const MiddleTruncate = ({ value }: { value: string }) => {
+  const [head, tail] = splitIdentifier(value);
+  return (
+    <span className='flex min-w-0' title={value}>
+      {head && <span className='min-w-0 truncate'>{head}</span>}
+      <span className='shrink-0 whitespace-nowrap'>{tail}</span>
+    </span>
+  );
+};
+
+/**
  * An identifier with a button to copy it. The button shows up while the row is
  * hovered or focused. Without an identifier, only a dash is shown.
  */
@@ -93,7 +119,13 @@ export const CopyableValue = ({
 
   return (
     <span className={cn('flex min-w-0 items-center gap-0.5', className)}>
-      <span className='min-w-0 truncate'>{children ?? value}</span>
+      {children === undefined || typeof children === 'string' ? (
+        <MiddleTruncate
+          value={typeof children === 'string' ? children : value}
+        />
+      ) : (
+        <span className='min-w-0 truncate'>{children}</span>
+      )}
       <CopyToClipboard
         copyText={value}
         className='h-5 shrink-0 px-1 md:opacity-0 md:group-focus-within/finding:opacity-100 md:group-hover/finding:opacity-100 [&_svg]:size-3'

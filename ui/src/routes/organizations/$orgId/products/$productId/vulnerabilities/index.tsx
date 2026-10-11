@@ -33,6 +33,7 @@ import { VulnerabilityMetrics } from '@/components/charts/vulnerability-metrics'
 import { DataTableCards } from '@/components/data-table-cards/data-table-cards';
 import {
   CopyableValue,
+  MiddleTruncate,
   SeverityMark,
 } from '@/components/data-table-cards/findings-cells';
 import { FindingsFilterChips } from '@/components/data-table-cards/findings-filter-chips';
@@ -101,7 +102,7 @@ const VulnerabilityPackage = ({
 
   return (
     <CopyableValue value={id} className='font-mono text-xs'>
-      <span title={id}>{id}</span>
+      <MiddleTruncate value={id} />
     </CopyableValue>
   );
 };
@@ -235,7 +236,7 @@ const ProductVulnerabilitiesComponent = () => {
       id: 'vulnerabilityId',
       header: 'ID',
       cell: ({ row }) => (
-        <div className='truncate font-mono text-xs font-medium'>
+        <div className='font-mono text-xs font-medium whitespace-nowrap'>
           {row.original.vulnerability.externalId}
         </div>
       ),

@@ -115,11 +115,7 @@ const PackageId = ({ pkg }: { pkg: Package }) => {
       ? pkg.purl
       : identifierToString(pkg.identifier);
 
-  return (
-    <CopyableValue value={id} className='font-mono text-xs font-medium'>
-      <span title={id}>{id}</span>
-    </CopyableValue>
-  );
+  return <CopyableValue value={id} className='font-mono text-xs font-medium' />;
 };
 
 // The marks of a curated, metadata-only or modified package.
