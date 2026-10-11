@@ -19,10 +19,11 @@
 
 // @vitest-environment jsdom
 
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { OrtRun } from '@/api';
+import { getSuperuser, postRepositoryRun } from '@/api/sdk.gen';
 import { RunDetailsBar } from '@/routes/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/-components/run-details-bar';
 import { createOrtRun } from '../fixtures/create-run';
 import { renderInteractiveWithRouter } from '../fixtures/render-interactive';
@@ -47,10 +48,25 @@ vi.mock('@tanstack/react-query', async (importOriginal) => {
   };
 });
 
-vi.mock('@/api/@tanstack/react-query.gen', () => ({
+vi.mock('@/api/@tanstack/react-query.gen', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/api/@tanstack/react-query.gen')>()),
   getRepositoryRunsOptions: () => ({ queryKey: ['repository-runs'] }),
-  getRepositoryRunOptions: () => ({ queryKey: ['repository-run'] }),
+  getRepositoryRunOptions: () => ({
+    queryKey: ['repository-run'],
+    queryFn: async () => mocks.ortRun,
+  }),
 }));
+
+vi.mock('@/api/sdk.gen', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/api/sdk.gen')>()),
+  getOrganization: vi.fn(() => new Promise(() => {})),
+  getProduct: vi.fn(() => new Promise(() => {})),
+  getRepository: vi.fn(() => new Promise(() => {})),
+  getSuperuser: vi.fn(),
+  postRepositoryRun: vi.fn(),
+}));
+
+vi.mock('react-oidc-context', () => ({ useAuth: () => ({ user: null }) }));
 
 vi.mock('@/hooks/use-authorization', () => ({
   useRepositoryPermission: () => ({ isAllowed: mocks.canTriggerRun }),
@@ -88,6 +104,10 @@ const renderBar = (runIndex: number, suffix = '/config?tab=jobs') => {
     index: runIndex,
     jobs: {},
     status: 'FINISHED',
+    revision: 'main',
+    path: 'sub',
+    jobConfigs: { analyzer: { allowDynamicVersions: true } },
+    labels: { team: 'a' },
   });
 
   return renderInteractiveWithRouter(<RunDetailsBar />, {
@@ -102,6 +122,7 @@ const renderBar = (runIndex: number, suffix = '/config?tab=jobs') => {
         path: '/organizations/$orgId/products/$productId/repositories/$repoId/create-run',
       },
     ],
+    withQueryClient: true,
   });
 };
 
@@ -109,6 +130,10 @@ describe('RunDetailsBar', () => {
   beforeEach(() => {
     mocks.allRunIndexes = [1, 3, 5];
     mocks.canTriggerRun = true;
+    vi.mocked(getSuperuser).mockResolvedValue({
+      data: false,
+    } as Awaited<ReturnType<typeof getSuperuser>>);
+    vi.mocked(postRepositoryRun).mockReset();
   });
 
   it('keeps the current page and search in previous and next links', async () => {
@@ -125,10 +150,7 @@ describe('RunDetailsBar', () => {
       'href',
       `${runPath}/5/config?tab=jobs`
     );
-    expect(screen.getByRole('link', { name: 'Rerun' })).toHaveAttribute(
-      'href',
-      '/organizations/1/products/2/repositories/3/create-run?rerunIndex=3'
-    );
+    expect(screen.getByRole('button', { name: 'Rerun' })).toBeEnabled();
     expect(container.querySelector('a button')).not.toBeInTheDocument();
   });
 
@@ -151,9 +173,44 @@ describe('RunDetailsBar', () => {
 
     renderBar(3, '');
 
-    expect(await screen.findByRole('link', { name: 'Rerun' })).toHaveAttribute(
-      'aria-disabled',
-      'true'
+    expect(await screen.findByRole('button', { name: 'Rerun' })).toBeDisabled();
+  });
+
+  it('starts a run with the configuration of the run', async () => {
+    vi.mocked(postRepositoryRun).mockResolvedValue({
+      data: { id: 43, index: 6, repositoryId: 3 },
+    } as Awaited<ReturnType<typeof postRepositoryRun>>);
+    const { router, user } = renderBar(3, '');
+
+    await user.click(await screen.findByRole('button', { name: 'Rerun' }));
+
+    expect(
+      await screen.findByRole('link', { name: 'Change configuration…' })
+    ).toHaveAttribute(
+      'href',
+      '/organizations/1/products/2/repositories/3/create-run?rerunIndex=3'
+    );
+    expect(await screen.findByText('Latest of')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Start run' }));
+
+    await waitFor(() =>
+      expect(postRepositoryRun).toHaveBeenCalledWith(
+        expect.objectContaining({
+          path: { repositoryId: 3 },
+          body: {
+            revision: 'main',
+            path: 'sub',
+            jobConfigs: { analyzer: { allowDynamicVersions: true } },
+            jobConfigContext: undefined,
+            environmentConfigPath: undefined,
+            labels: { team: 'a' },
+          },
+        })
+      )
+    );
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe(`${runPath}/6`)
     );
   });
 });

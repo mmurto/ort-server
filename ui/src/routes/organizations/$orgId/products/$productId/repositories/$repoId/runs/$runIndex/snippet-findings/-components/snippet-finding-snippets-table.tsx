@@ -239,32 +239,39 @@ export const SnippetFindingSnippetsTable = ({
         },
         { id: 'provenance', width: 'minmax(0,1.4fr)', mobile: 'sub' },
       ]}
+      // The search is updated from the latest one, so the open details stay.
       setCurrentPageOptions={(currentPage) => {
         return {
           to: '.',
-          search: {
-            ...search,
+          search: (previous) => ({
+            ...previous,
             snippetsPage: currentPage,
-          },
+          }),
+          resetScroll: false,
         };
       }}
       setPageSizeOptions={(size) => {
         return {
           to: '.',
-          search: {
-            ...search,
+          search: (previous) => ({
+            ...previous,
             snippetsPage: 1,
             snippetsPageSize: size,
-          },
+          }),
+          resetScroll: false,
         };
       }}
       setSortingOptions={(sortBy) => {
         return {
           to: '.',
-          search: {
-            ...search,
-            snippetsSortBy: updateColumnSorting(search.snippetsSortBy, sortBy),
-          },
+          search: (previous) => ({
+            ...previous,
+            snippetsSortBy: updateColumnSorting(
+              previous.snippetsSortBy,
+              sortBy
+            ),
+          }),
+          resetScroll: false,
         };
       }}
     />

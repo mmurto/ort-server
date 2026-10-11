@@ -27,7 +27,7 @@ import {
 } from '@/helpers/resolutions';
 import { IssueResolutions } from './issue-resolutions';
 import { RuleViolationResolutions } from './rule-violation-resolutions';
-import { ResolutionCard } from './shared';
+import { ResolutionEntry, ResolutionList } from './shared';
 import { getDisplayItems } from './utils';
 import { VulnerabilityResolutions } from './vulnerability-resolutions';
 
@@ -68,15 +68,21 @@ export function Resolutions({ item, repositoryId, runId }: ResolutionsProps) {
   }
 
   return (
-    <div className='flex flex-col gap-2'>
+    <ResolutionList
+      form={
+        displayItems.length === 0 && (
+          <p className='text-muted-foreground'>No resolutions.</p>
+        )
+      }
+    >
       {displayItems.map((displayItem) => (
-        <ResolutionCard
+        <ResolutionEntry
           key={displayItem.key}
           displayItem={displayItem}
           editingKey={editingKey}
           setEditingKey={setEditingKey}
         />
       ))}
-    </div>
+    </ResolutionList>
   );
 }

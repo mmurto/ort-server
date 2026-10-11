@@ -17,16 +17,18 @@
  * License-Filename: LICENSE
  */
 
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
-import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
-import { Menu, Search } from 'lucide-react';
-import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import { Link, useRouterState } from '@tanstack/react-router';
+import { Menu } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import { getServerSettingByKeyOptions } from '@/api/@tanstack/react-query.gen';
 import { PRODUCT_NAME } from '@/components/app-rail';
+import {
+  CommandPalette,
+  CommandPaletteButton,
+} from '@/components/command-palette';
+import { KeyboardShortcutsDialog } from '@/components/keyboard-shortcuts-dialog';
 import { ModeToggle } from '@/components/mode-toggle';
 import { useRail } from '@/components/rail-context';
 import { Siblings } from '@/components/siblings';
@@ -44,20 +46,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { extractInitials } from '@/helpers/extract-initials.ts';
 import { setCustomFavicon } from '@/helpers/set-custom-favicon';
 import { useUser } from '@/hooks/use-user';
 import { toastError } from '@/lib/toast';
 
-const formSchema = z.object({
-  id: z.string().min(1),
-});
+/** Whether a key event comes from a control the user types into. */
+const isTypingTarget = (target: EventTarget | null) =>
+  target instanceof HTMLElement &&
+  (target.isContentEditable ||
+    target.closest('input, textarea, select, [contenteditable="true"]') !==
+      null);
 
 export const Header = () => {
   const user = useUser();
-  const navigate = useNavigate();
   const { setOpen } = useRail();
 
   const {
@@ -77,13 +79,36 @@ export const Header = () => {
     ...getServerSettingByKeyOptions({ path: { key: 'FAVICON_URL' } }),
   });
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-  });
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    navigate({ to: `/runs/$runId`, params: { runId: values.id } });
-  }
+  // Cmd/Ctrl+K opens the command palette from anywhere; / and ? work while the
+  // user is not typing and no dialog is open.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return;
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setPaletteOpen((open) => !open);
+        return;
+      }
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (isTypingTarget(event.target)) return;
+      if (document.querySelector('[role="dialog"], [role="alertdialog"]')) {
+        return;
+      }
+      if (event.key === '/') {
+        event.preventDefault();
+        setPaletteOpen(true);
+      } else if (event.key === '?') {
+        event.preventDefault();
+        setShortcutsOpen(true);
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   const matches = useRouterState({ select: (state) => state.matches });
 
@@ -214,36 +239,7 @@ export const Header = () => {
         </Breadcrumb>
       </div>
       <div className='flex shrink-0 items-center gap-2'>
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className='hidden sm:block'
-          >
-            <FormField
-              control={form.control}
-              name='id'
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <div className='relative'>
-                      <Search className='text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2' />
-                      <Input
-                        {...field}
-                        type='text'
-                        name='runId'
-                        inputMode='numeric'
-                        aria-label='Go to run ID'
-                        placeholder='Go to run ID'
-                        className='h-8 w-36 pl-8 text-[0.8125rem]'
-                      />
-                    </div>
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <input type='submit' hidden />
-          </form>
-        </Form>
+        <CommandPaletteButton onOpen={() => setPaletteOpen(true)} />
         <ModeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -286,6 +282,9 @@ export const Header = () => {
             <Link to='/settings'>
               <DropdownMenuItem>Preferences</DropdownMenuItem>
             </Link>
+            <DropdownMenuItem onClick={() => setShortcutsOpen(true)}>
+              Keyboard shortcuts
+            </DropdownMenuItem>
             <Link to='/about'>
               <DropdownMenuItem>About</DropdownMenuItem>
             </Link>
@@ -300,6 +299,15 @@ export const Header = () => {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      <CommandPalette
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
+        onShowShortcuts={() => setShortcutsOpen(true)}
+      />
+      <KeyboardShortcutsDialog
+        open={shortcutsOpen}
+        onOpenChange={setShortcutsOpen}
+      />
     </header>
   );
 };

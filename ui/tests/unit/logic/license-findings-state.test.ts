@@ -33,8 +33,10 @@ import {
   getLicensePackagesTableState,
   getLicenseTablePagination,
   getLicenseTablesExpandedState,
+  getOpenLicense,
   getPackageIdentifierQueryFilter,
   normalizeLicenseFindingsSearch,
+  openLicenseTable,
   resetLicensePackageIdentifierControls,
   toggleLicensePackageTable,
   toggleLicenseTable,
@@ -655,4 +657,66 @@ describe('legacy URL normalization and query semantics', () => {
       expect(getLicensePackagesQueryFilter(table)).toEqual(expected);
     }
   );
+});
+
+describe('the one open license', () => {
+  const ortId = packageIdTypeSchema.enum.ORT_ID;
+
+  it('is the first license with an entry that is on the current page', () => {
+    const search: LicenseFindingsSearchParameters = {
+      licenseTables: { 'GPL-2.0': {}, MIT: {}, 'Apache-2.0': {} },
+    };
+
+    expect(getOpenLicense(search, ['Apache-2.0', 'MIT'])).toBe('MIT');
+    expect(getOpenLicense(search, ['BSD-3-Clause'])).toBeUndefined();
+    expect(getOpenLicense({}, ['MIT'])).toBeUndefined();
+  });
+
+  it('keeps the controls of the opened license and drops the others', () => {
+    const search = makeSearch();
+    const before = structuredClone(search);
+    const opened = openLicenseTable(
+      { ...search, marked: 'Apache-2.0' },
+      'MIT',
+      ortId
+    );
+
+    expect(opened.licenseTables).toEqual({ MIT: search.licenseTables!.MIT });
+    expect(opened).not.toHaveProperty('marked');
+    expect(opened.page).toBe(2);
+    expect(search).toEqual(before);
+  });
+
+  it('opens a license without an entry at its defaults', () => {
+    expect(openLicenseTable(makeSearch(), 'BSD-3-Clause', ortId)).toEqual(
+      expect.objectContaining({ licenseTables: { 'BSD-3-Clause': {} } })
+    );
+  });
+
+  it('binds legacy controls to the opened license', () => {
+    expect(
+      openLicenseTable({ packagePage: 2, findingsPage: 3 }, 'MIT', ortId)
+    ).toEqual({
+      licenseTables: { MIT: { page: 2, legacyFindings: { page: 3 } } },
+    });
+  });
+
+  it('closes every license without a license', () => {
+    const closed = openLicenseTable(
+      { ...makeSearch(), marked: 'MIT' },
+      undefined,
+      ortId
+    );
+
+    expect(closed).not.toHaveProperty('licenseTables');
+    expect(closed).not.toHaveProperty('marked');
+    expect(closed.page).toBe(2);
+  });
+
+  it('treats prototype names as licenses of their own', () => {
+    const opened = openLicenseTable({}, '__proto__', ortId);
+
+    expect(Object.keys(opened.licenseTables ?? {})).toEqual(['__proto__']);
+    expect(getOpenLicense(opened, ['__proto__'])).toBe('__proto__');
+  });
 });

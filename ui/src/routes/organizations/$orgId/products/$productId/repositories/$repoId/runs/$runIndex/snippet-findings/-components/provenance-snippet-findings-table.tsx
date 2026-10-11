@@ -20,16 +20,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { ExpandedState } from '@tanstack/react-table';
-import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
 
 import { SnippetFinding, SnippetFindingProvenance } from '@/api';
 import { getRunProvenanceSnippetFindingsOptions } from '@/api/@tanstack/react-query.gen';
-import { BreakableString } from '@/components/breakable-string';
-import { DataTable } from '@/components/data-table/data-table';
+import { DataTableCards } from '@/components/data-table-cards/data-table-cards';
 import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
-import { Button } from '@/components/ui/button';
 import {
   convertToBackendSorting,
   EMPTY_SORTING_STATE,
@@ -83,64 +80,31 @@ export const ProvenanceSnippetFindingsTable = ({
   });
 
   const findingColumns = findingColumnHelper.columns([
-    findingColumnHelper.display({
-      id: 'details',
-      header: 'Details',
-      meta: {
-        widthPercentage: 8,
-      },
-      cell: function CellComponent({ row }) {
-        return row.getCanExpand() ? (
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={() => {
-              const isOpening = !row.getIsExpanded();
-
-              setExpanded(isOpening ? { [row.id]: true } : {});
-              navigate({
-                search: {
-                  ...search,
-                  snippetsPage: 1,
-                },
-                replace: true,
-              });
-            }}
-            style={{ cursor: 'pointer' }}
-          >
-            {row.getIsExpanded() ? (
-              <ChevronUp className='h-4 w-4' />
-            ) : (
-              <ChevronDown className='h-4 w-4' />
-            )}
-          </Button>
-        ) : null;
-      },
-    }),
     findingColumnHelper.accessor('path', {
       id: 'path',
       header: 'Path',
-      cell: ({ row }) => <BreakableString text={row.original.path} />,
-      meta: {
-        isGrow: true,
-      },
+      cell: ({ row }) => (
+        <span className='font-mono text-xs break-all'>{row.original.path}</span>
+      ),
     }),
     findingColumnHelper.accessor('startLine', {
       id: 'startLine',
       header: 'Line Range',
       enableSorting: false,
-      cell: ({ row }) =>
-        formatLineRange(row.original.startLine, row.original.endLine),
-      meta: {
-        widthPercentage: 10,
-      },
+      cell: ({ row }) => (
+        <span className='text-muted-foreground whitespace-nowrap tabular-nums'>
+          {formatLineRange(row.original.startLine, row.original.endLine)}
+        </span>
+      ),
     }),
     findingColumnHelper.accessor('snippetCount', {
       id: 'snippetCount',
       header: 'Snippet Count',
-      meta: {
-        widthPercentage: 14,
-      },
+      cell: ({ row }) => (
+        <span className='whitespace-nowrap tabular-nums'>
+          {row.original.snippetCount}
+        </span>
+      ),
     }),
   ]);
 
@@ -175,41 +139,77 @@ export const ProvenanceSnippetFindingsTable = ({
   }
 
   return (
-    <DataTable
+    <DataTableCards
       table={findingsTable}
-      className='[&_tbody_tr:first-child]:border-t'
+      aria-label='Snippet findings'
+      globalShortcuts={false}
+      layout={[
+        {
+          id: 'path',
+          width: 'minmax(0,1fr)',
+          sortBy: 'path',
+          mobile: 'main',
+        },
+        { id: 'startLine', width: 'max-content', mobile: 'end' },
+        {
+          id: 'snippetCount',
+          width: 'max-content',
+          sortBy: 'snippetCount',
+          mobile: 'end',
+        },
+      ]}
+      onToggleExpanded={(row) => {
+        const isOpening = !row.getIsExpanded();
+
+        setExpanded(isOpening ? { [row.id]: true } : {});
+        navigate({
+          search: (previous) => ({
+            ...previous,
+            snippetsPage: 1,
+          }),
+          replace: true,
+          resetScroll: false,
+        });
+      }}
       renderSubComponent={({ row }) => (
         <SnippetFindingSnippetsTable
           runId={runId}
           snippetFindingId={row.original.id}
         />
       )}
+      // The search is updated from the latest one, so the open details stay.
       setCurrentPageOptions={(currentPage) => {
         return {
           to: '.',
-          search: {
-            ...search,
+          search: (previous) => ({
+            ...previous,
             findingsPage: currentPage,
-          },
+          }),
+          resetScroll: false,
         };
       }}
       setPageSizeOptions={(size) => {
         return {
           to: '.',
-          search: {
-            ...search,
+          search: (previous) => ({
+            ...previous,
             findingsPage: 1,
             findingsPageSize: size,
-          },
+          }),
+          resetScroll: false,
         };
       }}
       setSortingOptions={(sortBy) => {
         return {
           to: '.',
-          search: {
-            ...search,
-            findingsSortBy: updateColumnSorting(search.findingsSortBy, sortBy),
-          },
+          search: (previous) => ({
+            ...previous,
+            findingsSortBy: updateColumnSorting(
+              previous.findingsSortBy,
+              sortBy
+            ),
+          }),
+          resetScroll: false,
         };
       }}
     />

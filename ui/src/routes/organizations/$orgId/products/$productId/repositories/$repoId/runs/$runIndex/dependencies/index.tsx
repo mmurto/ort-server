@@ -20,6 +20,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { ChevronDown, ChevronsUpDown, ChevronUp } from 'lucide-react';
+import z from 'zod';
 
 import {
   getRepositoryRunOptions,
@@ -30,13 +31,18 @@ import { SheetSection } from '@/components/page-header';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Toggle } from '@/components/ui/toggle';
 import { convertToBackendSorting } from '@/helpers/handle-multisort';
+import { identifierToString } from '@/helpers/identifier-conversion';
 import { cn } from '@/lib/utils';
 import {
   dependencyGraphSortSearchParameterSchema,
   type DependencyGraphSortField,
 } from '@/schemas';
+import { useUserSettingsStore } from '@/store/user-settings.store';
+import type { RenderPackageExtras } from './-components/dependency-tree-row';
 import { ManagerDependenciesTab } from './-components/manager-dependencies-tab';
 import { PackageCountBadge } from './-components/package-count-badge';
+import { PackageNodeExtras } from './-components/package-node-extras';
+import { usePackageVulnerabilities } from './-components/package-vulnerabilities';
 
 type SortDirection = 'asc' | 'desc';
 
@@ -141,6 +147,8 @@ const SortControls = ({ className }: { className?: string }) => {
 const DependenciesComponent = () => {
   const params = Route.useParams();
   const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const packageIdType = useUserSettingsStore((state) => state.packageIdType);
 
   const { data: ortRun } = useSuspenseQuery({
     ...getRepositoryRunOptions({
@@ -161,6 +169,35 @@ const DependenciesComponent = () => {
       },
     }),
   });
+
+  const packageVulnerabilities = usePackageVulnerabilities(
+    ortRun.id,
+    ortRun.jobs.advisor != null
+  );
+
+  const renderPackageExtras: RenderPackageExtras = (graph, packageIndex) => (
+    <PackageNodeExtras
+      graph={graph}
+      packageIndex={packageIndex}
+      packageIdType={packageIdType}
+      vulnerabilities={packageVulnerabilities.get(
+        identifierToString(graph.packages[packageIndex])
+      )}
+      params={params}
+    />
+  );
+
+  // The search is kept in the URL, without adding an entry to the history for
+  // every search.
+  const setSearch = (value: string) => {
+    const searchParameter = value === '' ? undefined : value;
+    if (searchParameter === search.search) return;
+    void navigate({
+      search: (previous) => ({ ...previous, search: searchParameter }),
+      replace: true,
+      resetScroll: false,
+    });
+  };
 
   const managerEntries = Object.entries(dependencyGraphs.graphs).sort(
     ([a], [b]) => a.localeCompare(b)
@@ -203,6 +240,9 @@ const DependenciesComponent = () => {
               key={managerName}
               graph={graph}
               managerName={managerName}
+              initialSearch={search.search}
+              onSearchChange={setSearch}
+              renderPackageExtras={renderPackageExtras}
             />
           ))}
         </Tabs>
@@ -214,7 +254,9 @@ const DependenciesComponent = () => {
 export const Route = createFileRoute(
   '/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/dependencies/'
 )({
-  validateSearch: dependencyGraphSortSearchParameterSchema,
+  validateSearch: dependencyGraphSortSearchParameterSchema.extend({
+    search: z.string().optional(),
+  }),
   loader: async ({ context: { queryClient }, params }) => {
     const ortRun = await queryClient.fetchQuery({
       ...getRepositoryRunOptions({

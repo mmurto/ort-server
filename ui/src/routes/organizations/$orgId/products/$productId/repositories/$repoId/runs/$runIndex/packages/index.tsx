@@ -29,30 +29,22 @@ import {
   getRunPackageLicensesOptions,
   getRunPackagesOptions,
 } from '@/api/@tanstack/react-query.gen';
-import { BreakableString } from '@/components/breakable-string';
-import { CopyToClipboard } from '@/components/copy-to-clipboard';
-import { DataTableCards } from '@/components/data-table-cards/data-table-cards';
+import {
+  DataTableCards,
+  type DataTableCardsDetails,
+} from '@/components/data-table-cards/data-table-cards';
 import {
   CopyableValue,
   EmptyValue,
 } from '@/components/data-table-cards/findings-cells';
 import { DependencyPaths } from '@/components/dependency-paths';
-import {
-  LicensesAccordion,
-  SpdxExpressionBadgeGroup,
-} from '@/components/licenses';
+import { FindingPanelSection } from '@/components/finding-panel/finding-panel';
+import { LicensesList, SpdxExpressionBadgeGroup } from '@/components/licenses';
 import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { PackageCuration } from '@/components/package-curation';
 import { SheetSection } from '@/components/page-header';
-import { RenderProperty } from '@/components/render-property';
 import { TimestampWithUTC } from '@/components/timestamp-with-utc';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import {
   Tooltip,
@@ -87,6 +79,13 @@ import {
   sortingSearchParameterSchema,
 } from '@/schemas';
 import { useUserSettingsStore } from '@/store/user-settings.store';
+import {
+  DependencyGraphLink,
+  PanelFields,
+  PanelMono,
+  PanelUrl,
+} from '../-components/panel-fields';
+import { PackageFindings } from './-components/package-findings';
 
 const defaultPageSize = 10;
 
@@ -172,169 +171,192 @@ const PackageFlags = ({ pkg }: { pkg: Package }) => (
   </div>
 );
 
-// Component to ender the expanded subrow of a package card, showing additional details.
-const renderSubComponent = ({
+type RunParams = {
+  orgId: string;
+  productId: string;
+  repoId: string;
+  runIndex: string;
+};
+
+const hasArtifact = (artifact: Package['binaryArtifact']) =>
+  !!(artifact.url || artifact.hashValue || artifact.hashAlgorithm);
+
+const ArtifactFields = ({
+  artifact,
+}: {
+  artifact: Package['binaryArtifact'];
+}) => (
+  <PanelFields
+    fields={[
+      { label: 'URL', value: <PanelUrl url={artifact.url} /> },
+      { label: 'Hash', value: <PanelMono value={artifact.hashValue} /> },
+      { label: 'Algorithm', value: artifact.hashAlgorithm || null },
+    ]}
+  />
+);
+
+// The details of a package, shown in the panel next to the grid.
+const renderDetails = ({
   row,
   packageIdType,
   runId,
+  params,
 }: {
   row: AppRow<Package>;
-  packageIdType?: PackageIdType;
+  packageIdType: PackageIdType;
   runId: number;
-}) => {
+  params: RunParams;
+}): DataTableCardsDetails => {
   const pkg = row.original;
-  const hasCurations = pkg.curations.length > 0;
-
-  // The card title shows one of the package identifiers, depending on the user
-  // preference, so show the other one here.
-  const showsPurlInTitle =
+  const ortId = identifierToString(pkg.identifier);
+  const usesPurl =
     packageIdType === packageIdTypeSchema.enum.PURL && !!pkg.purl;
-  const alternativeIdLabel = showsPurlInTitle ? 'ORT ID' : 'PURL';
-  const alternativeId = showsPurlInTitle
-    ? identifierToString(pkg.identifier)
-    : pkg.purl;
+  const id = usesPurl ? pkg.purl : ortId;
+  // The title shows one of the identifiers, the details the other one.
+  const alternativeId = usesPurl ? ortId : pkg.purl;
+  const hasFlags =
+    pkg.curations.length > 0 || pkg.isMetadataOnly || pkg.isModified;
+  const vcs = pkg.vcsProcessed;
+  const hasVcs = !!(vcs.type || vcs.url || vcs.revision || vcs.path);
 
-  return (
-    <div className='flex flex-col gap-4'>
-      {alternativeId && (
-        <div className='flex gap-2'>
-          <div className='font-semibold'>{alternativeIdLabel}:</div>
-          <div className='min-w-0 font-mono text-xs'>
-            <BreakableString text={alternativeId} />
-            <CopyToClipboard
-              copyText={alternativeId}
-              className='h-5 px-2 align-middle'
+  return {
+    title: <span className='font-mono text-[0.875rem] break-all'>{id}</span>,
+    meta: hasFlags ? <PackageFlags pkg={pkg} /> : undefined,
+    content: (
+      <>
+        {pkg.description && (
+          <p className='text-[0.875rem] leading-relaxed wrap-break-word'>
+            {pkg.description}
+          </p>
+        )}
+        <FindingPanelSection title='Findings'>
+          <PackageFindings pkg={pkg} runId={runId} params={params} />
+        </FindingPanelSection>
+        <FindingPanelSection
+          title='Dependency paths'
+          actions={<DependencyGraphLink params={params} searchTerm={id} />}
+        >
+          {pkg.shortestDependencyPaths.length > 0 ? (
+            <DependencyPaths
+              pkg={pkg}
+              pkgIdType={packageIdType}
+              className='flex flex-col gap-2'
             />
-          </div>
-        </div>
-      )}
-      <RenderProperty label='Authors' value={pkg.authors} />
-      <RenderProperty
-        label='Description'
-        value={pkg.description}
-        type='textblock'
-      />
-      <LicensesAccordion
-        runId={runId}
-        identifier={pkg.identifier}
-        declaredLicenses={[
-          ...(pkg.processedDeclaredLicense.spdxExpression
-            ? [pkg.processedDeclaredLicense.spdxExpression]
-            : []),
-          ...pkg.processedDeclaredLicense.unmappedLicenses,
-        ]}
-      />
-      <RenderProperty label='CPE' value={pkg.cpe} />
-      <RenderProperty
-        label='Source Code Origins'
-        value={pkg.sourceCodeOrigins}
-      />
-      {pkg.vcsProcessed.type ||
-      pkg.vcsProcessed.url ||
-      pkg.vcsProcessed.revision ||
-      pkg.vcsProcessed.path ? (
-        <div>
-          <div className='font-semibold'>
-            {getRepositoryTypeLabel(pkg.vcsProcessed.type)} Repository
-          </div>
-          <div className='ml-2'>
-            <RenderProperty
-              label='URL'
-              value={pkg.vcsProcessed.url}
-              type='url'
-            />
-            <RenderProperty
-              label='Revision'
-              value={pkg.vcsProcessed.revision}
-            />
-            <RenderProperty label='Path' value={pkg.vcsProcessed.path} />
-          </div>
-        </div>
-      ) : (
-        <RenderProperty label='Repository' value={null} />
-      )}
-      {pkg.binaryArtifact.url ||
-      pkg.binaryArtifact.hashValue ||
-      pkg.binaryArtifact.hashAlgorithm ? (
-        <div>
-          <div className='font-semibold'>Binary Artifact</div>
-          <div className='ml-2'>
-            <RenderProperty
-              label='URL'
-              value={pkg.binaryArtifact.url}
-              type='url'
-            />
-            <RenderProperty
-              label='Hash Value'
-              value={pkg.binaryArtifact.hashValue}
-            />
-            <RenderProperty
-              label='Hash Algorithm'
-              value={pkg.binaryArtifact.hashAlgorithm}
-            />
-          </div>
-        </div>
-      ) : (
-        <RenderProperty label='Binary Artifact' value={null} />
-      )}
-      {pkg.isMetadataOnly ? null : pkg.sourceArtifact.url ||
-        pkg.sourceArtifact.hashValue ||
-        pkg.sourceArtifact.hashAlgorithm ? (
-        <div>
-          <div className='font-semibold'>Source Artifact</div>
-          <div className='ml-2'>
-            <RenderProperty
-              label='URL'
-              value={pkg.sourceArtifact.url}
-              type='url'
-            />
-            <RenderProperty
-              label='Hash Value'
-              value={pkg.sourceArtifact.hashValue}
-            />
-            <RenderProperty
-              label='Hash Algorithm'
-              value={pkg.sourceArtifact.hashAlgorithm}
-            />
-          </div>
-        </div>
-      ) : (
-        <RenderProperty label='Source Artifact' value={null} />
-      )}
-      {pkg.shortestDependencyPaths.length > 0 && (
-        <div>
-          <div className='font-semibold'>Shortest Dependency Paths</div>
-          <DependencyPaths
-            pkg={pkg}
-            pkgIdType={packageIdType}
-            className='flex flex-col gap-2'
+          ) : (
+            <div className='text-muted-foreground'>
+              No dependency paths recorded.
+            </div>
+          )}
+        </FindingPanelSection>
+        <FindingPanelSection title='Package'>
+          <PanelFields
+            fields={[
+              {
+                label: usesPurl ? 'ORT ID' : 'PURL',
+                value: alternativeId ? (
+                  <CopyableValue
+                    value={alternativeId}
+                    className='font-mono text-xs'
+                  />
+                ) : null,
+              },
+              {
+                label: 'Authors',
+                value: pkg.authors.length > 0 ? pkg.authors.join(', ') : null,
+              },
+              { label: 'Homepage', value: <PanelUrl url={pkg.homepageUrl} /> },
+              {
+                label: 'Published',
+                value: pkg.publishedAt ? (
+                  <TimestampWithUTC
+                    timestamp={pkg.publishedAt}
+                    label='Publishing timestamp'
+                  />
+                ) : null,
+              },
+              { label: 'CPE', value: <PanelMono value={pkg.cpe} /> },
+              {
+                label: 'Source code origins',
+                value:
+                  pkg.sourceCodeOrigins && pkg.sourceCodeOrigins.length > 0
+                    ? pkg.sourceCodeOrigins.join(', ')
+                    : null,
+              },
+            ]}
           />
-        </div>
-      )}
-      <RenderProperty label='Labels' value={pkg.labels} type='keyvalue' />
-      {hasCurations && (
-        <Accordion type='multiple' className='w-full'>
-          <AccordionItem value='curations'>
-            <AccordionTrigger>
-              Curations ({pkg.curations.length})
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className='mb-4'>
-                Curations are shown from highest to lowest priority, where
-                higher-priority values take precedence over lower-priority
-                values.
-              </div>
+        </FindingPanelSection>
+        <FindingPanelSection title='Licenses'>
+          <LicensesList
+            runId={runId}
+            identifier={pkg.identifier}
+            declaredLicenses={getDeclaredLicenses(pkg)}
+          />
+        </FindingPanelSection>
+        <FindingPanelSection
+          title={
+            hasVcs
+              ? `${getRepositoryTypeLabel(vcs.type)} repository`
+              : 'Repository'
+          }
+        >
+          {hasVcs ? (
+            <PanelFields
+              fields={[
+                { label: 'URL', value: <PanelUrl url={vcs.url} /> },
+                {
+                  label: 'Revision',
+                  value: <PanelMono value={vcs.revision} />,
+                },
+                { label: 'Path', value: <PanelMono value={vcs.path} /> },
+              ]}
+            />
+          ) : (
+            <EmptyValue />
+          )}
+        </FindingPanelSection>
+        <FindingPanelSection title='Binary artifact'>
+          {hasArtifact(pkg.binaryArtifact) ? (
+            <ArtifactFields artifact={pkg.binaryArtifact} />
+          ) : (
+            <EmptyValue />
+          )}
+        </FindingPanelSection>
+        {!pkg.isMetadataOnly && (
+          <FindingPanelSection title='Source artifact'>
+            {hasArtifact(pkg.sourceArtifact) ? (
+              <ArtifactFields artifact={pkg.sourceArtifact} />
+            ) : (
+              <EmptyValue />
+            )}
+          </FindingPanelSection>
+        )}
+        <FindingPanelSection title='Labels'>
+          {pkg.labels && Object.keys(pkg.labels).length > 0 ? (
+            <PanelFields
+              fields={Object.entries(pkg.labels)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([key, value]) => ({ label: key, value: String(value) }))}
+            />
+          ) : (
+            <EmptyValue />
+          )}
+        </FindingPanelSection>
+        {pkg.curations.length > 0 && (
+          <FindingPanelSection title={`Curations (${pkg.curations.length})`}>
+            <p className='text-muted-foreground mb-2'>
+              Curations are shown from highest to lowest priority, where
+              higher-priority values take precedence over lower-priority values.
+            </p>
+            <div className='flex flex-col gap-3'>
               {pkg.curations.map((curation, idx) => (
-                <div key={idx} className=''>
-                  <PackageCuration curation={curation} />
-                </div>
+                <PackageCuration key={idx} curation={curation} />
               ))}
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      )}
-    </div>
-  );
+            </div>
+          </FindingPanelSection>
+        )}
+      </>
+    ),
+  };
 };
 
 const PackagesComponent = () => {
@@ -646,8 +668,14 @@ const PackagesComponent = () => {
             width: 'max-content',
             sortBy: 'publishedAt',
             mobile: 'hidden',
+            withDetails: false,
           },
-          { id: 'homepage', width: 'minmax(0,1.2fr)', mobile: 'hidden' },
+          {
+            id: 'homepage',
+            width: 'minmax(0,1.2fr)',
+            mobile: 'hidden',
+            withDetails: false,
+          },
         ]}
         setMarkedOptions={(marked) => ({
           to: Route.to,
@@ -656,8 +684,8 @@ const PackagesComponent = () => {
             marked: marked === '' ? undefined : marked,
           },
         })}
-        renderSubComponent={({ row }) =>
-          renderSubComponent({ row, packageIdType, runId: ortRun.id })
+        renderDetails={({ row }) =>
+          renderDetails({ row, packageIdType, runId: ortRun.id, params })
         }
         setCurrentPageOptions={(currentPage) => {
           return {

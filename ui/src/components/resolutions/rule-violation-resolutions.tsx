@@ -30,7 +30,8 @@ import {
 } from '@/helpers/resolutions';
 import { ApiError } from '@/lib/api-error';
 import { toast, toastError } from '@/lib/toast';
-import { ResolutionCard, ResolutionForm } from './shared';
+import { defaultResolutionReason } from './reasons';
+import { ResolutionEntry, ResolutionForm, ResolutionList } from './shared';
 import {
   getDisplayItems,
   getManagedResolutionContext,
@@ -75,12 +76,25 @@ export function RuleViolationResolutions({
   });
 
   return (
-    <div className='flex flex-col gap-2'>
+    <ResolutionList
+      form={
+        !hasAnyResolution && (
+          <ResolutionForm
+            context={createContext}
+            mode='create'
+            defaultValues={{
+              comment: '',
+              reason: defaultResolutionReason[createContext.itemType],
+            }}
+          />
+        )
+      }
+    >
       {displayItems.map((displayItem) => {
         const context = getManagedResolutionContext(createContext, displayItem);
 
         return (
-          <ResolutionCard
+          <ResolutionEntry
             key={displayItem.key}
             displayItem={displayItem}
             editingKey={editingKey}
@@ -100,16 +114,6 @@ export function RuleViolationResolutions({
           />
         );
       })}
-      {!hasAnyResolution && (
-        <ResolutionForm
-          context={createContext}
-          mode='create'
-          defaultValues={{
-            comment: '',
-            reason: 'CANT_FIX_EXCEPTION',
-          }}
-        />
-      )}
-    </div>
+    </ResolutionList>
   );
 }

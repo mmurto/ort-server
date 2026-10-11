@@ -29,6 +29,14 @@ import {
   VulnerabilityResolutionReason,
 } from '@/api/types.gen';
 import {
+  zPatchIssueResolution,
+  zPatchRuleViolationResolution,
+  zPatchVulnerabilityResolution,
+  zPostIssueResolution,
+  zPostRuleViolationResolution,
+  zPostVulnerabilityResolution,
+} from '@/api/zod.gen';
+import {
   getAppliedIssueResolutions,
   getAppliedRuleViolationResolutions,
   getAppliedVulnerabilityResolutions,
@@ -39,6 +47,7 @@ import {
   isRuleViolationItem,
   isVulnerabilityItem,
   ItemWithResolutions,
+  type ResolutionItemType,
 } from '@/helpers/resolutions';
 
 export type ResolutionFormValues = {
@@ -50,7 +59,7 @@ export type ResolutionFormValues = {
 };
 
 export type ManagedResolutionContext = {
-  itemType: 'issue' | 'rule-violation' | 'vulnerability';
+  itemType: ResolutionItemType;
   identifier: string;
   repositoryId: string;
   runId: number;
@@ -85,7 +94,12 @@ export function getManagedResolutionContext(
     };
   }
 
-  return context.itemType === 'vulnerability' ? context : undefined;
+  // Resolutions from the repository configuration or the global resolutions
+  // file can only be changed there.
+  return context.itemType === 'vulnerability' &&
+    displayItem.resolution.source === 'SERVER'
+    ? context
+    : undefined;
 }
 
 function getResolutionIdentityKey(
@@ -197,4 +211,25 @@ export function getDisplayItems(
   }
 
   return [];
+}
+
+/** The schema of the reason and comment of a resolution. */
+export function getResolutionSchema(
+  itemType: ResolutionItemType,
+  mode: 'create' | 'edit'
+) {
+  switch (itemType) {
+    case 'issue':
+      return mode === 'create'
+        ? zPostIssueResolution.omit({ message: true })
+        : zPatchIssueResolution;
+    case 'rule-violation':
+      return mode === 'create'
+        ? zPostRuleViolationResolution.omit({ message: true })
+        : zPatchRuleViolationResolution;
+    case 'vulnerability':
+      return mode === 'create'
+        ? zPostVulnerabilityResolution
+        : zPatchVulnerabilityResolution;
+  }
 }

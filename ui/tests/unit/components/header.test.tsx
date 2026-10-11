@@ -20,13 +20,17 @@
 // @vitest-environment jsdom
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import type { AuthContextProps } from 'react-oidc-context';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { getServerSettingByKey, getSuperuser } from '@/api/sdk.gen';
+import {
+  getOrganizations,
+  getServerSettingByKey,
+  getSuperuser,
+} from '@/api/sdk.gen';
 import { Header } from '@/components/header';
 import { ThemeProvider } from '@/components/theme-provider';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -36,18 +40,21 @@ import { Route as TokenCallbackRoute } from '@/routes/profile/token/callback';
 import { isCompiledByReactCompiler } from '../fixtures/react-compiler';
 
 const auth = vi.hoisted(() => ({ current: undefined as unknown }));
+const navigate = vi.hoisted(() => vi.fn());
 
 vi.mock('react-oidc-context', () => ({ useAuth: () => auth.current }));
 
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: unknown) => ({ options }),
   Link: ({ children }: { children: ReactNode }) => <a>{children}</a>,
-  useNavigate: () => vi.fn(),
+  useNavigate: () => navigate,
+  useParams: () => ({}),
   useRouterState: () => [],
 }));
 
 vi.mock('@/api/sdk.gen', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/api/sdk.gen')>()),
+  getOrganizations: vi.fn(),
   getServerSettingByKey: vi.fn(),
   getSuperuser: vi.fn(),
 }));
@@ -65,6 +72,12 @@ const renderHeader = () => {
   vi.mocked(getSuperuser).mockResolvedValue({
     data: false,
   } as Awaited<ReturnType<typeof getSuperuser>>);
+  vi.mocked(getOrganizations).mockResolvedValue({
+    data: {
+      data: [{ id: 7, name: 'Example Org' }],
+      pagination: { limit: 8, offset: 0, totalCount: 1 },
+    },
+  } as unknown as Awaited<ReturnType<typeof getOrganizations>>);
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -129,5 +142,111 @@ describe('Header', () => {
 
     expect(first.signoutRedirect).not.toHaveBeenCalled();
     expect(second.signoutRedirect).toHaveBeenCalled();
+  });
+
+  it('opens the keyboard shortcuts from the user menu', async () => {
+    const user = userEvent.setup();
+    auth.current = signedInAs('Ada Lovelace');
+    renderHeader();
+
+    await openUserMenu(user);
+    await user.click(
+      await screen.findByRole('menuitem', { name: 'Keyboard shortcuts' })
+    );
+
+    expect(
+      await screen.findByRole('dialog', { name: 'Keyboard shortcuts' })
+    ).toBeInTheDocument();
+  });
+});
+
+describe('command palette', () => {
+  beforeAll(() => {
+    // cmdk scrolls the selected item into view, which jsdom does not implement.
+    Element.prototype.scrollIntoView = () => {};
+  });
+
+  it('opens from the header button and offers actions', async () => {
+    const user = userEvent.setup();
+    auth.current = signedInAs('Ada Lovelace');
+    renderHeader();
+
+    await user.click(screen.getByRole('button', { name: 'Go to… (search)' }));
+
+    const palette = await screen.findByRole('dialog', { name: 'Go to' });
+    expect(within(palette).getByText('Actions')).toBeInTheDocument();
+    expect(
+      within(palette).getByRole('option', { name: /All organizations/ })
+    ).toBeInTheDocument();
+    expect(
+      within(palette).getByRole('option', { name: /Keyboard shortcuts/ })
+    ).toBeInTheDocument();
+    expect(
+      await within(palette).findByRole('option', { name: /Example Org/ })
+    ).toBeInTheDocument();
+  });
+
+  it('opens with Cmd+K and Ctrl+K', async () => {
+    const user = userEvent.setup();
+    auth.current = signedInAs('Ada Lovelace');
+    renderHeader();
+
+    await user.keyboard('{Meta>}k{/Meta}');
+    expect(
+      await screen.findByRole('dialog', { name: 'Go to' })
+    ).toBeInTheDocument();
+
+    await user.keyboard('{Escape}');
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'Go to' })).toBeNull()
+    );
+
+    await user.keyboard('{Control>}k{/Control}');
+    expect(
+      await screen.findByRole('dialog', { name: 'Go to' })
+    ).toBeInTheDocument();
+  });
+
+  it('opens with / and shows the shortcuts with ?', async () => {
+    const user = userEvent.setup();
+    auth.current = signedInAs('Ada Lovelace');
+    renderHeader();
+
+    await user.keyboard('/');
+    expect(
+      await screen.findByRole('dialog', { name: 'Go to' })
+    ).toBeInTheDocument();
+
+    await user.keyboard('{Escape}');
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'Go to' })).toBeNull()
+    );
+
+    await user.keyboard('?');
+    expect(
+      await screen.findByRole('dialog', { name: 'Keyboard shortcuts' })
+    ).toBeInTheDocument();
+  });
+
+  it('goes to the run with the ID typed as a number', async () => {
+    const user = userEvent.setup();
+    auth.current = signedInAs('Ada Lovelace');
+    navigate.mockClear();
+    renderHeader();
+
+    await user.click(screen.getByRole('button', { name: 'Go to… (search)' }));
+    const palette = await screen.findByRole('dialog', { name: 'Go to' });
+    await user.type(within(palette).getByRole('combobox'), '42');
+    await user.click(
+      within(palette).getByRole('option', { name: /Run with ID 42/ })
+    );
+
+    expect(navigate).toHaveBeenCalledWith({
+      to: '/runs/$runId',
+      params: { runId: '42' },
+    });
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'Go to' })).toBeNull()
+    );
   });
 });

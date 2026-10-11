@@ -33,13 +33,16 @@ import {
 } from '@/api/@tanstack/react-query.gen';
 import { zVulnerabilityRating } from '@/api/zod.gen';
 import { VulnerabilityMetrics } from '@/components/charts/vulnerability-metrics';
-import { DataTableCards } from '@/components/data-table-cards/data-table-cards';
+import {
+  DataTableCards,
+  type DataTableCardsDetails,
+} from '@/components/data-table-cards/data-table-cards';
 import {
   CopyableValue,
   EmptyValue,
   FindingText,
   MiddleTruncate,
-  ResolvedMark,
+  ResolutionStateMark,
   SeverityMark,
 } from '@/components/data-table-cards/findings-cells';
 import {
@@ -47,30 +50,23 @@ import {
   sumCounts,
 } from '@/components/data-table-cards/findings-counts';
 import { FindingsFilterChips } from '@/components/data-table-cards/findings-filter-chips';
+import { FindingPanelSection } from '@/components/finding-panel/finding-panel';
 import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { MarkdownRenderer } from '@/components/markdown-renderer';
 import { SheetSection } from '@/components/page-header';
-import { Resolutions } from '@/components/resolutions';
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+  BulkResolve,
+  PendingResolutionsBanner,
+  RESOLUTION_FORM_SELECTOR,
+  Resolutions,
+} from '@/components/resolutions';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { VulnerabilityReferences } from '@/components/vulnerability-references';
 import { capitalize } from '@/helpers/capitalize';
 import { getVulnerabilityRatingBackgroundColor } from '@/helpers/get-status-class';
 import {
@@ -80,8 +76,8 @@ import {
 } from '@/helpers/handle-multisort';
 import { identifierToString } from '@/helpers/identifier-conversion';
 import {
-  getResolutionAccordionDefaultValue,
   getResolutionAccordionLabel,
+  getResolutionState,
   getResolvedStatus,
 } from '@/helpers/resolutions';
 import { getVersionsRelativeToReference } from '@/helpers/versions';
@@ -223,17 +219,17 @@ const VulnerabilitiesComponent = () => {
       id: 'vulnerabilityId',
       header: 'ID',
       cell: ({ row }) => {
-        const resolved = getResolvedStatus(row.original) === 'Resolved';
+        const state = getResolutionState(row.original);
 
         return (
           <div className='flex min-w-0 items-center gap-2'>
             <FindingText
-              resolved={resolved}
+              resolved={state === 'resolved'}
               className='font-mono text-xs font-medium whitespace-nowrap'
             >
               {row.original.vulnerability.externalId}
             </FindingText>
-            {resolved && <ResolvedMark />}
+            <ResolutionStateMark state={state} />
           </div>
         );
       },
@@ -413,19 +409,13 @@ const VulnerabilitiesComponent = () => {
     ...getRunStatisticsOptions({ path: { runId: ortRun.id } }),
   });
 
-  // The run statistics count the vulnerabilities per rating, but know nothing
-  // of the other filters, so the counts are only shown without them.
-  const ratingCounts =
-    packageIdentifier === undefined &&
-    externalId === undefined &&
-    advisor === undefined &&
-    search.itemFix === undefined
-      ? selectCountsByResolution(
-          statistics?.vulnerabilitiesCountTotalByRating,
-          statistics?.vulnerabilitiesCountByRating,
-          search.itemResolved
-        )
-      : undefined;
+  // The run statistics count the vulnerabilities per rating in the whole run,
+  // regardless of the other filters.
+  const ratingCounts = selectCountsByResolution(
+    statistics?.vulnerabilitiesCountTotalByRating,
+    statistics?.vulnerabilitiesCountByRating,
+    search.itemResolved
+  );
 
   const {
     data: totalVulnerabilities,
@@ -461,11 +451,11 @@ const VulnerabilitiesComponent = () => {
     }),
   });
 
-  const renderSubComponent = ({
+  const renderDetails = ({
     row,
   }: {
     row: AppRow<VulnerabilityWithDetails>;
-  }) => {
+  }): DataTableCardsDetails => {
     const vulnerability = row.original.vulnerability;
     let pkgVersion;
     try {
@@ -479,19 +469,39 @@ const VulnerabilitiesComponent = () => {
       pkgVersion || ''
     );
 
-    return (
-      <Accordion
-        type='multiple'
-        className='w-full'
-        defaultValue={getResolutionAccordionDefaultValue(row.original)}
-      >
-        <AccordionItem value='fixed-versions'>
-          <AccordionTrigger className='font-semibold'>
-            First fixed versions
-          </AccordionTrigger>
-          <AccordionContent>
+    return {
+      title: (
+        <span className='font-mono text-[0.875rem]'>
+          {vulnerability.externalId}
+        </span>
+      ),
+      meta: (
+        <>
+          <SeverityMark
+            label={row.original.rating}
+            colorClass={getVulnerabilityRatingBackgroundColor(
+              row.original.rating
+            )}
+          />
+          <ResolutionStateMark state={getResolutionState(row.original)} />
+          <span className='text-muted-foreground'>
+            via {row.original.advisor.name}
+          </span>
+        </>
+      ),
+      content: (
+        <>
+          {vulnerability.summary && (
+            <p className='text-[0.875rem] leading-relaxed'>
+              {vulnerability.summary}
+            </p>
+          )}
+          <FindingPanelSection title='Package'>
+            <VulnerabilityPackage vulnerability={row.original} />
+          </FindingPanelSection>
+          <FindingPanelSection title='First fixed versions'>
             {(row.original.firstFixedVersions?.length ?? 0) > 0 ? (
-              <>
+              <div className='font-mono text-xs'>
                 {relativeVersions.earlierVersions.length > 0 && (
                   <span className='text-muted-foreground'>
                     {relativeVersions.earlierVersions.join(', ')}
@@ -509,79 +519,38 @@ const VulnerabilitiesComponent = () => {
                     {relativeVersions.laterVersions.join(', ')}
                   </span>
                 )}
-              </>
+              </div>
             ) : (
-              <div className='text-muted-foreground text-[0.8125rem]'>
+              <div className='text-muted-foreground'>
                 No fixed versions available.
               </div>
             )}
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem value='resolutions'>
-          <AccordionTrigger className='font-semibold'>
-            {getResolutionAccordionLabel(row.original)}
-          </AccordionTrigger>
-          <AccordionContent>
+          </FindingPanelSection>
+          <FindingPanelSection
+            title={getResolutionAccordionLabel(row.original)}
+          >
             <Resolutions
               item={row.original}
               repositoryId={params.repoId}
               runId={ortRun.id}
             />
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem value='details'>
-          <AccordionTrigger className='font-semibold'>Details</AccordionTrigger>
-          <AccordionContent>
-            <div className='flex flex-col gap-4'>
-              <VulnerabilityMetrics vulnerability={vulnerability} />
-              <div className='font-semibold'>Description</div>
-              <MarkdownRenderer
-                markdown={
-                  vulnerability.description || '_No description available._'
-                }
-              />
-              <div className='mt-2 font-semibold'>
-                Links to vulnerability references
-              </div>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Severity</TableHead>
-                    <TableHead>Scoring system</TableHead>
-                    <TableHead>Score</TableHead>
-                    <TableHead>Vector</TableHead>
-                    <TableHead>Link</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {vulnerability.references
-                    .sort((refA, refB) => (refB.score ?? 0) - (refA.score ?? 0))
-                    .map((reference, index) => (
-                      <TableRow key={index}>
-                        <TableCell>{reference.severity || '-'}</TableCell>
-                        <TableCell>{reference.scoringSystem || '-'}</TableCell>
-                        <TableCell>{reference.score || '-'}</TableCell>
-                        <TableCell className='font-mono text-xs break-all whitespace-normal'>
-                          {reference.vector || '-'}
-                        </TableCell>
-                        <TableCell>
-                          <Link
-                            className='link break-all'
-                            to={reference.url}
-                            target='_blank'
-                          >
-                            {reference.url}
-                          </Link>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-    );
+          </FindingPanelSection>
+          <FindingPanelSection title='Scores'>
+            <VulnerabilityMetrics vulnerability={vulnerability} />
+          </FindingPanelSection>
+          <FindingPanelSection title='Description'>
+            <MarkdownRenderer
+              markdown={
+                vulnerability.description || '_No description available._'
+              }
+            />
+          </FindingPanelSection>
+          <FindingPanelSection title='References'>
+            <VulnerabilityReferences references={vulnerability.references} />
+          </FindingPanelSection>
+        </>
+      ),
+    };
   };
 
   const [expanded, setExpanded] = useState<ExpandedState>(
@@ -660,11 +629,13 @@ const VulnerabilitiesComponent = () => {
           count: ratingCounts ? (ratingCounts[value] ?? 0) : undefined,
         }))}
         total={sumCounts(ratingCounts)}
+        countsTitle='The number in the whole run, regardless of the other filters'
         selected={rating}
         onSelect={(ratings) => {
           navigate({ search: { ...search, page: 1, rating: ratings } });
         }}
       />
+      <PendingResolutionsBanner items={vulnerabilities.data} run={params} />
       <DataTableCards
         onClearFilters={() =>
           navigate({
@@ -704,12 +675,18 @@ const VulnerabilitiesComponent = () => {
             filters: [columnId],
             mobile: 'sub',
           },
-          { id: 'summaryText', width: 'minmax(0,2fr)', mobile: 'hidden' },
+          {
+            id: 'summaryText',
+            width: 'minmax(0,2fr)',
+            mobile: 'hidden',
+            withDetails: false,
+          },
           {
             id: 'advisor',
             width: 'minmax(0,0.7fr)',
             filters: ['advisorName'],
             mobile: 'hidden',
+            withDetails: false,
           },
           {
             id: 'fix',
@@ -728,7 +705,17 @@ const VulnerabilitiesComponent = () => {
           },
         })}
         noResultsContent={noResultsContent}
-        renderSubComponent={renderSubComponent}
+        renderDetails={renderDetails}
+        resolveTarget={RESOLUTION_FORM_SELECTOR}
+        bulkActions={({ rows, clear }) => (
+          <BulkResolve
+            items={rows.map((row) => row.original)}
+            itemType='vulnerability'
+            repositoryId={params.repoId}
+            runId={ortRun.id}
+            onDone={clear}
+          />
+        )}
         setCurrentPageOptions={(currentPage) => {
           return {
             to: Route.to,

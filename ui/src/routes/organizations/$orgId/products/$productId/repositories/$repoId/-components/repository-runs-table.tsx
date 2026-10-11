@@ -24,7 +24,7 @@ import {
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { GitCompare, Repeat, View } from 'lucide-react';
+import { GitCompare, View } from 'lucide-react';
 import { useState } from 'react';
 
 import { Organization, OrtRunSummary, Product, Repository } from '@/api';
@@ -81,6 +81,7 @@ import {
   selectRunForComparison,
   type RunComparisonSelection,
 } from './repository-runs-table-utils';
+import { RerunButton } from './rerun-button';
 import { RunConfigurationDiffDialog } from './run-configuration-diff-dialog';
 import { RunItemCounts } from './run-item-counts';
 
@@ -435,35 +436,14 @@ const createColumns = (
               </TooltipTrigger>
               <TooltipContent>View the details of this run</TooltipContent>
             </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant='outline'
-                  asChild
-                  size='icon'
-                  disabled={canTriggerRun === false}
-                >
-                  <Link
-                    to='/organizations/$orgId/products/$productId/repositories/$repoId/create-run'
-                    params={{
-                      orgId: row.original.organizationId.toString(),
-                      productId: row.original.productId.toString(),
-                      repoId: row.original.repositoryId.toString(),
-                    }}
-                    search={{
-                      rerunIndex: row.original.index,
-                    }}
-                  >
-                    <Repeat />
-                  </Link>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {canTriggerRun !== false
-                  ? 'Create a new run based on this run'
-                  : 'Insufficient permissions.'}
-              </TooltipContent>
-            </Tooltip>
+            <RerunButton
+              orgId={row.original.organizationId.toString()}
+              productId={row.original.productId.toString()}
+              repoId={row.original.repositoryId.toString()}
+              runIndex={row.original.index}
+              canTriggerRun={canTriggerRun}
+              compact
+            />
             <DeleteDialog
               thingName={
                 <>

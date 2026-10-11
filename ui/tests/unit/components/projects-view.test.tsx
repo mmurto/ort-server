@@ -44,7 +44,7 @@ vi.mock('@/api/sdk.gen', async (importOriginal) => ({
 
 vi.mock('@/components/licenses', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/components/licenses')>()),
-  LicensesAccordion: () => null,
+  LicensesList: () => null,
 }));
 
 const ProjectsComponent = Route.options.component!;
@@ -138,24 +138,40 @@ describe('projects table', () => {
     expect(container).toHaveTextContent('7 in total, 2 matching filters');
   });
 
-  it('expands a row', async () => {
-    const { user } = renderProjects();
+  it('opens the details of a project by clicking its row', async () => {
+    const { router, user } = renderProjects();
 
     const definitionFile = await findDefinitionFile('project-1');
     expect(
       screen.queryByText('Description of project-1')
     ).not.toBeInTheDocument();
 
-    await user.click(
-      within(definitionFile.closest<HTMLElement>('[role="row"]')!).getByRole(
-        'button',
-        { name: 'Expand row' }
-      )
-    );
+    await user.click(definitionFile);
 
-    expect(await screen.findByText('Description of project-1')).toBeVisible();
+    const details = await screen.findByRole('dialog');
+    expect(within(details).getByText('Description of project-1')).toBeVisible();
+    expect(
+      within(details).getByRole('heading', { name: 'Licenses' })
+    ).toBeVisible();
     expect(
       screen.queryByText('Description of project-2')
     ).not.toBeInTheDocument();
+    // The URL holds the open project by its ID.
+    await waitFor(() =>
+      expect(router.state.location.search).toMatchObject({
+        marked: 'Maven:com.example:project-1:1.0',
+      })
+    );
+
+    const graphLink = within(details).getByRole('link', {
+      name: 'Show in dependency graph',
+    });
+    const target = new URL(graphLink.getAttribute('href')!, 'http://localhost');
+    expect(target.pathname).toBe(
+      '/organizations/1/products/2/repositories/3/runs/4/dependencies'
+    );
+    expect(target.searchParams.get('search')).toContain(
+      'Maven:com.example:project-1:1.0'
+    );
   });
 });

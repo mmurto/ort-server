@@ -42,7 +42,8 @@ vi.mock('@/api/sdk.gen', async (importOriginal) => ({
   getRunIssues: mocks.issues,
 }));
 
-vi.mock('@/components/resolutions', () => ({
+vi.mock('@/components/resolutions', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/components/resolutions')>()),
   Resolutions: () => null,
 }));
 
@@ -193,13 +194,14 @@ describe('issues table', () => {
   const findIssue = (name: string) =>
     screen.findByRole('link', { name: purlOf(name) });
 
-  // The button that expands and collapses the row of the given issue.
-  const getDetailsButton = (name: string) =>
+  // A cell of the row of the given issue that is not a link, so clicking it
+  // opens the details of the issue.
+  const getRowCell = (name: string) =>
     within(
       screen
         .getByRole('link', { name: purlOf(name) })
         .closest<HTMLElement>('[role="row"]')!
-    ).getByRole('button', { name: /^(Expand|Collapse) row$/ });
+    ).getAllByRole('gridcell')[0]!;
 
   const lastIssuesQuery = () =>
     mocks.issues.mock.calls.at(-1)?.[0].query as IssuesQuery;
@@ -260,28 +262,38 @@ describe('issues table', () => {
     });
   });
 
-  it('expands and collapses a row', async () => {
-    const { user } = renderIssues();
+  it('opens and closes the details of an issue', async () => {
+    const { router, user } = renderIssues();
 
     expect(await findIssue('issue-1')).toBeVisible();
     expect(screen.queryByText(/^Details of/)).not.toBeInTheDocument();
 
-    await user.click(getDetailsButton('issue-1'));
+    await user.click(getRowCell('issue-1'));
 
-    expect(await screen.findByText('Details of issue-1')).toBeVisible();
-    expect(getDetailsButton('issue-1')).toHaveAccessibleName('Collapse row');
+    // On narrow screens, as in jsdom, the details cover the page.
+    const details = await screen.findByRole('dialog');
+    expect(within(details).getByText('Details of issue-1')).toBeVisible();
+    expect(
+      within(details).getByRole('heading', { name: 'Message' })
+    ).toBeVisible();
     expect(screen.queryByText('Details of issue-2')).not.toBeInTheDocument();
-    expect(getDetailsButton('issue-2')).toHaveAccessibleName('Expand row');
+    await waitFor(() =>
+      expect(router.state.location.search).toMatchObject({ marked: '0' })
+    );
 
-    await user.click(getDetailsButton('issue-1'));
+    await user.click(
+      within(details).getByRole('button', { name: 'Close details' })
+    );
 
     await waitFor(() =>
       expect(screen.queryByText('Details of issue-1')).not.toBeInTheDocument()
     );
-    expect(getDetailsButton('issue-1')).toHaveAccessibleName('Expand row');
+    await waitFor(() =>
+      expect(router.state.location.search).not.toHaveProperty('marked')
+    );
   });
 
-  it('expands the row marked in the URL', async () => {
+  it('opens the details of the issue marked in the URL', async () => {
     renderIssues('?marked=1');
 
     expect(await screen.findByText('Details of issue-2')).toBeVisible();
@@ -292,7 +304,7 @@ describe('issues table', () => {
     const { queryClient, user } = renderIssues();
 
     expect(await findIssue('issue-1')).toBeVisible();
-    await user.click(getDetailsButton('issue-1'));
+    await user.click(getRowCell('issue-1'));
     expect(await screen.findByText('Details of issue-1')).toBeVisible();
 
     nameTag = 'renamed';
@@ -306,7 +318,7 @@ describe('issues table', () => {
     expect(
       screen.queryByRole('link', { name: purlOf('issue-1') })
     ).not.toBeInTheDocument();
-    // The table collapses expanded rows when it receives new data.
+    // The details close when the table receives new data.
     expect(screen.queryByText(/^Details of/)).not.toBeInTheDocument();
   });
 });

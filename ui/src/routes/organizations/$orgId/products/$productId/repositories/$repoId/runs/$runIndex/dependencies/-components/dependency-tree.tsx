@@ -53,6 +53,7 @@ import {
   type ExpandableRow,
   type TreeExpansion,
 } from './dependency-tree-model';
+import type { RenderPackageExtras } from './dependency-tree-row';
 import { VirtualizedDependencyTree } from './virtualized-dependency-tree';
 
 type TreeSnapshot = {
@@ -238,6 +239,7 @@ type DependencyTreeProps = {
   searchTerm: string;
   /** The number of rows after which generating rows pauses. */
   rowLimit?: number;
+  renderPackageExtras?: RenderPackageExtras;
 };
 
 /**
@@ -252,6 +254,7 @@ export const DependencyTree = memo(function DependencyTree({
   packageIdType,
   searchTerm,
   rowLimit = ROW_LIMIT,
+  renderPackageExtras,
 }: DependencyTreeProps) {
   // Manual expansion changes are stored by occurrence identifier, so keep the
   // identifiers for as long as this tree exists, also across graph changes.
@@ -293,6 +296,7 @@ export const DependencyTree = memo(function DependencyTree({
         packageIdType={packageIdType}
         searchTerm={searchTerm}
         onToggle={treeRows.toggle}
+        renderPackageExtras={renderPackageExtras}
       />
 
       {status === 'running' && rows.length >= CHUNK_ROW_LIMIT && (

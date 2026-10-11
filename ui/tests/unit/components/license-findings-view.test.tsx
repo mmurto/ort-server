@@ -23,14 +23,16 @@ import {
   defaultParseSearch,
   defaultStringifySearch,
 } from '@tanstack/react-router';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import {
-  act,
-  fireEvent,
-  screen,
-  waitFor,
-  within,
-} from '@testing-library/react';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 
 import type {
   GetRunDetectedLicenseFindingsData,
@@ -44,7 +46,6 @@ import { LicenseFindingsView } from '@/routes/organizations/$orgId/products/$pro
 import {
   licenseFindingsSearchParameterSchema,
   packageIdTypeSchema,
-  type LicenseFindingsSearchParameters,
 } from '@/schemas';
 import { useUserSettingsStore } from '@/store/user-settings.store';
 import { renderInteractiveWithRouter } from '../fixtures/render-interactive';
@@ -141,12 +142,30 @@ const findingsRequests = (license: string, id = firstId) =>
     ([options]) =>
       options.path.license === license && options.path.identifier === id
   );
-const openedSearch = (): LicenseFindingsSearchParameters => ({
-  licenseTables: {
-    MIT: { packages: { [firstId]: {}, [secondId]: {} } },
-    'Apache-2.0': { packages: { [firstId]: {} } },
-  },
-});
+// The row of a license in the grid of detected licenses.
+const licenseRow = (license: string) =>
+  within(screen.getByRole('grid', { name: 'Detected licenses' }))
+    .getAllByRole('row')
+    .find(
+      (row) =>
+        within(row).queryAllByRole('gridcell')[0]?.textContent === license
+    )!;
+// Clicking the package count of a license opens its packages in the details.
+const openLicense = async (
+  user: ReturnType<typeof renderView>['user'],
+  license: string
+) => {
+  await screen.findByRole('grid', { name: 'Detected licenses' });
+  await user.click(within(licenseRow(license)).getAllByRole('gridcell')[1]!);
+  return screen.findByRole('region', { name: `Packages for ${license}` });
+};
+// The button that shows or hides the findings of a package.
+const packageToggle = (license: string, id = firstId) =>
+  within(
+    within(packageRegion(license))
+      .getByRole('link', { name: id })
+      .closest<HTMLElement>('[role="row"]')!
+  ).getByRole('button', { name: /^(Expand|Collapse) row$/ });
 
 beforeAll(() => {
   // The page size selector relies on DOM APIs that jsdom does not implement.
@@ -155,8 +174,26 @@ beforeAll(() => {
   Element.prototype.scrollIntoView = () => {};
 });
 
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 beforeEach(() => {
   vi.clearAllMocks();
+  // Show the details next to the grid, as on wide screens.
+  vi.spyOn(window, 'matchMedia').mockImplementation(
+    (media: string) =>
+      ({
+        media,
+        matches: true,
+        onchange: null,
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => false,
+      }) as MediaQueryList
+  );
   packages[0]!.purl = 'pkg:maven/com.example/library-0@1.0';
   useUserSettingsStore.setState({
     packageIdType: packageIdTypeSchema.enum.ORT_ID,
@@ -209,28 +246,21 @@ beforeEach(() => {
   );
 });
 
-describe('independent detected-license tables', () => {
-  it('opens multiple licenses and packages and deletes only the closed subtree', async () => {
+describe('detected-license details', () => {
+  it('shows the packages of one license and the findings of its packages', async () => {
     const { user, router } = renderView();
-    await user.click(
-      await screen.findByRole('button', { name: 'Packages for MIT' })
-    );
-    await user.click(
-      screen.getByRole('button', { name: 'Packages for Apache-2.0' })
-    );
-    await user.click(
-      await screen.findByRole('button', { name: findingsName('MIT') })
-    );
-    await user.click(
-      screen.getByRole('button', { name: findingsName('MIT', secondId) })
-    );
-    await user.click(
-      screen.getByRole('button', { name: findingsName('Apache-2.0') })
-    );
-    await screen.findByRole('region', { name: findingsName('Apache-2.0') });
-    expect(currentSearch(router)).toEqual(openedSearch());
-    expect(findingsRegion('MIT', secondId)).toBeVisible();
+    await openLicense(user, 'MIT');
+    expect(currentSearch(router)).toEqual({ licenseTables: { MIT: {} } });
 
+    await user.click(packageToggle('MIT'));
+    await user.click(packageToggle('MIT', secondId));
+    await screen.findByRole('region', { name: findingsName('MIT', secondId) });
+    expect(findingsRegion('MIT')).toBeVisible();
+    expect(currentSearch(router)).toEqual({
+      licenseTables: { MIT: { packages: { [firstId]: {}, [secondId]: {} } } },
+    });
+
+    // Hiding the findings of a package discards their controls.
     await user.click(
       within(findingsRegion('MIT')).getByRole('link', {
         name: 'Go to next page',
@@ -241,38 +271,44 @@ describe('independent detected-license tables', () => {
         currentSearch(router).licenseTables?.MIT?.packages?.[firstId]
       ).toEqual({ page: 2 })
     );
-    const sibling = currentSearch(router).licenseTables?.['Apache-2.0'];
-    await user.click(screen.getByRole('button', { name: findingsName('MIT') }));
+    await user.click(packageToggle('MIT'));
     expect(currentSearch(router).licenseTables?.MIT?.packages).toEqual({
       [secondId]: {},
     });
-    await user.click(screen.getByRole('button', { name: findingsName('MIT') }));
-    await screen.findByRole('region', { name: findingsName('MIT') });
-    expect(
-      currentSearch(router).licenseTables?.MIT?.packages?.[firstId]
-    ).toEqual({});
-
-    await user.click(screen.getByRole('button', { name: 'Packages for MIT' }));
-    expect(currentSearch(router).licenseTables).toEqual({
-      'Apache-2.0': sibling,
-    });
-    expect(
-      screen.queryByRole('region', { name: 'Packages for MIT' })
-    ).not.toBeInTheDocument();
-    expect(findingsRegion('Apache-2.0')).toBeVisible();
-    await user.click(screen.getByRole('button', { name: 'Packages for MIT' }));
-    await screen.findByRole('region', { name: 'Packages for MIT' });
-    expect(currentSearch(router).licenseTables?.MIT).toEqual({});
     expect(
       screen.queryByRole('region', { name: findingsName('MIT') })
     ).not.toBeInTheDocument();
   });
 
+  it('shows one license at a time and closes the details', async () => {
+    const { user, router } = renderView({
+      licenseTables: { MIT: { packages: { [firstId]: {} } } },
+    });
+    await screen.findByRole('region', { name: findingsName('MIT') });
+
+    await user.click(
+      within(licenseRow('Apache-2.0')).getAllByRole('gridcell')[1]!
+    );
+    await screen.findByRole('region', { name: 'Packages for Apache-2.0' });
+    expect(
+      screen.queryByRole('region', { name: 'Packages for MIT' })
+    ).not.toBeInTheDocument();
+    expect(currentSearch(router)).toEqual({
+      licenseTables: { 'Apache-2.0': {} },
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Close details' }));
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('region', { name: 'Packages for Apache-2.0' })
+      ).not.toBeInTheDocument()
+    );
+    expect(currentSearch(router)).toEqual({});
+  });
+
   it('links package IDs to their entries in the packages table', async () => {
     const { user } = renderView();
-    await user.click(
-      await screen.findByRole('button', { name: 'Packages for MIT' })
-    );
+    await openLicense(user, 'MIT');
 
     const link = await within(packageRegion('MIT')).findByRole('link', {
       name: firstId,
@@ -295,9 +331,7 @@ describe('independent detected-license tables', () => {
       packageIdType: packageIdTypeSchema.enum.PURL,
     });
     const { user } = renderView();
-    await user.click(
-      await screen.findByRole('button', { name: 'Packages for MIT' })
-    );
+    await openLicense(user, 'MIT');
 
     const link = await within(packageRegion('MIT')).findByRole('link', {
       name: firstId,
@@ -314,9 +348,13 @@ describe('independent detected-license tables', () => {
     });
   });
 
-  it('paginates findings independently, including the same package under two licenses', async () => {
-    const { user, router } = renderView(openedSearch());
-    await screen.findByRole('region', { name: findingsName('Apache-2.0') });
+  it('paginates the findings of each package independently', async () => {
+    const { user, router } = renderView({
+      licenseTables: {
+        MIT: { packages: { [firstId]: {}, [secondId]: {} } },
+      },
+    });
+    await screen.findByRole('region', { name: findingsName('MIT', secondId) });
     await user.click(
       within(findingsRegion('MIT')).getByRole('link', {
         name: 'Go to next page',
@@ -329,20 +367,14 @@ describe('independent detected-license tables', () => {
       })
     );
     expect(findingsRequests('MIT', secondId)).toHaveLength(1);
-    expect(findingsRequests('Apache-2.0')).toHaveLength(1);
     await user.click(
       within(findingsRegion('MIT', secondId)).getByRole('link', {
         name: 'Go to next page',
       })
     );
-    await user.click(
-      within(findingsRegion('Apache-2.0')).getByRole('link', {
-        name: 'Go to next page',
-      })
-    );
     await waitFor(() =>
       expect(
-        currentSearch(router).licenseTables?.['Apache-2.0']?.packages?.[firstId]
+        currentSearch(router).licenseTables?.MIT?.packages?.[secondId]
       ).toEqual({ page: 2 })
     );
 
@@ -357,18 +389,15 @@ describe('independent detected-license tables', () => {
     expect(
       currentSearch(router).licenseTables?.MIT?.packages?.[secondId]
     ).toEqual({ page: 2 });
-    expect(
-      currentSearch(router).licenseTables?.['Apache-2.0']?.packages?.[firstId]
-    ).toEqual({ page: 2 });
     expect(packageRequests('MIT')).toHaveLength(1);
-    expect(packageRequests('Apache-2.0')).toHaveLength(1);
   });
 
-  it('keeps package pagination, sorting and filters local to their license', async () => {
+  it('keeps package pagination, sorting and filters to the open license', async () => {
     const { user, router } = renderView({
-      licenseTables: { MIT: {}, 'Apache-2.0': {} },
+      page: 1,
+      licenseTables: { MIT: {} },
     });
-    await screen.findByRole('region', { name: 'Packages for Apache-2.0' });
+    await screen.findByRole('region', { name: 'Packages for MIT' });
     await user.click(
       within(packageRegion('MIT')).getByRole('link', {
         name: 'Go to next page',
@@ -385,10 +414,10 @@ describe('independent detected-license tables', () => {
       )
     );
     const header = () =>
-      within(packageRegion('MIT')).getByRole('columnheader', {
-        name: 'ORT ID',
-      });
-    await user.click(within(header()).getByRole('link'));
+      within(packageRegion('MIT')).getAllByRole('columnheader')[0]!;
+    await user.click(
+      within(header()).getByRole('link', { name: 'ORT ID, not sorted' })
+    );
     await waitFor(() =>
       expect(packageRequests('MIT').at(-1)?.[0].query.sort).toBe('identifier')
     );
@@ -412,134 +441,86 @@ describe('independent detected-license tables', () => {
         })
       )
     );
-    expect(currentSearch(router).licenseTables?.['Apache-2.0']).toEqual({});
-    expect(packageRequests('Apache-2.0')).toHaveLength(1);
+    // The licenses stay where they were.
+    expect(currentSearch(router).page).toBe(1);
+    expect(mocks.licenses.mock.calls.at(-1)?.[0].query.offset).toBe(0);
   });
 
-  it('restores an exact shared view after closing a parent and through browser history', async () => {
+  it('restores a shared view and follows the browser history', async () => {
     const original = renderView({
-      licenseTables: {
-        MIT: { page: 2 },
-        'Apache-2.0': { packages: { [firstId]: { page: 3 } } },
-      },
-    });
-    await screen.findByRole('region', { name: findingsName('Apache-2.0') });
-    await original.user.click(
-      screen.getByRole('button', { name: 'Packages for MIT' })
-    );
-    const shared = currentSearch(original.router);
-    expect(shared.licenseTables).not.toHaveProperty('MIT');
-    await act(async () => {
-      original.router.history.back();
+      licenseTables: { MIT: { page: 2 } },
     });
     await screen.findByRole('region', { name: 'Packages for MIT' });
     expect(within(packageRegion('MIT')).getByRole('spinbutton')).toHaveValue(2);
-    await act(async () => {
-      original.router.history.forward();
-    });
+    await original.user.click(
+      screen.getByRole('button', { name: 'Close details' })
+    );
     await waitFor(() =>
       expect(
         screen.queryByRole('region', { name: 'Packages for MIT' })
       ).not.toBeInTheDocument()
     );
+    await original.user.click(
+      within(licenseRow('Apache-2.0')).getAllByRole('gridcell')[1]!
+    );
+    await screen.findByRole('region', { name: 'Packages for Apache-2.0' });
+    await original.user.click(
+      within(packageRegion('Apache-2.0')).getByRole('link', {
+        name: 'Go to next page',
+      })
+    );
+    await waitFor(() =>
+      expect(currentSearch(original.router).licenseTables).toEqual({
+        'Apache-2.0': { page: 2 },
+      })
+    );
+    const shared = currentSearch(original.router);
+    await act(async () => {
+      original.router.history.back();
+    });
+    await waitFor(() =>
+      expect(currentSearch(original.router).licenseTables).toEqual({
+        'Apache-2.0': {},
+      })
+    );
     original.unmount();
+
     renderView(shared);
-    await screen.findByRole('region', { name: findingsName('Apache-2.0') });
+    await screen.findByRole('region', { name: 'Packages for Apache-2.0' });
     expect(
-      screen.getByRole('button', { name: 'Packages for MIT' })
-    ).toHaveAttribute('aria-expanded', 'false');
-    expect(
-      within(findingsRegion('Apache-2.0')).getByRole('spinbutton')
-    ).toHaveValue(3);
+      within(packageRegion('Apache-2.0')).getByRole('spinbutton')
+    ).toHaveValue(2);
   });
 
-  it('retains still-open state across outer pages without fetching off-page descendants', async () => {
+  it('retains the open license across pages without fetching it off the page', async () => {
     const { user, router, container } = renderView({
       licenseTables: { MIT: {} },
     });
     await screen.findByRole('region', { name: 'Packages for MIT' });
-    const nextLinks = within(container).getAllByRole('link', {
-      name: 'Go to next page',
-    });
-    await user.click(nextLinks.at(-1)!);
+    const licensesPagination = () =>
+      within(container).getAllByRole('link', { name: 'Go to next page' })[0]!;
+    await user.click(licensesPagination());
     await waitFor(() =>
       expect(
-        screen.queryByRole('button', { name: 'Packages for MIT' })
+        screen.queryByRole('region', { name: 'Packages for MIT' })
       ).not.toBeInTheDocument()
     );
     expect(currentSearch(router).licenseTables).toEqual({ MIT: {} });
     expect(packageRequests('MIT')).toHaveLength(1);
     await user.click(screen.getByRole('link', { name: 'Go to previous page' }));
     await screen.findByRole('region', { name: 'Packages for MIT' });
-    expect(
-      screen.getByRole('button', { name: 'Packages for MIT' })
-    ).toHaveAttribute('aria-expanded', 'true');
   });
 
   it('returns to the first page when the license sorting changes', async () => {
     const { user, router } = renderView({ page: 3 });
-    const header = await screen.findByRole('columnheader', {
-      name: 'Detected License',
-    });
-    await user.click(within(header).getByRole('link'));
+    await user.click(
+      await screen.findByRole('link', { name: 'Detected License, not sorted' })
+    );
 
     await waitFor(() => expect(currentSearch(router).page).toBe(1));
     expect(currentSearch(router).sortBy).toEqual([
       { id: 'license', desc: false },
     ]);
-  });
-
-  it('scrolls a newly opened panel into view at both levels', async () => {
-    const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView');
-    const { user } = renderView();
-    const license = await screen.findByRole('button', {
-      name: 'Packages for MIT',
-    });
-    const licenseRow = license.closest('tr');
-    await user.click(license);
-    await screen.findByRole('region', { name: 'Packages for MIT' });
-
-    // The panel must already be on screen, or there is nothing to scroll to.
-    expect(scrollIntoView).toHaveBeenCalledTimes(1);
-    expect(scrollIntoView.mock.contexts[0]).toBe(licenseRow);
-    expect(licenseRow).toHaveAttribute('style', 'scroll-margin-top: 4rem;');
-    expect(
-      (scrollIntoView.mock.contexts[0] as Element).nextElementSibling
-    ).toContainElement(
-      screen.getByRole('region', { name: 'Packages for MIT' })
-    );
-
-    const pkg = screen.getByRole('button', { name: findingsName('MIT') });
-    const packageRow = pkg.closest('tr');
-    await user.click(pkg);
-    await screen.findByRole('region', { name: findingsName('MIT') });
-
-    expect(scrollIntoView).toHaveBeenCalledTimes(2);
-    expect(scrollIntoView.mock.contexts[1]).toBe(packageRow);
-    expect(packageRow).toHaveAttribute('style', 'scroll-margin-top: 4rem;');
-
-    // Closing scrolls nowhere: the viewer stays where they are.
-    await user.click(pkg);
-    await user.click(license);
-    expect(scrollIntoView).toHaveBeenCalledTimes(2);
-  });
-
-  it('merges rapid sibling expansions against the latest URL state', async () => {
-    const { router } = renderView();
-    const mit = await screen.findByRole('button', { name: 'Packages for MIT' });
-    const apache = screen.getByRole('button', {
-      name: 'Packages for Apache-2.0',
-    });
-    act(() => {
-      fireEvent.click(mit);
-      fireEvent.click(apache);
-    });
-    await waitFor(() =>
-      expect(currentSearch(router).licenseTables).toEqual({
-        MIT: {},
-        'Apache-2.0': {},
-      })
-    );
   });
 });
 
@@ -568,32 +549,44 @@ describe('detected-license URL compatibility', () => {
         MIT: { packageMarked: firstId, packages: { [firstId]: { page: 2 } } },
       },
     });
-    await user.click(screen.getByRole('button', { name: findingsName('MIT') }));
+    await user.click(packageToggle('MIT'));
     expect(currentSearch(router).licenseTables?.MIT).toEqual({});
   });
 
-  it('consumes old unscoped controls only for the first opened branch', async () => {
+  it('opens the details from the links of the package details', async () => {
+    renderView({
+      detectedLicense: ['MIT'],
+      marked: 'MIT',
+      page: 1,
+      licenseTables: {
+        MIT: { packageMarked: firstId, packages: { [firstId]: {} } },
+      },
+    });
+    await screen.findByRole('region', { name: findingsName('MIT') });
+    expect(mocks.licenses.mock.calls.at(-1)?.[0].query.license).toBe('MIT');
+  });
+
+  it('consumes old unscoped controls only for the first opened license', async () => {
     const { user, router } = renderView({
       packagePageSize: 20,
       findingsPage: 3,
     });
-    await user.click(
-      await screen.findByRole('button', { name: 'Packages for MIT' })
-    );
-    await user.click(
-      screen.getByRole('button', { name: 'Packages for Apache-2.0' })
-    );
-    await user.click(
-      await screen.findByRole('button', { name: findingsName('MIT') })
-    );
+    await openLicense(user, 'MIT');
+    await user.click(packageToggle('MIT'));
     await screen.findByRole('region', { name: findingsName('MIT') });
     expect(packageRequests('MIT')[0]?.[0].query.limit).toBe(20);
-    expect(packageRequests('Apache-2.0')[0]?.[0].query.limit).toBe(10);
     expect(findingsRequests('MIT')[0]?.[0].query.offset).toBe(20);
     expect(currentSearch(router)).not.toHaveProperty('findingsPage');
+    expect(currentSearch(router)).not.toHaveProperty('packagePageSize');
     expect(currentSearch(router).licenseTables?.MIT).not.toHaveProperty(
       'legacyFindings'
     );
+
+    await user.click(
+      within(licenseRow('Apache-2.0')).getAllByRole('gridcell')[1]!
+    );
+    await screen.findByRole('region', { name: 'Packages for Apache-2.0' });
+    expect(packageRequests('Apache-2.0')[0]?.[0].query.limit).toBe(10);
   });
 
   it('uses URL filter semantics despite a different display preference', async () => {
@@ -624,10 +617,6 @@ describe('detected-license URL compatibility', () => {
           sortBy: [{ id: 'identifier', desc: false }],
           packages: { [firstId]: { page: 2 } },
         },
-        'Apache-2.0': {
-          packageId: 'library',
-          packageIdType: packageIdTypeSchema.enum.ORT_ID,
-        },
       },
     });
     await screen.findByRole('region', { name: findingsName('MIT') });
@@ -640,7 +629,6 @@ describe('detected-license URL compatibility', () => {
     await waitFor(() =>
       expect(currentSearch(router).licenseTables).toEqual({
         MIT: { packages: { [firstId]: { page: 2 } } },
-        'Apache-2.0': {},
       })
     );
     expect(router.history.location.state.__TSR_index).toBe(historyIndex);
@@ -649,15 +637,12 @@ describe('detected-license URL compatibility', () => {
     );
   });
 
-  it('ignores malformed entries without losing valid open panels', async () => {
+  it('ignores malformed entries without losing a valid open license', async () => {
     const { router } = renderView({
       licenseTables: { MIT: { page: -2 }, 'Apache-2.0': null },
     });
     await screen.findByRole('region', { name: 'Packages for MIT' });
     expect(currentSearch(router).licenseTables).toEqual({ MIT: {} });
-    expect(
-      screen.getByRole('button', { name: 'Packages for Apache-2.0' })
-    ).toHaveAttribute('aria-expanded', 'false');
     expect(packageRequests('Apache-2.0')).toHaveLength(0);
   });
 });

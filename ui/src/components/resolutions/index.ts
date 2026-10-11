@@ -18,3 +18,6 @@
  */
 
 export { Resolutions } from './resolutions';
+export { BulkResolve } from './bulk-resolve';
+export { PendingResolutionsBanner } from './pending-resolutions-banner';
+export { RESOLUTION_FORM_SELECTOR } from './shared';

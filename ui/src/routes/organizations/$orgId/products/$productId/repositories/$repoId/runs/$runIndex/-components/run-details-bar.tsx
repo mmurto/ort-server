@@ -17,9 +17,9 @@
  * License-Filename: LICENSE
  */
 
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link, useLocation } from '@tanstack/react-router';
-import { ChevronLeft, ChevronRight, Download, Repeat } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download } from 'lucide-react';
 
 import {
   getRepositoryRunOptions,
@@ -40,6 +40,7 @@ import {
 import { config } from '@/config';
 import { useRepositoryPermission } from '@/hooks/use-authorization';
 import { cn } from '@/lib/utils';
+import { RerunButton } from '@/routes/organizations/$orgId/products/$productId/repositories/$repoId/-components/rerun-button';
 
 type RunDetailsBarProps = {
   className?: string;
@@ -94,13 +95,33 @@ export const RunDetailsBar = ({ className }: RunDetailsBarProps) => {
   );
 
   const currentIndex = Number.parseInt(params.runIndex);
-  const currentPosition = allRunIndexes.indexOf(currentIndex);
+  const latestIndex = allRunIndexes.at(-1) ?? currentIndex;
+  const isOlderRun =
+    allRunIndexes.length === 100 && !allRunIndexes.includes(currentIndex);
+
+  // An older run is not among the newest 100. Its neighbours are read from a
+  // window of runs around it, placed as if no runs had been deleted.
+  const { data: olderRunIndexes } = useQuery({
+    ...getRepositoryRunsOptions({
+      path: { repositoryId: Number.parseInt(params.repoId) },
+      query: {
+        limit: 100,
+        offset: Math.max(0, latestIndex - currentIndex - 50),
+        sort: '-index',
+      },
+    }),
+    enabled: isOlderRun,
+    select: (data) => data.data.map((run) => run.index).sort((a, b) => a - b),
+  });
+
+  const runIndexes = isOlderRun ? (olderRunIndexes ?? []) : allRunIndexes;
+  const currentPosition = runIndexes.indexOf(currentIndex);
 
   const previousIndex =
-    currentPosition > 0 ? allRunIndexes[currentPosition - 1] : null;
+    currentPosition > 0 ? runIndexes[currentPosition - 1] : null;
   const nextIndex =
-    currentPosition < allRunIndexes.length - 1
-      ? allRunIndexes[currentPosition + 1]
+    currentPosition >= 0 && currentPosition < runIndexes.length - 1
+      ? runIndexes[currentPosition + 1]
       : null;
 
   const hasPrevious = previousIndex !== null;
@@ -276,34 +297,13 @@ export const RunDetailsBar = ({ className }: RunDetailsBarProps) => {
               Download reports
             </Link>
           </Button>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span
-                className='inline-flex'
-                tabIndex={canTriggerRun === false ? 0 : undefined}
-              >
-                <Button asChild disabled={canTriggerRun === false}>
-                  <Link
-                    to='/organizations/$orgId/products/$productId/repositories/$repoId/create-run'
-                    params={{
-                      orgId: params.orgId,
-                      productId: params.productId,
-                      repoId: params.repoId,
-                    }}
-                    search={{
-                      rerunIndex: ortRun.index,
-                    }}
-                  >
-                    <Repeat />
-                    Rerun
-                  </Link>
-                </Button>
-              </span>
-            </TooltipTrigger>
-            {canTriggerRun === false && (
-              <TooltipContent>Insufficient permissions.</TooltipContent>
-            )}
-          </Tooltip>
+          <RerunButton
+            orgId={params.orgId}
+            productId={params.productId}
+            repoId={params.repoId}
+            runIndex={ortRun.index}
+            canTriggerRun={canTriggerRun}
+          />
         </div>
       </div>
     </header>

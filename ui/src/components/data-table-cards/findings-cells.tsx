@@ -43,12 +43,34 @@ export const SeverityMark = ({
   </span>
 );
 
-/** The mark of a resolved finding; unresolved findings are left unmarked. */
-export const ResolvedMark = () => (
-  <span className='text-ok text-[0.6875rem] font-semibold tracking-[0.04em] whitespace-nowrap uppercase'>
-    Resolved
-  </span>
-);
+/**
+ * The mark of a resolved finding; unresolved findings are left unmarked. A
+ * finding resolved only by resolutions that apply to the next run gets a muted
+ * pending mark instead.
+ */
+export const ResolvedMark = ({ pending = false }: { pending?: boolean }) =>
+  pending ? (
+    <span
+      className='text-muted-foreground text-[0.6875rem] font-semibold tracking-[0.04em] whitespace-nowrap uppercase'
+      title='Resolved with the next run'
+    >
+      Resolved (pending)
+    </span>
+  ) : (
+    <span className='text-ok text-[0.6875rem] font-semibold tracking-[0.04em] whitespace-nowrap uppercase'>
+      Resolved
+    </span>
+  );
+
+/** The mark of a finding by its resolution state; unresolved ones get none. */
+export const ResolutionStateMark = ({
+  state,
+}: {
+  state: 'resolved' | 'pending' | 'unresolved';
+}) =>
+  state === 'unresolved' ? null : (
+    <ResolvedMark pending={state === 'pending'} />
+  );
 
 /** The main text of a finding, struck through once the finding is resolved. */
 export const FindingText = ({

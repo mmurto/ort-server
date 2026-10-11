@@ -27,6 +27,7 @@ import homeIcon from '@/assets/home-icon.svg';
 import { OrgSwitcher } from '@/components/org-switcher';
 import { useRail } from '@/components/rail-context';
 import { useTheme } from '@/components/theme-provider-context';
+import { useUser } from '@/hooks/use-user';
 import { cn } from '@/lib/utils';
 
 export const PRODUCT_NAME = 'ORT Server';
@@ -72,6 +73,44 @@ const Brand = () => {
   );
 };
 
+/**
+ * The navigation of the pages outside an organization and the administration,
+ * which have no sections of their own.
+ */
+const GlobalNav = () => {
+  const { isSuperuser } = useUser();
+  const items = [
+    { to: '/', label: 'Home', exact: true },
+    {
+      to: '/organizations',
+      label: 'Organizations',
+      exact: true,
+    },
+    ...(isSuperuser
+      ? [{ to: '/admin', label: 'Administration', exact: false }]
+      : []),
+    { to: '/profile', label: 'Profile', exact: false },
+    { to: '/settings', label: 'Preferences', exact: true },
+    { to: '/about', label: 'About', exact: true },
+  ] as const;
+
+  return (
+    <nav aria-label='General' className='mt-3 flex flex-col'>
+      {items.map((item) => (
+        <Link
+          key={item.to}
+          to={item.to}
+          className={railItemClass}
+          activeProps={{ className: railActiveClass, 'aria-current': 'page' }}
+          activeOptions={{ exact: item.exact }}
+        >
+          {item.label}
+        </Link>
+      ))}
+    </nav>
+  );
+};
+
 export const AppRail = ({
   slotRef,
 }: {
@@ -80,6 +119,15 @@ export const AppRail = ({
   const { open, setOpen } = useRail();
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
+  });
+  // Organizations and the administration put their own sections in the rail.
+  const hasSections = useRouterState({
+    select: (state) =>
+      state.matches.some(
+        (match) =>
+          match.routeId.startsWith('/organizations/$orgId') ||
+          match.routeId.startsWith('/admin')
+      ),
   });
 
   // Close the drawer whenever the route changes.
@@ -116,6 +164,7 @@ export const AppRail = ({
           </button>
         </div>
         <OrgSwitcher />
+        {!hasSections && <GlobalNav />}
         <div ref={slotRef} className='flex flex-col pb-6' />
       </aside>
     </>

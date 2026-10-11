@@ -18,7 +18,7 @@
  */
 
 import { X } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import type { DependencyGraph } from '@/api';
 import { Button } from '@/components/ui/button';
@@ -34,17 +34,30 @@ import {
   scopeHasSearchMatch,
 } from './dependency-graph-utils';
 import { DependencyTree } from './dependency-tree';
+import type { RenderPackageExtras } from './dependency-tree-row';
 
 export const ManagerDependenciesTab = ({
   graph,
   managerName,
+  initialSearch = '',
+  onSearchChange,
+  renderPackageExtras,
 }: {
   graph: DependencyGraph;
   managerName: string;
+  /** The search to start with, e.g. from the URL. */
+  initialSearch?: string;
+  /** Called with the search once the user stopped typing. */
+  onSearchChange?: (search: string) => void;
+  renderPackageExtras?: RenderPackageExtras;
 }) => {
-  const [searchValue, setSearchValue] = useState('');
+  const [searchValue, setSearchValue] = useState(initialSearch);
   const packageIdType = useUserSettingsStore((state) => state.packageIdType);
   const debouncedSearchValue = useDebounce(searchValue);
+
+  useEffect(() => {
+    onSearchChange?.(debouncedSearchValue);
+  }, [debouncedSearchValue, onSearchChange]);
   const searchTerm = normalizeSearchTerm(debouncedSearchValue);
 
   const adjacency = buildAdjacencyMap(graph);
@@ -102,6 +115,7 @@ export const ManagerDependenciesTab = ({
         matchesNodeSubtree={matchesNodeSubtree}
         packageIdType={packageIdType}
         searchTerm={searchTerm}
+        renderPackageExtras={renderPackageExtras}
       />
     </TabsContent>
   );

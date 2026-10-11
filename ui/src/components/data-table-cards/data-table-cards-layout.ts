@@ -47,6 +47,12 @@ export type DataTableCardsColumn = {
   mobile?: DataTableCardsMobilePlacement;
   /** Additional classes for the cells of this column. */
   className?: string;
+  /**
+   * Whether the column stays while the details of a row are open next to the
+   * grid; defaults to `true`. Turn it off for long secondary text, so the main
+   * columns keep their room.
+   */
+  withDetails?: boolean;
 };
 
 export const mobilePlacementClasses: Record<
@@ -79,10 +85,15 @@ export function resolveLayout<TData extends RowData>(
 
 /**
  * The CSS grid template of the columns, plus a trailing column for the row
- * actions and the sort menu.
+ * actions and the sort menu, and a leading one for the checkboxes of
+ * selectable rows.
  */
-export function getGridTemplate(layout: DataTableCardsColumn[]) {
+export function getGridTemplate(
+  layout: DataTableCardsColumn[],
+  selectable = false
+) {
   return [
+    ...(selectable ? ['max-content'] : []),
     ...layout.map((column) => column.width ?? 'minmax(0,1fr)'),
     'max-content',
   ].join(' ');

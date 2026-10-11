@@ -83,7 +83,7 @@ it('copies a curation template before the Software Heritage link', async () => {
   );
   const writeText = vi.spyOn(navigator.clipboard, 'writeText');
   const path = await screen.findByText(finding.path);
-  const pathCell = path.closest('td');
+  const pathCell = path.closest<HTMLElement>('[role="gridcell"]');
 
   expect(pathCell).not.toBeNull();
 

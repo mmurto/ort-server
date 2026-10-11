@@ -18,7 +18,7 @@
  */
 
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
+import { useParams, useSearch } from '@tanstack/react-router';
 import { ExpandedState } from '@tanstack/react-table';
 import { useState } from 'react';
 
@@ -28,8 +28,12 @@ import {
   getRunSnippetFindingProvenancesOptions,
 } from '@/api/@tanstack/react-query.gen';
 import { BreakableString } from '@/components/breakable-string';
-import { DataTableCards } from '@/components/data-table-cards/data-table-cards';
+import {
+  DataTableCards,
+  type DataTableCardsDetails,
+} from '@/components/data-table-cards/data-table-cards';
 import { CopyableValue } from '@/components/data-table-cards/findings-cells';
+import { FindingPanelSection } from '@/components/finding-panel/finding-panel';
 import { LoadError } from '@/components/load-error';
 import { SheetSection } from '@/components/page-header';
 import { Sha1Component } from '@/components/sha1-component';
@@ -43,6 +47,7 @@ import {
   selectNoTableState,
   useAppTable,
 } from '@/hooks/use-app-table';
+import type { AppRow } from '@/hooks/use-app-table';
 import { ProvenanceSnippetFindingsTable } from './provenance-snippet-findings-table';
 import {
   getSnippetFindingProvenancePageCount,
@@ -54,6 +59,9 @@ const provenanceColumnHelper =
 const defaultPageSize = 10;
 const snippetFindingsRoutePath =
   '/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/snippet-findings/';
+
+const findingsCount = (count: number) =>
+  `${count} finding${count === 1 ? '' : 's'}`;
 
 const isValidRevision = (
   revision: string | null | undefined
@@ -104,10 +112,11 @@ const ProvenanceDetails = ({
 export const SnippetFindingsView = () => {
   const params = useParams({ from: snippetFindingsRoutePath });
   const search = useSearch({ from: snippetFindingsRoutePath });
-  const navigate = useNavigate({ from: snippetFindingsRoutePath });
   const pageIndex = search.page ? search.page - 1 : 0;
   const pageSize = search.pageSize ? search.pageSize : defaultPageSize;
-  const [expanded, setExpanded] = useState<ExpandedState>({});
+  const [expanded, setExpanded] = useState<ExpandedState>(
+    search.marked ? { [search.marked]: true } : {}
+  );
 
   const { data: ortRun } = useSuspenseQuery({
     ...getRepositoryRunOptions({
@@ -164,8 +173,7 @@ export const SnippetFindingsView = () => {
       header: 'Findings',
       cell: ({ row }) => (
         <span className='text-muted-foreground whitespace-nowrap tabular-nums'>
-          {row.original.snippetFindingCount} finding
-          {row.original.snippetFindingCount === 1 ? '' : 's'}
+          {findingsCount(row.original.snippetFindingCount)}
         </span>
       ),
     }),
@@ -225,6 +233,41 @@ export const SnippetFindingsView = () => {
     return <LoadError error={error} />;
   }
 
+  const renderDetails = ({
+    row,
+  }: {
+    row: AppRow<SnippetFindingProvenance>;
+  }): DataTableCardsDetails => {
+    const identifier = identifierToString(row.original.identifier);
+
+    return {
+      title: <span className='font-mono text-[0.875rem]'>{identifier}</span>,
+      meta: (
+        <>
+          <span className='label-caps text-foreground'>
+            {row.original.provenanceType}
+          </span>
+          <span className='text-muted-foreground tabular-nums'>
+            {findingsCount(row.original.snippetFindingCount)}
+          </span>
+        </>
+      ),
+      content: (
+        <>
+          <FindingPanelSection title='Provenance'>
+            <ProvenanceDetails provenance={row.original} />
+          </FindingPanelSection>
+          <FindingPanelSection title='Snippet findings'>
+            <ProvenanceSnippetFindingsTable
+              runId={ortRun.id}
+              provenance={row.original}
+            />
+          </FindingPanelSection>
+        </>
+      ),
+    };
+  };
+
   const scannerWasIncludedInRun = ortRun.jobs.scanner != null;
   const noResultsContent = !scannerWasIncludedInRun ? (
     <div className='text-muted-foreground text-[0.8125rem]'>
@@ -264,28 +307,29 @@ export const SnippetFindingsView = () => {
             mobile: 'end',
           },
           { id: 'findings', width: 'max-content', mobile: 'end' },
-          { id: 'provenance', width: 'minmax(0,2fr)', mobile: 'sub' },
+          {
+            id: 'provenance',
+            width: 'minmax(0,2fr)',
+            mobile: 'sub',
+            withDetails: false,
+          },
         ]}
-        onToggleExpanded={(row) => {
-          const isOpening = !row.getIsExpanded();
-
-          setExpanded(isOpening ? { [row.id]: true } : {});
-          navigate({
-            search: {
-              ...search,
-              findingsPage: 1,
-              snippetsPage: 1,
-            },
-            replace: true,
-          });
-        }}
+        setMarkedOptions={(marked) => ({
+          to: '.',
+          search: {
+            ...search,
+            // If no items are marked for inspection, remove the "marked"
+            // parameter from search parameters.
+            marked: marked === '' ? undefined : marked,
+            // The findings and snippets of another provenance start on their
+            // first page.
+            ...(marked === search.marked
+              ? {}
+              : { findingsPage: undefined, snippetsPage: undefined }),
+          },
+        })}
         noResultsContent={noResultsContent}
-        renderSubComponent={({ row }) => (
-          <ProvenanceSnippetFindingsTable
-            runId={ortRun.id}
-            provenance={row.original}
-          />
-        )}
+        renderDetails={renderDetails}
         setCurrentPageOptions={(currentPage) => {
           return {
             to: '.',

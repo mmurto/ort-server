@@ -20,6 +20,7 @@
 // @vitest-environment jsdom
 
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import type { ComponentProps } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { DependencyGraph } from '@/api';
@@ -69,10 +70,17 @@ vi.mock(
 
 const SEARCH_DELAY_MS = 500;
 
-const renderTab = (graph: DependencyGraph) => {
+const renderTab = (
+  graph: DependencyGraph,
+  props: Partial<ComponentProps<typeof ManagerDependenciesTab>> = {}
+) => {
   const ui = (tabGraph: DependencyGraph) => (
     <Tabs defaultValue='Gradle'>
-      <ManagerDependenciesTab graph={tabGraph} managerName='Gradle' />
+      <ManagerDependenciesTab
+        graph={tabGraph}
+        managerName='Gradle'
+        {...props}
+      />
     </Tabs>
   );
   const result = render(ui(graph));
@@ -285,5 +293,28 @@ describe('ManagerDependenciesTab', () => {
     fireEvent.click(screen.getByRole('button', { name: /Gradle::app:1.0/ }));
 
     expect(isShown('compileClasspath')).toBe(false);
+  });
+
+  it('starts with the given search and reports the search after the delay', () => {
+    const onSearchChange = vi.fn();
+    renderTab(createDependencyGraph(), {
+      initialSearch: 'logback',
+      onSearchChange,
+    });
+
+    expect(
+      screen.getByPlaceholderText('Search package ID or PURL...')
+    ).toHaveValue('logback');
+    expect(isShown(packageLabel('logback-core'))).toBe(true);
+    expect(onSearchChange).toHaveBeenLastCalledWith('logback');
+
+    typeSearch('json');
+    waitForSearch(SEARCH_DELAY_MS - 1);
+
+    expect(onSearchChange).not.toHaveBeenCalledWith('json');
+
+    waitForSearch(1);
+
+    expect(onSearchChange).toHaveBeenLastCalledWith('json');
   });
 });

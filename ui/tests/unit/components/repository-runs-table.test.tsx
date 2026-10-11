@@ -41,6 +41,7 @@ const mocks = vi.hoisted(() => ({
   repository: vi.fn(),
   run: vi.fn(),
   runs: vi.fn(),
+  superuser: vi.fn(),
 }));
 
 vi.mock('@/api/sdk.gen', async (importOriginal) => ({
@@ -50,7 +51,11 @@ vi.mock('@/api/sdk.gen', async (importOriginal) => ({
   getRepository: mocks.repository,
   getRepositoryRun: mocks.run,
   getRepositoryRuns: mocks.runs,
+  getSuperuser: mocks.superuser,
 }));
+
+// The rerun button reads the user to decide which job options to keep.
+vi.mock('react-oidc-context', () => ({ useAuth: () => ({ user: null }) }));
 
 // Poll the runs often, so that the tests do not have to wait for refreshed data.
 vi.mock('@/config', async (importOriginal) => {
@@ -178,6 +183,7 @@ describe('RepositoryRunsTable', () => {
       },
     });
     mocks.run.mockResolvedValue({ data: {} });
+    mocks.superuser.mockResolvedValue({ data: false });
     mocks.runs.mockResolvedValue(
       runs(
         createRun(3, 'ACTIVE'),
@@ -262,5 +268,25 @@ describe('RepositoryRunsTable', () => {
     expect(await findToggle(2)).toHaveAccessibleName(selectedLabel);
     expect(await findToggle(2)).toHaveAttribute('aria-pressed', 'true');
     expect(await findToggle(3)).toHaveAccessibleName(selectComparedLabel);
+  });
+
+  it('offers to rerun each run', async () => {
+    const { user } = renderTable();
+
+    for (const runIndex of [1, 2, 3]) {
+      expect(
+        await screen.findByRole('button', { name: `Rerun run ${runIndex}` })
+      ).toBeEnabled();
+    }
+
+    await user.click(screen.getByRole('button', { name: 'Rerun run 2' }));
+
+    expect(
+      await screen.findByRole('link', { name: 'Change configuration…' })
+    ).toHaveAttribute(
+      'href',
+      '/organizations/1/products/2/repositories/3/create-run?rerunIndex=2'
+    );
+    expect(screen.getByRole('button', { name: 'Start run' })).toBeVisible();
   });
 });

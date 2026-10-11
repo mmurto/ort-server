@@ -27,33 +27,19 @@ import {
   type UseFormReturn,
 } from 'react-hook-form';
 
-import { Accordion } from '@/components/ui/accordion';
 import type { CreateRunFormValues } from '@/routes/organizations/$orgId/products/$productId/repositories/$repoId/_repo-layout/create-run/-components';
 
 type FormHarnessOptions = {
   defaultValues: DefaultValues<CreateRunFormValues>;
-  openAccordion?: string;
 };
 
 export function renderWithForm(
   children: (form: UseFormReturn<CreateRunFormValues>) => ReactNode,
-  { defaultValues, openAccordion }: FormHarnessOptions
+  { defaultValues }: FormHarnessOptions
 ) {
   function FormHarness() {
     const form = useForm<CreateRunFormValues>({ defaultValues });
-    const content = children(form);
-
-    return (
-      <FormProvider {...form}>
-        {openAccordion ? (
-          <Accordion type='multiple' defaultValue={[openAccordion]}>
-            {content}
-          </Accordion>
-        ) : (
-          content
-        )}
-      </FormProvider>
-    );
+    return <FormProvider {...form}>{children(form)}</FormProvider>;
   }
 
   return renderToStaticMarkup(<FormHarness />);

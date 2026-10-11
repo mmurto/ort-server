@@ -205,6 +205,10 @@ const ViewAll = ({ children }: { children: ReactNode }) => (
   </span>
 );
 
+// A preview row links to its item: filtered to it on its page and opened.
+const previewRowClassName =
+  'hover:bg-muted/60 focus-visible:bg-muted/60 -mx-1 grid gap-x-3 px-1 py-2 text-[0.8125rem] transition-colors';
+
 const RuleViolationsPreview = ({ ortRun, params }: PreviewProps) => {
   const packageIdType = useUserSettingsStore((state) => state.packageIdType);
   const status = ortRun.jobs.evaluator?.status;
@@ -242,36 +246,58 @@ const RuleViolationsPreview = ({ ortRun, params }: PreviewProps) => {
         <PreviewEmpty>No unresolved rule violations.</PreviewEmpty>
       ) : (
         <ul className='divide-y'>
-          {(data?.data ?? []).map((violation, index) => (
-            <li
-              key={index}
-              className='grid grid-cols-[5.5rem_minmax(0,1fr)] gap-x-3 py-2 text-[0.8125rem]'
-            >
-              <SeverityMark
-                label={violation.severity}
-                colorClass={getRuleViolationSeverityBackgroundColor(
-                  violation.severity
-                )}
-              />
-              <div className='min-w-0'>
-                <div className='truncate font-mono text-xs font-medium'>
-                  {violation.rule}
-                </div>
-                {violation.id || violation.purl ? (
-                  <div className='text-muted-foreground truncate font-mono text-xs'>
-                    {getPackageIdString(
-                      { packageId: violation.id, purl: violation.purl },
-                      packageIdType
+          {(data?.data ?? []).map((violation, index) => {
+            // The package or project, as the page filters by it.
+            const subject =
+              (violation.id || violation.purl
+                ? getPackageIdString(
+                    { packageId: violation.id, purl: violation.purl },
+                    packageIdType
+                  )
+                : undefined) || undefined;
+
+            return (
+              <li key={index}>
+                <Link
+                  to='/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/rule-violations'
+                  params={params}
+                  search={{
+                    rule: [violation.rule],
+                    pkgId: subject,
+                    itemResolved: ['Unresolved'],
+                    sortBy: [{ id: 'severity', desc: true }],
+                    marked: '0',
+                  }}
+                  aria-label={`${violation.severity} rule violation ${violation.rule}${subject ? ` in ${subject}` : ''}`}
+                  className={cn(
+                    previewRowClassName,
+                    'grid-cols-[5.5rem_minmax(0,1fr)]'
+                  )}
+                >
+                  <SeverityMark
+                    label={violation.severity}
+                    colorClass={getRuleViolationSeverityBackgroundColor(
+                      violation.severity
+                    )}
+                  />
+                  <div className='min-w-0'>
+                    <div className='truncate font-mono text-xs font-medium'>
+                      {violation.rule}
+                    </div>
+                    {subject ? (
+                      <div className='text-muted-foreground truncate font-mono text-xs'>
+                        {subject}
+                      </div>
+                    ) : (
+                      <div className='text-muted-foreground truncate text-xs'>
+                        {violation.license ?? violation.message}
+                      </div>
                     )}
                   </div>
-                ) : (
-                  <div className='text-muted-foreground truncate text-xs'>
-                    {violation.license ?? violation.message}
-                  </div>
-                )}
-              </div>
-            </li>
-          ))}
+                </Link>
+              </li>
+            );
+          })}
           {!data &&
             Array.from({ length: 4 }).map((_, i) => (
               <li key={i} className='py-2.5'>
@@ -325,38 +351,55 @@ const VulnerabilitiesPreview = ({ ortRun, params }: PreviewProps) => {
             const score = Math.max(
               ...item.vulnerability.references.map((r) => r.score ?? 0)
             );
+            const pkgId =
+              getPackageIdString(
+                { packageId: item.identifier, purl: item.purl },
+                packageIdType
+              ) || undefined;
+
             return (
-              <li
-                key={index}
-                className='grid grid-cols-[5.5rem_minmax(0,1fr)_auto] gap-x-3 py-2 text-[0.8125rem]'
-              >
-                <SeverityMark
-                  label={item.rating}
-                  colorClass={getVulnerabilityRatingBackgroundColor(
-                    item.rating
+              <li key={index}>
+                <Link
+                  to='/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/vulnerabilities'
+                  params={params}
+                  search={{
+                    externalId: item.vulnerability.externalId,
+                    pkgId,
+                    itemResolved: ['Unresolved'],
+                    sortBy: [{ id: 'rating', desc: true }],
+                    marked: '0',
+                  }}
+                  aria-label={`${item.rating} vulnerability ${item.vulnerability.externalId}${pkgId ? ` in ${pkgId}` : ''}`}
+                  className={cn(
+                    previewRowClassName,
+                    'grid-cols-[5.5rem_minmax(0,1fr)_auto]'
                   )}
-                />
-                <div className='min-w-0'>
-                  <div className='truncate font-mono text-xs font-medium'>
-                    {item.vulnerability.externalId}
+                >
+                  <SeverityMark
+                    label={item.rating}
+                    colorClass={getVulnerabilityRatingBackgroundColor(
+                      item.rating
+                    )}
+                  />
+                  <div className='min-w-0'>
+                    <div className='truncate font-mono text-xs font-medium'>
+                      {item.vulnerability.externalId}
+                    </div>
+                    <div className='text-muted-foreground truncate font-mono text-xs'>
+                      {pkgId}
+                    </div>
                   </div>
-                  <div className='text-muted-foreground truncate font-mono text-xs'>
-                    {getPackageIdString(
-                      { packageId: item.identifier, purl: item.purl },
-                      packageIdType
+                  <div className='text-muted-foreground text-right text-xs'>
+                    {score > 0 && (
+                      <>
+                        <span className='text-foreground font-medium'>
+                          {score.toFixed(1)}
+                        </span>{' '}
+                        CVSS
+                      </>
                     )}
                   </div>
-                </div>
-                <div className='text-muted-foreground text-right text-xs'>
-                  {score > 0 && (
-                    <>
-                      <span className='text-foreground font-medium'>
-                        {score.toFixed(1)}
-                      </span>{' '}
-                      CVSS
-                    </>
-                  )}
-                </div>
+                </Link>
               </li>
             );
           })}

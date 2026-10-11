@@ -29,6 +29,7 @@ import {
 import { MarkItems } from '@/components/data-table/mark-items';
 import { NoResults } from '@/components/data-table/no-results';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import type { AppRow } from '@/hooks/use-app-table';
 import { cn } from '@/lib/utils';
 
@@ -37,13 +38,21 @@ interface DataTableCardsRowsProps<TData extends RowData> {
   layout: DataTableCardsColumn[];
   rowId: (index: number) => string;
   selectedIndex: number;
+  /** The row whose details are open in a panel, or -1. */
+  openIndex?: number;
   onSelect: (index: number) => void;
+  /** Opens a row's details when the row is clicked. */
+  onActivate?: (index: number) => void;
   onToggle: (row: AppRow<TData>) => void;
   renderSubComponent?: (props: { row: AppRow<TData> }) => React.ReactElement;
   setMarkedOptions?: (marked: string) => LinkOptions;
   noResultsContent?: React.ReactNode;
   filtersActive?: boolean;
   onClearFilters?: () => void;
+  /** The ids of the rows checked for a bulk action, for selectable rows. */
+  checkedIds?: ReadonlySet<string>;
+  /** Checks or unchecks a row; `range` extends it from the last one. */
+  onToggleChecked?: (index: number, range: boolean) => void;
 }
 
 // The row actions stay in the layout, so they do not shift the row, and in the
@@ -57,13 +66,17 @@ export function DataTableCardsRows<TData extends RowData>({
   layout,
   rowId,
   selectedIndex,
+  openIndex = -1,
   onSelect,
+  onActivate,
   onToggle,
   renderSubComponent,
   setMarkedOptions,
   noResultsContent,
   filtersActive = false,
   onClearFilters,
+  checkedIds,
+  onToggleChecked,
 }: DataTableCardsRowsProps<TData>) {
   // The rows keep their identity when a row is expanded or a column is hidden;
   // only their methods return the new state. React Compiler would reuse what
@@ -93,6 +106,7 @@ export function DataTableCardsRows<TData extends RowData>({
     const isSelected = index === selectedIndex;
     const canExpand = !!renderSubComponent && row.getCanExpand();
     const isExpanded = canExpand && row.getIsExpanded();
+    const isChecked = checkedIds?.has(row.id) ?? false;
     const cells = new Map(
       row.getVisibleCells().map((cell) => [cell.column.id, cell])
     );
@@ -105,14 +119,45 @@ export function DataTableCardsRows<TData extends RowData>({
           aria-selected={isSelected}
           aria-expanded={canExpand ? isExpanded : undefined}
           data-state={isSelected ? 'selected' : undefined}
+          data-open={index === openIndex ? '' : undefined}
+          data-checked={isChecked ? '' : undefined}
           className={cn(
             'group/finding hover:bg-muted/60 flex flex-wrap items-center border-b px-2 py-2 transition-colors max-md:gap-x-3 max-md:gap-y-1',
             'md:col-span-full md:grid md:min-h-9 md:grid-cols-subgrid md:py-1.5',
-            'data-[state=selected]:bg-muted data-[state=selected]:shadow-[inset_2px_0_0_var(--brand)]'
+            'data-[state=selected]:bg-muted data-[state=selected]:shadow-[inset_2px_0_0_var(--brand)]',
+            onActivate && 'data-open:bg-muted cursor-pointer',
+            'data-checked:bg-muted/40'
           )}
-          onClick={() => onSelect(index)}
+          onClick={(event) => {
+            // Links and buttons in the row keep their own action.
+            if (
+              event.target instanceof Element &&
+              event.target.closest('a, button, input, [role="checkbox"]')
+            ) {
+              onSelect(index);
+              return;
+            }
+            (onActivate ?? onSelect)(index);
+          }}
           onFocus={() => onSelect(index)}
         >
+          {onToggleChecked && (
+            <div
+              role='gridcell'
+              className='flex items-center max-md:order-0 max-md:shrink-0'
+            >
+              <Checkbox
+                aria-label={`Select item ${index + 1}`}
+                checked={isChecked}
+                onClick={(event) => {
+                  // The checkbox follows the selection, which also handles
+                  // ranges with Shift.
+                  event.preventDefault();
+                  onToggleChecked(index, event.shiftKey);
+                }}
+              />
+            </div>
+          )}
           {layout.map((column) => {
             const cell = cells.get(column.id);
 

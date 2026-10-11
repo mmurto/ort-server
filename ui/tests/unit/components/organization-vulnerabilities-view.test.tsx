@@ -132,11 +132,11 @@ const renderVulnerabilities = (search = '') =>
 const findVulnerability = (name: string) =>
   screen.findByText(`Summary of ${name}`);
 
-// The button that expands and collapses the row of the given vulnerability.
-const getDetailsButton = (name: string) =>
+// The cell of the given vulnerability that opens its details when clicked.
+const getDetailsCell = (name: string) =>
   within(
     screen.getByText(`Summary of ${name}`).closest<HTMLElement>('[role="row"]')!
-  ).getByRole('button', { name: /^(Expand|Collapse) row$/ });
+  ).getAllByRole('gridcell')[0]!;
 
 // The package IDs that the "repositories" links of the cards search for.
 const getLinkedPackageIds = () =>
@@ -229,6 +229,21 @@ describe('organization vulnerabilities table', () => {
     expect(container).toHaveTextContent('25 in total, 13 matching filters');
   });
 
+  it('keeps the total count on the rating chips while filters are active', async () => {
+    renderVulnerabilities('?externalId=CVE-2026');
+
+    expect(await findVulnerability('filtered-1')).toBeVisible();
+    const all = within(
+      screen.getByRole('group', { name: 'Filter by rating' })
+    ).getByRole('button', { name: /^All/ });
+
+    expect(all).toHaveTextContent('All25');
+    expect(all).toHaveAttribute(
+      'title',
+      'The number of all vulnerabilities in this organization, regardless of the filters'
+    );
+  });
+
   it('applies sorting and the page from the URL', async () => {
     const { router } = renderVulnerabilities();
 
@@ -293,30 +308,37 @@ describe('organization vulnerabilities table', () => {
     );
   });
 
-  it('expands and collapses a row', async () => {
-    const { user } = renderVulnerabilities();
+  it('opens and closes the details of a row', async () => {
+    const { router, user } = renderVulnerabilities();
 
     expect(await findVulnerability('vuln-1')).toBeVisible();
     expect(screen.queryByText(/^Description of/)).not.toBeInTheDocument();
 
-    await user.click(getDetailsButton('vuln-1'));
+    await user.click(getDetailsCell('vuln-1'));
 
-    expect(await screen.findByText('Description of vuln-1')).toBeVisible();
-    expect(getDetailsButton('vuln-1')).toHaveAccessibleName('Collapse row');
+    const details = await screen.findByRole('dialog');
+    expect(within(details).getByText('Description of vuln-1')).toBeVisible();
+    expect(
+      within(details).getByRole('heading', { name: 'References' })
+    ).toBeVisible();
     expect(screen.queryByText('Description of vuln-2')).not.toBeInTheDocument();
-    expect(getDetailsButton('vuln-2')).toHaveAccessibleName('Expand row');
+    await waitFor(() =>
+      expect(router.state.location.search).toEqual({ marked: '0' })
+    );
 
-    await user.click(getDetailsButton('vuln-1'));
+    await user.click(
+      within(details).getByRole('button', { name: 'Close details' })
+    );
 
     await waitFor(() =>
       expect(
         screen.queryByText('Description of vuln-1')
       ).not.toBeInTheDocument()
     );
-    expect(getDetailsButton('vuln-1')).toHaveAccessibleName('Expand row');
+    await waitFor(() => expect(router.state.location.search).toEqual({}));
   });
 
-  it('expands the row marked in the URL', async () => {
+  it('opens the details of the row marked in the URL', async () => {
     renderVulnerabilities('?marked=1');
 
     expect(await screen.findByText('Description of vuln-2')).toBeVisible();
@@ -327,7 +349,7 @@ describe('organization vulnerabilities table', () => {
     const { queryClient, user } = renderVulnerabilities();
 
     expect(await findVulnerability('vuln-1')).toBeVisible();
-    await user.click(getDetailsButton('vuln-1'));
+    await user.click(getDetailsCell('vuln-1'));
     expect(await screen.findByText('Description of vuln-1')).toBeVisible();
 
     nameTag = 'renamed';
@@ -335,7 +357,7 @@ describe('organization vulnerabilities table', () => {
 
     expect(await findVulnerability('renamed-1')).toBeVisible();
     expect(screen.queryByText('Summary of vuln-1')).not.toBeInTheDocument();
-    // The table collapses expanded rows when it receives new data.
+    // The details close when the table receives new data.
     expect(screen.queryByText(/^Description of/)).not.toBeInTheDocument();
   });
 

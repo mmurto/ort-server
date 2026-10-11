@@ -42,6 +42,10 @@ import { LastRunDate } from '../products/$productId/-components/last-run-date';
 import { LastRunStatus } from '../products/$productId/-components/last-run-status';
 import { TotalRuns } from '../products/$productId/-components/total-runs';
 import { ProductItemCounts } from './product-item-counts';
+import {
+  ProductLatestRunDate,
+  ProductLatestRunStatuses,
+} from './product-latest-runs';
 
 const columnHelper = createAppColumnHelper<Product>();
 
@@ -103,9 +107,10 @@ export const ProductRunStatusCell = ({ product }: { product: Product }) => {
       {data.pagination.totalCount === 1 && data.data[0] ? (
         <LastRunStatus repoId={data.data[0].id} />
       ) : (
-        <span className='text-muted-foreground text-[0.8125rem]'>
-          Contains {data.pagination.totalCount} repositories
-        </span>
+        <ProductLatestRunStatuses
+          productId={product.id}
+          repositoryCount={data.pagination.totalCount}
+        />
       )}
       <div className='flex'>
         <ProductItemCounts productId={product.id} />
@@ -139,7 +144,9 @@ export const ProductLastRunDateCell = ({ product }: { product: Product }) => {
 
   if (data.pagination.totalCount === 1 && data.data[0])
     return <LastRunDate repoId={data.data[0].id} />;
-  else return null;
+  if (data.pagination.totalCount > 1)
+    return <ProductLatestRunDate productId={product.id} />;
+  return null;
 };
 
 export const ProductJobStatusCell = ({ product }: { product: Product }) => {

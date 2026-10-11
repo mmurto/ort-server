@@ -25,7 +25,10 @@ import { PageHeader } from '@/components/page-header';
 import { useUser } from '@/hooks/use-user';
 import { useHomeFavorites, useHomeRecentRuns } from '@/providers/home-data';
 import { HomeFavoritesSection } from './-components/home-favorites-section';
-import { HomeOrganizationsSection } from './-components/home-organizations-section';
+import {
+  HomeOrganizationsList,
+  HomeOrganizationsSection,
+} from './-components/home-organizations-section';
 import { HomeRecentRunsSection } from './-components/home-recent-runs-section';
 
 const PRODUCT_NAME = 'ORT Server';
@@ -33,6 +36,7 @@ const PRODUCT_NAME = 'ORT Server';
 const HomePage = () => {
   const favorites = useHomeFavorites();
   const recentRuns = useHomeRecentRuns();
+  const isNew = favorites.length === 0 && recentRuns.length === 0;
   const user = useUser();
   const userDisplayName =
     user.fullName || user.username || user.user?.profile.email;
@@ -51,10 +55,13 @@ const HomePage = () => {
         description='Your favorites and the runs you started recently. Both are kept in this browser only.'
         actions={<HomeOrganizationsSection />}
       />
+      {/* Before anything is starred or started here, the organizations lead the way in. */}
+      {isNew && <HomeOrganizationsList />}
       <div className='grid gap-x-12 gap-y-10 xl:grid-cols-2'>
         <HomeFavoritesSection favorites={favorites} />
         <HomeRecentRunsSection recentRuns={recentRuns} />
       </div>
+      {!isNew && <HomeOrganizationsList />}
     </div>
   );
 };

@@ -23,6 +23,7 @@ import z from 'zod';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import {
   findingsPaginationSearchParameterSchema,
+  markedSearchParameterSchema,
   paginationSearchParameterSchema,
   sortingSearchParameterSchema,
 } from '@/schemas';
@@ -54,6 +55,7 @@ const snippetFindingsSearchSchema = z.object({
   ...sortingSearchParameterSchema.shape,
   ...findingsPaginationSearchParameterSchema.shape,
   ...nestedSortingSearchParameterSchema.shape,
+  ...markedSearchParameterSchema.shape,
 });
 
 export const Route = createFileRoute(

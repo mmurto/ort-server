@@ -18,6 +18,7 @@
  */
 
 import { SquareMinus, SquarePlus } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 import type { DependencyGraph } from '@/api';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +32,12 @@ import {
 } from './dependency-tree-model';
 import { HighlightedMatch } from './highlighted-match';
 import { PackageCountBadge } from './package-count-badge';
+
+/** Renders what follows the label of a package, e.g. links to its details. */
+export type RenderPackageExtras = (
+  graph: DependencyGraph,
+  packageIndex: number
+) => ReactNode;
 
 /** The horizontal distance between two levels of the tree, in pixels. */
 const INDENT_PX = 24;
@@ -193,6 +200,7 @@ type DependencyTreeRowProps = {
   searchTerm: string;
   measureRef: (element: HTMLElement | null) => void;
   onToggle: (row: ExpandableRow) => void;
+  renderPackageExtras?: RenderPackageExtras;
 };
 
 /** A single row of the dependency tree, positioned absolutely in the list. */
@@ -205,6 +213,7 @@ export const DependencyTreeRow = ({
   searchTerm,
   measureRef,
   onToggle,
+  renderPackageExtras,
 }: DependencyTreeRowProps) => {
   const label = (
     <RowLabel
@@ -227,24 +236,28 @@ export const DependencyTreeRow = ({
       }}
     >
       <Connectors row={row} />
-      {row.kind !== 'cycle' && row.expandable ? (
-        <button
-          type='button'
-          aria-expanded={row.expanded}
-          className='flex w-full items-start gap-2 rounded-sm text-left'
-          onClick={() => onToggle(row)}
-        >
-          <ToggleIcon expanded={row.expanded} />
+      <div className='flex items-start gap-2'>
+        {row.kind !== 'cycle' && row.expandable ? (
+          <button
+            type='button'
+            aria-expanded={row.expanded}
+            className='flex min-w-0 flex-1 items-start gap-2 rounded-sm text-left'
+            onClick={() => onToggle(row)}
+          >
+            <ToggleIcon expanded={row.expanded} />
+            <div className='min-w-0 flex-1'>{label}</div>
+          </button>
+        ) : row.kind === 'cycle' ? (
           <div className='min-w-0 flex-1'>{label}</div>
-        </button>
-      ) : row.kind === 'cycle' ? (
-        label
-      ) : (
-        <div className='flex items-start gap-2'>
-          <div className='mt-[3px] size-4 shrink-0' />
-          {label}
-        </div>
-      )}
+        ) : (
+          <div className='flex min-w-0 flex-1 items-start gap-2'>
+            <div className='mt-[3px] size-4 shrink-0' />
+            {label}
+          </div>
+        )}
+        {(row.kind === 'package' || row.kind === 'cycle') &&
+          renderPackageExtras?.(graph, row.packageIndex)}
+      </div>
     </div>
   );
 };

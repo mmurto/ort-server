@@ -29,7 +29,10 @@ import type {
   ExpandableRow,
   DependencyTreeRow as Row,
 } from './dependency-tree-model';
-import { DependencyTreeRow } from './dependency-tree-row';
+import {
+  DependencyTreeRow,
+  type RenderPackageExtras,
+} from './dependency-tree-row';
 
 /** The height assumed for rows that have not been measured yet, in pixels. */
 const ESTIMATED_ROW_HEIGHT_PX = 32;
@@ -43,6 +46,7 @@ type VirtualizedDependencyTreeProps = {
   packageIdType: PackageIdType;
   searchTerm: string;
   onToggle: (row: ExpandableRow) => void;
+  renderPackageExtras?: RenderPackageExtras;
 };
 
 const rowIndexOf = (element: EventTarget | null) => {
@@ -64,6 +68,7 @@ export const VirtualizedDependencyTree = ({
   packageIdType,
   searchTerm,
   onToggle,
+  renderPackageExtras,
 }: VirtualizedDependencyTreeProps) => {
   // The virtualizer is a mutable object whose identity does not change when it
   // scrolls or measures rows. React Compiler would reuse the rows read from it
@@ -150,6 +155,7 @@ export const VirtualizedDependencyTree = ({
             searchTerm={searchTerm}
             measureRef={virtualizer.measureElement}
             onToggle={onToggle}
+            renderPackageExtras={renderPackageExtras}
           />
         );
       })}

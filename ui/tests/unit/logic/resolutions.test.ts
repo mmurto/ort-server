@@ -17,12 +17,20 @@
  * License-Filename: LICENSE
  */
 
-import { expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
+import {
+  getResolutionReasonLabel,
+  resolutionReasonOptions,
+} from '@/components/resolutions/reasons';
 import {
   getAppliedIssueResolutions,
   getResolutionAccordionDefaultValue,
   getResolutionAccordionLabel,
+  getResolutionState,
+  getResolvedStatus,
+  hasPendingResolutionChanges,
+  hasServerResolution,
 } from '@/helpers/resolutions';
 import {
   createIssue,
@@ -93,4 +101,76 @@ it('getResolutionAccordionLabel returns an item-specific label', () => {
   expect(getResolutionAccordionLabel(vulnerability)).toBe(
     'Resolve vulnerability'
   );
+});
+
+describe('resolution state', () => {
+  const pendingIssue = createIssue({
+    message: 'Issue message',
+    resolutions: [],
+    unappliedResolutions: [
+      {
+        message: 'Issue message',
+        reason: 'CANT_FIX_ISSUE',
+        comment: '',
+        source: 'SERVER',
+      },
+    ],
+  });
+  const pendingVulnerability = createVulnerability({
+    resolutions: [],
+    unappliedResolutions: [
+      {
+        externalId: 'CVE-0000-0000',
+        reason: 'CANT_FIX_VULNERABILITY',
+        comment: '',
+        source: 'SERVER',
+      },
+    ],
+  });
+  const appliedRuleViolation = createRuleViolation({
+    resolutions: [
+      {
+        message: 'Rule violation message',
+        reason: 'CANT_FIX_EXCEPTION',
+        comment: '',
+        source: 'REPOSITORY_FILE',
+        isDeleted: false,
+      },
+    ],
+    unappliedResolutions: [],
+  });
+
+  it('counts only applied resolutions as resolved, for every kind of item', () => {
+    expect(getResolutionState(pendingIssue)).toBe('pending');
+    expect(getResolvedStatus(pendingIssue)).toBe('Unresolved');
+    expect(getResolutionState(pendingVulnerability)).toBe('pending');
+    expect(getResolvedStatus(pendingVulnerability)).toBe('Unresolved');
+    expect(getResolutionState(appliedRuleViolation)).toBe('resolved');
+    expect(getResolvedStatus(appliedRuleViolation)).toBe('Resolved');
+    expect(
+      getResolutionState(
+        createRuleViolation({ resolutions: [], unappliedResolutions: [] })
+      )
+    ).toBe('unresolved');
+  });
+
+  it('finds pending changes and server resolutions', () => {
+    expect(hasPendingResolutionChanges(pendingIssue)).toBe(true);
+    expect(hasPendingResolutionChanges(appliedRuleViolation)).toBe(false);
+    expect(hasServerResolution(pendingVulnerability)).toBe(true);
+    expect(hasServerResolution(appliedRuleViolation)).toBe(false);
+  });
+
+  it('labels the reasons in plain words', () => {
+    expect(getResolutionReasonLabel('NOT_A_VULNERABILITY')).toBe(
+      'Not a vulnerability'
+    );
+    expect(getResolutionReasonLabel('UNKNOWN_REASON')).toBe('UNKNOWN_REASON');
+    for (const options of Object.values(resolutionReasonOptions)) {
+      for (const option of options) {
+        expect(option.label).not.toMatch(/_/);
+        expect(option.description).not.toBe('');
+      }
+    }
+  });
 });

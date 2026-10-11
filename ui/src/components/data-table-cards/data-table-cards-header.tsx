@@ -24,6 +24,7 @@ import { ArrowDown, ArrowUp } from 'lucide-react';
 import type { DataTableCardsColumn } from '@/components/data-table-cards/data-table-cards-layout';
 import { DataTableCardsSort } from '@/components/data-table-cards/data-table-cards-sort';
 import { DataTableFilter } from '@/components/data-table/data-table-filter';
+import { Checkbox } from '@/components/ui/checkbox';
 import type {
   AppColumn,
   AppReactTable,
@@ -47,6 +48,12 @@ interface DataTableCardsHeaderProps<TData extends RowData> {
   /** The columns of the grid. Without them, only the trailing cell is shown. */
   layout?: DataTableCardsColumn[];
   setSortingOptions?: SortingOptions;
+  /** The checkbox that selects all rows of the page, for selectable rows. */
+  selectAll?: {
+    checked: boolean | 'indeterminate';
+    disabled?: boolean;
+    onToggle: () => void;
+  };
 }
 
 // The filter buttons carry the column title for small screens, where the
@@ -111,6 +118,7 @@ export function DataTableCardsHeader<TData extends RowData>({
   table,
   layout = [],
   setSortingOptions,
+  selectAll,
 }: DataTableCardsHeaderProps<TData>) {
   return (
     <table.Subscribe selector={selectHeaderState}>
@@ -138,6 +146,19 @@ export function DataTableCardsHeader<TData extends RowData>({
             role='row'
             className='border-foreground border-b-border flex min-h-9 flex-wrap items-center border-t border-b px-2 py-1 max-md:justify-end max-md:gap-x-3 md:col-span-full md:grid md:grid-cols-subgrid md:py-0'
           >
+            {selectAll && (
+              <div
+                role='columnheader'
+                className='flex items-center max-md:order-first max-md:mr-auto'
+              >
+                <Checkbox
+                  aria-label='Select all items on this page'
+                  checked={selectAll.checked}
+                  disabled={selectAll.disabled}
+                  onCheckedChange={selectAll.onToggle}
+                />
+              </div>
+            )}
             {layout.map((column) => {
               const sortColumn = column.sortBy
                 ? table.getColumn(column.sortBy)

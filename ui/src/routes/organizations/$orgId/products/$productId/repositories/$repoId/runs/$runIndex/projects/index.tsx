@@ -29,16 +29,19 @@ import {
   getRunProjectLicensesOptions,
   getRunProjectsOptions,
 } from '@/api/@tanstack/react-query.gen';
-import { DataTableCards } from '@/components/data-table-cards/data-table-cards';
-import { EmptyValue } from '@/components/data-table-cards/findings-cells';
 import {
-  LicensesAccordion,
-  SpdxExpressionBadgeGroup,
-} from '@/components/licenses';
+  DataTableCards,
+  type DataTableCardsDetails,
+} from '@/components/data-table-cards/data-table-cards';
+import {
+  CopyableValue,
+  EmptyValue,
+} from '@/components/data-table-cards/findings-cells';
+import { FindingPanelSection } from '@/components/finding-panel/finding-panel';
+import { LicensesList, SpdxExpressionBadgeGroup } from '@/components/licenses';
 import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { SheetSection } from '@/components/page-header';
-import { RenderProperty } from '@/components/render-property';
 import {
   convertToBackendSorting,
   EMPTY_SORTING_STATE,
@@ -61,6 +64,12 @@ import {
   projectIdentifierSearchParameterSchema,
   sortingSearchParameterSchema,
 } from '@/schemas';
+import {
+  DependencyGraphLink,
+  PanelFields,
+  PanelMono,
+  PanelUrl,
+} from '../-components/panel-fields';
 
 const defaultPageSize = 10;
 
@@ -80,90 +89,165 @@ const LicenseList = ({ licenses }: { licenses: string[] }) => (
   </div>
 );
 
-const renderSubComponent = ({
+type RunParams = {
+  orgId: string;
+  productId: string;
+  repoId: string;
+  runIndex: string;
+};
+
+// The details of a project, shown in the panel next to the grid.
+const renderDetails = ({
   row,
   runId,
+  params,
 }: {
   row: AppRow<Project>;
   runId: number;
-}) => {
+  params: RunParams;
+}): DataTableCardsDetails => {
   const project = row.original;
-
-  return (
-    <div className='flex flex-col gap-4'>
-      <RenderProperty label='Authors' value={project.authors} />
-      <RenderProperty
-        label='Description'
-        value={project.description}
-        type='textblock'
-      />
-      <LicensesAccordion
-        runId={runId}
-        identifier={project.identifier}
-        declaredLicenses={[
-          ...(project.processedDeclaredLicense.spdxExpression
-            ? [project.processedDeclaredLicense.spdxExpression]
-            : []),
-          ...project.processedDeclaredLicense.unmappedLicenses,
-        ]}
-      />
-      <RenderProperty label='Homepage' value={project.homepageUrl} type='url' />
-      <RenderProperty label='CPE' value={project.cpe} />
-      <div>
-        <div className='font-semibold'>Processed Declared License</div>
-        <div className='ml-2'>
-          <div className='space-y-1'>
-            <div className='text-[0.8125rem] font-semibold'>
-              SPDX expression
-            </div>
-            {project.processedDeclaredLicense.spdxExpression ? (
-              <SpdxExpressionBadgeGroup
-                expression={project.processedDeclaredLicense.spdxExpression}
-              />
-            ) : (
-              <div className='text-muted-foreground'>N/A</div>
-            )}
-          </div>
-          <RenderProperty
-            label='Mapped licenses'
-            value={project.processedDeclaredLicense.mappedLicenses}
-            type='keyvalue'
-          />
-          <div className='space-y-1'>
-            <div className='text-[0.8125rem] font-semibold'>
-              Unmapped licenses
-            </div>
-            {project.processedDeclaredLicense.unmappedLicenses.length > 0 ? (
-              <LicenseList
-                licenses={project.processedDeclaredLicense.unmappedLicenses}
-              />
-            ) : (
-              <div className='text-muted-foreground'>N/A</div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <div className='font-semibold'>
-          {getRepositoryTypeLabel(project.vcsProcessed.type)} Repository
-        </div>
-        <div className='ml-2'>
-          <RenderProperty
-            label='URL'
-            value={project.vcsProcessed.url}
-            type='url'
-          />
-          <RenderProperty
-            label='Revision'
-            value={project.vcsProcessed.revision}
-          />
-          <RenderProperty label='Path' value={project.vcsProcessed.path} />
-        </div>
-      </div>
-      <RenderProperty label='Scopes' value={project.scopeNames} type='array' />
-    </div>
+  const id = identifierToString(project.identifier);
+  const declaredLicense = project.processedDeclaredLicense;
+  const mappedLicenses = Object.entries(declaredLicense.mappedLicenses).sort(
+    ([a], [b]) => a.localeCompare(b)
   );
+
+  return {
+    title: <span className='font-mono text-[0.875rem] break-all'>{id}</span>,
+    meta: (
+      <span className='text-muted-foreground'>
+        {project.identifier.type}
+        {project.definitionFilePath && (
+          <>
+            {' · '}
+            <span className='font-mono text-xs'>
+              {project.definitionFilePath}
+            </span>
+          </>
+        )}
+      </span>
+    ),
+    content: (
+      <>
+        {project.description && (
+          <p className='text-[0.875rem] leading-relaxed wrap-break-word'>
+            {project.description}
+          </p>
+        )}
+        <FindingPanelSection
+          title='Project'
+          actions={<DependencyGraphLink params={params} searchTerm={id} />}
+        >
+          <PanelFields
+            fields={[
+              {
+                label: 'ID',
+                value: (
+                  <CopyableValue value={id} className='font-mono text-xs' />
+                ),
+              },
+              {
+                label: 'Definition file',
+                value: <PanelMono value={project.definitionFilePath} />,
+              },
+              {
+                label: 'Authors',
+                value:
+                  project.authors.length > 0
+                    ? project.authors.join(', ')
+                    : null,
+              },
+              {
+                label: 'Homepage',
+                value: <PanelUrl url={project.homepageUrl} />,
+              },
+              { label: 'CPE', value: <PanelMono value={project.cpe} /> },
+            ]}
+          />
+        </FindingPanelSection>
+        <FindingPanelSection title='Licenses'>
+          <LicensesList
+            runId={runId}
+            identifier={project.identifier}
+            declaredLicenses={[
+              ...(declaredLicense.spdxExpression
+                ? [declaredLicense.spdxExpression]
+                : []),
+              ...declaredLicense.unmappedLicenses,
+            ]}
+          />
+        </FindingPanelSection>
+        <FindingPanelSection title='Processed declared license'>
+          <PanelFields
+            fields={[
+              {
+                label: 'SPDX expression',
+                value: declaredLicense.spdxExpression ? (
+                  <SpdxExpressionBadgeGroup
+                    expression={declaredLicense.spdxExpression}
+                  />
+                ) : null,
+              },
+              {
+                label: 'Mapped licenses',
+                value:
+                  mappedLicenses.length > 0 ? (
+                    <ul className='flex flex-col gap-0.5'>
+                      {mappedLicenses.map(([from, to]) => (
+                        <li key={from} className='wrap-break-word'>
+                          {from}
+                          <span className='text-muted-foreground'> → </span>
+                          {to}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null,
+              },
+              {
+                label: 'Unmapped licenses',
+                value:
+                  declaredLicense.unmappedLicenses.length > 0 ? (
+                    <LicenseList licenses={declaredLicense.unmappedLicenses} />
+                  ) : null,
+              },
+            ]}
+          />
+        </FindingPanelSection>
+        <FindingPanelSection
+          title={`${getRepositoryTypeLabel(project.vcsProcessed.type)} repository`}
+        >
+          <PanelFields
+            fields={[
+              {
+                label: 'URL',
+                value: <PanelUrl url={project.vcsProcessed.url} />,
+              },
+              {
+                label: 'Revision',
+                value: <PanelMono value={project.vcsProcessed.revision} />,
+              },
+              {
+                label: 'Path',
+                value: <PanelMono value={project.vcsProcessed.path} />,
+              },
+            ]}
+          />
+        </FindingPanelSection>
+        <FindingPanelSection title='Scopes'>
+          {project.scopeNames.length > 0 ? (
+            <ul className='flex flex-col gap-0.5 font-mono text-xs'>
+              {[...project.scopeNames].sort().map((scope) => (
+                <li key={scope}>{scope}</li>
+              ))}
+            </ul>
+          ) : (
+            <EmptyValue />
+          )}
+        </FindingPanelSection>
+      </>
+    ),
+  };
 };
 
 const ProjectsComponent = () => {
@@ -480,7 +564,12 @@ const ProjectsComponent = () => {
             filters: ['declaredLicense'],
             mobile: 'hidden',
           },
-          { id: 'homepage', width: 'minmax(0,1.2fr)', mobile: 'hidden' },
+          {
+            id: 'homepage',
+            width: 'minmax(0,1.2fr)',
+            mobile: 'hidden',
+            withDetails: false,
+          },
         ]}
         setMarkedOptions={(marked) => ({
           to: Route.to,
@@ -491,8 +580,8 @@ const ProjectsComponent = () => {
             marked: marked === '' ? undefined : marked,
           },
         })}
-        renderSubComponent={({ row }) =>
-          renderSubComponent({ row, runId: ortRun.id })
+        renderDetails={({ row }) =>
+          renderDetails({ row, runId: ortRun.id, params })
         }
         setCurrentPageOptions={(currentPage) => {
           return {

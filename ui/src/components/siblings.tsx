@@ -23,7 +23,13 @@ import {
   type QueryKey,
   type SkipToken,
 } from '@tanstack/react-query';
-import { Link, useParams, useRouter } from '@tanstack/react-router';
+import {
+  Link,
+  useParams,
+  useRouter,
+  useRouterState,
+  type LinkProps,
+} from '@tanstack/react-router';
 import { Check, ChevronDown, ExternalLink } from 'lucide-react';
 import { useState } from 'react';
 
@@ -39,6 +45,7 @@ import {
   getRepositoryRunsOptions,
 } from '@/api/@tanstack/react-query.gen';
 import { SearchableInfiniteList } from '@/components/searchable-infinite-list';
+import { StatusMark } from '@/components/status-mark';
 import { BreadcrumbItem, BreadcrumbLink } from '@/components/ui/breadcrumb';
 import { Button } from '@/components/ui/button';
 import { CommandItem } from '@/components/ui/command';
@@ -101,6 +108,12 @@ export const Siblings = ({ entity, pathName }: SiblingsProps) => {
   // Only one of the dropdowns below is rendered, the one that belongs to this breadcrumb, so a
   // single open state and a single search term are enough for all of them.
   const [isOpen, setIsOpen] = useState(false);
+  // The page of the current run that is open, e.g. "/vulnerabilities", which
+  // the entries of the runs dropdown keep.
+  const runSubPath = useRouterState({
+    select: (state) =>
+      /\/runs\/\d+(\/[^?#]*)?$/.exec(state.location.pathname)?.[1] ?? '',
+  }).replace(/\/$/, '');
   const [searchTerm, setSearchTerm] = useState('');
   const filter = toSearchFilter(useDebounce(searchTerm, 300));
 
@@ -185,7 +198,8 @@ export const Siblings = ({ entity, pathName }: SiblingsProps) => {
       query: { limit: DROPDOWN_PAGE_SIZE, sort: '-index' },
     }),
     {
-      staleTime: staleTime,
+      // The statuses of recent runs change while they are running.
+      staleTime: 30 * 1000,
       enabled: entity === 'run' && isOpen && !!params.repoId,
     }
   );
@@ -307,7 +321,7 @@ export const Siblings = ({ entity, pathName }: SiblingsProps) => {
               onSelect={closeDropdown}
             >
               <Link
-                to='/organizations/$orgId/products/$productId/repositories/$repoId'
+                to='/organizations/$orgId/products/$productId/repositories/$repoId/runs'
                 params={{
                   orgId: params.orgId ?? '',
                   productId: params.productId ?? '',
@@ -348,19 +362,35 @@ export const Siblings = ({ entity, pathName }: SiblingsProps) => {
               onSelect={closeDropdown}
             >
               <Link
-                to='/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex'
-                params={{
-                  orgId: params.orgId ?? '',
-                  productId: params.productId ?? '',
-                  repoId: params.repoId ?? '',
-                  runIndex: run.index.toString(),
-                }}
+                // The same page of the other run, without the item opened
+                // in this one.
+                to={
+                  `/organizations/${params.orgId}/products/${params.productId}/repositories/${params.repoId}/runs/${run.index}${runSubPath}` as LinkProps['to']
+                }
+                search={
+                  ((previous: Record<string, unknown>) => ({
+                    ...previous,
+                    marked: undefined,
+                    page: undefined,
+                  })) as LinkProps['search']
+                }
                 preload={false}
               >
-                <div className='grid w-full grid-cols-6 items-center gap-2'>
-                  <div className='col-span-5'>{run.index}</div>
-                  {run.index === Number(params.runIndex) && (
-                    <Check className='ml-auto size-3.5' />
+                <div className='flex w-full min-w-0 items-center gap-3'>
+                  <span className='w-12 shrink-0 font-medium tabular-nums'>
+                    Run {run.index}
+                  </span>
+                  <StatusMark status={run.status} />
+                  <span className='text-muted-foreground min-w-0 flex-1 truncate font-mono text-xs'>
+                    {run.revision}
+                  </span>
+                  <span className='text-muted-foreground shrink-0 text-xs tabular-nums'>
+                    {new Date(run.createdAt).toLocaleDateString()}
+                  </span>
+                  {run.index === Number(params.runIndex) ? (
+                    <Check className='size-3.5 shrink-0' />
+                  ) : (
+                    <span className='size-3.5 shrink-0' />
                   )}
                 </div>
               </Link>

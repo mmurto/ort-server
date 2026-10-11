@@ -19,9 +19,9 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Pencil } from 'lucide-react';
-import { useState } from 'react';
-import { Resolver, useForm } from 'react-hook-form';
+import { Pencil, Trash2 } from 'lucide-react';
+import { useId, useState, type ReactNode } from 'react';
+import { Control, Resolver, useForm } from 'react-hook-form';
 
 import {
   getRunIssuesQueryKey,
@@ -45,22 +45,9 @@ import {
   RuleViolationResolutionReason,
   VulnerabilityResolutionReason,
 } from '@/api/types.gen';
-import {
-  zIssueResolutionReason,
-  zPatchIssueResolution,
-  zPatchRuleViolationResolution,
-  zPatchVulnerabilityResolution,
-  zPostIssueResolution,
-  zPostRuleViolationResolution,
-  zPostVulnerabilityResolution,
-  zRuleViolationResolutionReason,
-  zVulnerabilityResolutionReason,
-} from '@/api/zod.gen';
 import { DeleteDialog } from '@/components/delete-dialog';
-import { DeleteIconButton } from '@/components/delete-icon-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -69,27 +56,24 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { getIssueSeverityBackgroundColor } from '@/helpers/get-status-class';
-
-import '@/helpers/resolutions';
-
+import type { ResolutionItemType } from '@/helpers/resolutions';
 import { ApiError } from '@/lib/api-error';
 import { toast, toastError } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import {
+  getResolutionReasonLabel,
+  resolutionReasonOptions,
+  resolutionSourceNotes,
+} from './reasons';
+import {
+  getResolutionSchema,
   ManagedResolutionContext,
   ResolutionDisplayItem,
   ResolutionFormValues,
@@ -97,6 +81,9 @@ import {
 
 const COLLAPSIBLE_MESSAGE_MAX_LINES = 4;
 const COLLAPSIBLE_MESSAGE_CHAR_THRESHOLD = 280;
+
+/** Marks the part of the details that the R shortcut focuses. */
+export const RESOLUTION_FORM_SELECTOR = '[data-resolution-form]';
 
 type ExpandableResolutionMessageProps = {
   message: string;
@@ -140,62 +127,110 @@ function ExpandableResolutionMessage({
         {message}
       </div>
       <Button
-        variant='ghost'
+        variant='link'
         size='sm'
-        className='h-auto px-2 py-1 font-mono text-xs'
+        className='h-auto p-0 text-xs'
         onClick={() => setIsExpanded((value) => !value)}
         aria-expanded={isExpanded}
-        aria-label={isExpanded ? 'Collapse message' : 'Expand message'}
       >
-        {isExpanded ? 'Hide' : '...'}
+        {isExpanded ? 'Show less' : 'Show the whole message'}
       </Button>
     </div>
   );
 }
 
 type ResolutionFormFieldsProps = {
-  form: ReturnType<typeof useForm<ResolutionFormValues>>;
-  reasonOptions: readonly string[];
+  control: Control<ResolutionFormValues>;
+  itemType: ResolutionItemType;
+  disabled?: boolean;
 };
 
-function ResolutionFormFields({
-  form,
-  reasonOptions,
+/**
+ * The reason of a resolution as a list of plain choices with a line of help
+ * each, and a comment. The chosen reason is marked for the R shortcut, which
+ * focuses it.
+ */
+export function ResolutionFormFields({
+  control,
+  itemType,
+  disabled,
 }: ResolutionFormFieldsProps) {
+  const labelId = useId();
+  const idPrefix = useId();
+
   return (
     <>
       <FormField
-        control={form.control}
+        control={control}
         name='reason'
         render={({ field }) => (
-          <FormItem>
-            <FormLabel>Reason</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value}>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder='Select a reason' />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {reasonOptions.map((reason) => (
-                  <SelectItem key={reason} value={reason}>
-                    {reason}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <FormItem className='gap-1.5'>
+            <div id={labelId} className='text-[0.8125rem] font-medium'>
+              Reason
+            </div>
+            <FormControl>
+              <RadioGroup
+                aria-labelledby={labelId}
+                value={field.value}
+                onValueChange={field.onChange}
+                disabled={disabled}
+                className='gap-0'
+              >
+                {resolutionReasonOptions[itemType].map((option) => {
+                  const id = `${idPrefix}-${option.value}`;
+                  const checked = field.value === option.value;
+
+                  return (
+                    <label
+                      key={option.value}
+                      htmlFor={id}
+                      className='hover:bg-accent has-data-[state=checked]:bg-muted flex cursor-pointer items-start gap-2 rounded-sm px-2 py-1.5'
+                    >
+                      <RadioGroupItem
+                        id={id}
+                        value={option.value}
+                        className='mt-0.5'
+                        data-autofocus={checked ? '' : undefined}
+                        aria-labelledby={`${id}-label`}
+                        aria-describedby={`${id}-help`}
+                      />
+                      <span className='flex min-w-0 flex-col'>
+                        <span
+                          id={`${id}-label`}
+                          className='text-[0.8125rem] font-medium'
+                        >
+                          {option.label}
+                        </span>
+                        <span
+                          id={`${id}-help`}
+                          className='text-muted-foreground text-xs'
+                        >
+                          {option.description}
+                        </span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </RadioGroup>
+            </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
       <FormField
-        control={form.control}
+        control={control}
         name='comment'
         render={({ field }) => (
-          <FormItem>
+          <FormItem className='gap-1.5'>
             <FormLabel>Comment</FormLabel>
             <FormControl>
-              <Input {...field} placeholder='(optional)' />
+              <Textarea
+                {...field}
+                disabled={disabled}
+                rows={3}
+                className='min-h-16 text-[0.8125rem]'
+                placeholder='Why the resolution applies, e.g. a link to the assessment'
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -204,6 +239,16 @@ function ResolutionFormFields({
     </>
   );
 }
+
+/** Runs a submission whose errors are already reported by the mutation. */
+const ignoreRejection = async (submit: () => Promise<unknown>) => {
+  try {
+    await submit();
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 type ResolutionFormProps = {
   context: ManagedResolutionContext;
@@ -223,25 +268,11 @@ export function ResolutionForm({
   const queryClient = useQueryClient();
   const isIssue = context.itemType === 'issue';
   const isRuleViolation = context.itemType === 'rule-violation';
-  const reasonOptions = isIssue
-    ? zIssueResolutionReason.options
-    : isRuleViolation
-      ? zRuleViolationResolutionReason.options
-      : zVulnerabilityResolutionReason.options;
-  const schema = isIssue
-    ? mode === 'create'
-      ? zPostIssueResolution.omit({ message: true })
-      : zPatchIssueResolution
-    : isRuleViolation
-      ? mode === 'create'
-        ? zPostRuleViolationResolution.omit({ message: true })
-        : zPatchRuleViolationResolution
-      : mode === 'create'
-        ? zPostVulnerabilityResolution
-        : zPatchVulnerabilityResolution;
 
   const form = useForm<ResolutionFormValues>({
-    resolver: zodResolver(schema) as Resolver<ResolutionFormValues>,
+    resolver: zodResolver(
+      getResolutionSchema(context.itemType, mode)
+    ) as Resolver<ResolutionFormValues>,
     defaultValues,
   });
 
@@ -253,15 +284,9 @@ export function ResolutionForm({
           path: { runId: context.runId },
         }),
       });
-      toast.info(
-        mode === 'create' ? 'Resolution created' : 'Resolution updated',
-        {
-          description:
-            mode === 'create'
-              ? 'Issue resolution created successfully.'
-              : 'Issue resolution updated successfully.',
-        }
-      );
+      toast.info('Resolution created', {
+        description: 'Issue resolution created successfully.',
+      });
     },
     onError(error: ApiError) {
       toastError(error.message, error);
@@ -292,15 +317,9 @@ export function ResolutionForm({
           path: { runId: context.runId },
         }),
       });
-      toast.info(
-        mode === 'create' ? 'Resolution created' : 'Resolution updated',
-        {
-          description:
-            mode === 'create'
-              ? 'Vulnerability resolution created successfully.'
-              : 'Vulnerability resolution updated successfully.',
-        }
-      );
+      toast.info('Resolution created', {
+        description: 'Vulnerability resolution created successfully.',
+      });
     },
     onError(error: ApiError) {
       toastError(error.message, error);
@@ -331,15 +350,9 @@ export function ResolutionForm({
           path: { runId: context.runId },
         }),
       });
-      toast.info(
-        mode === 'create' ? 'Resolution created' : 'Resolution updated',
-        {
-          description:
-            mode === 'create'
-              ? 'Rule violation resolution created successfully.'
-              : 'Rule violation resolution updated successfully.',
-        }
-      );
+      toast.info('Resolution created', {
+        description: 'Rule violation resolution created successfully.',
+      });
     },
     onError(error: ApiError) {
       toastError(error.message, error);
@@ -374,66 +387,61 @@ export function ResolutionForm({
         ? vulnerabilityCreateMutation.isPending
         : vulnerabilityUpdateMutation.isPending;
 
-  const onSubmit = async (values: ResolutionFormValues) => {
+  const submit = (values: ResolutionFormValues) => {
     if (isIssue) {
-      if (mode === 'create') {
-        await issueCreateMutation.mutateAsync({
-          path: {
-            repositoryId: context.repositoryId,
-          },
-          body: {
-            comment: values.comment,
-            message: context.identifier,
-            reason: values.reason as IssueResolutionReason,
-          } satisfies PostIssueResolution,
-        });
-      } else {
-        await issueUpdateMutation.mutateAsync({
-          path: {
-            repositoryId: context.repositoryId,
-            messageHash: context.identifier,
-          },
-          body: {
-            comment: values.comment,
-            reason: values.reason as IssueResolutionReason,
-          } satisfies PatchIssueResolution,
-        });
-      }
-    } else if (isRuleViolation) {
-      if (mode === 'create') {
-        await ruleViolationCreateMutation.mutateAsync({
-          path: {
-            repositoryId: context.repositoryId,
-          },
-          body: {
-            comment: values.comment,
-            message: context.identifier,
-            reason: values.reason as RuleViolationResolutionReason,
-          } satisfies PostRuleViolationResolution,
-        });
-      } else {
-        await ruleViolationUpdateMutation.mutateAsync({
-          path: {
-            repositoryId: context.repositoryId,
-            messageHash: context.identifier,
-          },
-          body: {
-            comment: values.comment,
-            reason: values.reason as RuleViolationResolutionReason,
-          } satisfies PatchRuleViolationResolution,
-        });
-      }
-    } else {
-      if (mode === 'create') {
-        await vulnerabilityCreateMutation.mutateAsync({
+      return mode === 'create'
+        ? issueCreateMutation.mutateAsync({
+            path: { repositoryId: context.repositoryId },
+            body: {
+              comment: values.comment,
+              message: context.identifier,
+              reason: values.reason as IssueResolutionReason,
+            } satisfies PostIssueResolution,
+          })
+        : issueUpdateMutation.mutateAsync({
+            path: {
+              repositoryId: context.repositoryId,
+              messageHash: context.identifier,
+            },
+            body: {
+              comment: values.comment,
+              reason: values.reason as IssueResolutionReason,
+            } satisfies PatchIssueResolution,
+          });
+    }
+    if (isRuleViolation) {
+      return mode === 'create'
+        ? ruleViolationCreateMutation.mutateAsync({
+            path: { repositoryId: context.repositoryId },
+            body: {
+              comment: values.comment,
+              message: context.identifier,
+              reason: values.reason as RuleViolationResolutionReason,
+            } satisfies PostRuleViolationResolution,
+          })
+        : ruleViolationUpdateMutation.mutateAsync({
+            path: {
+              repositoryId: context.repositoryId,
+              messageHash: context.identifier,
+            },
+            body: {
+              comment: values.comment,
+              reason: values.reason as RuleViolationResolutionReason,
+            } satisfies PatchRuleViolationResolution,
+          });
+    }
+    return mode === 'create'
+      ? vulnerabilityCreateMutation.mutateAsync({
           path: {
             repositoryId: context.repositoryId,
             externalId: context.identifier,
           },
-          body: values as PostVulnerabilityResolution,
-        });
-      } else {
-        await vulnerabilityUpdateMutation.mutateAsync({
+          body: {
+            comment: values.comment,
+            reason: values.reason as VulnerabilityResolutionReason,
+          } satisfies PostVulnerabilityResolution,
+        })
+      : vulnerabilityUpdateMutation.mutateAsync({
           path: {
             repositoryId: context.repositoryId,
             externalId: context.identifier,
@@ -443,113 +451,107 @@ export function ResolutionForm({
             reason: values.reason as VulnerabilityResolutionReason,
           } satisfies PatchVulnerabilityResolution,
         });
-      }
-    }
-
-    if (mode === 'edit') {
-      onSuccess?.();
-    }
   };
 
-  const formButtons =
-    mode === 'create' ? (
-      <Button type='submit' disabled={isPending} className='w-fit'>
-        {isPending ? 'Creating...' : 'Create resolution'}
-      </Button>
-    ) : (
-      <div className='flex gap-2'>
-        <Button type='submit' disabled={isPending}>
-          {isPending ? 'Saving...' : 'Save'}
-        </Button>
-        <Button type='button' variant='outline' onClick={onCancel}>
-          Cancel
-        </Button>
-      </div>
-    );
+  const onSubmit = async (values: ResolutionFormValues) => {
+    const succeeded = await ignoreRejection(() => submit(values));
+    if (succeeded && mode === 'edit') onSuccess?.();
+  };
 
-  const formContent = (
+  return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
         className='flex flex-col gap-4'
+        aria-label={mode === 'create' ? 'New resolution' : 'Edit resolution'}
       >
-        <ResolutionFormFields form={form} reasonOptions={reasonOptions} />
-        {formButtons}
+        <ResolutionFormFields
+          control={form.control}
+          itemType={context.itemType}
+          disabled={isPending}
+        />
+        <div className='flex flex-wrap gap-2'>
+          <Button type='submit' disabled={isPending}>
+            {mode === 'create'
+              ? isPending
+                ? 'Resolving…'
+                : 'Resolve'
+              : isPending
+                ? 'Saving…'
+                : 'Save'}
+          </Button>
+          {mode === 'edit' && (
+            <Button type='button' variant='outline' onClick={onCancel}>
+              Cancel
+            </Button>
+          )}
+        </div>
       </form>
     </Form>
   );
-
-  if (mode === 'create') {
-    return (
-      <Card>
-        <CardContent>{formContent}</CardContent>
-      </Card>
-    );
-  }
-
-  return <CardContent>{formContent}</CardContent>;
 }
-type ResolutionCardProps = {
+
+const pendingLabels: Record<ResolutionDisplayItem['state'], string | null> = {
+  applied: null,
+  'pending-create': 'Added · pending rerun',
+  'pending-update': 'Changed · pending rerun',
+  'pending-delete': 'Deleted · pending rerun',
+};
+
+type ResolutionEntryProps = {
   displayItem: ResolutionDisplayItem;
   editingKey: string | null;
   setEditingKey: (key: string | null) => void;
   context?: ManagedResolutionContext;
-  onDelete?: () => void;
+  onDelete?: () => void | Promise<unknown>;
 };
 
-export function ResolutionCard({
+/**
+ * One resolution of an item: its reason, comment and what it matches, where it
+ * is defined, and whether it only applies to the next run.
+ */
+export function ResolutionEntry({
   displayItem,
   editingKey,
   setEditingKey,
   context,
   onDelete,
-}: ResolutionCardProps) {
+}: ResolutionEntryProps) {
   const { key, resolution, state, showActions } = displayItem;
   const isEditing = editingKey === key;
-  const pendingLabel =
-    state === 'pending-create'
-      ? 'Created: Pending rerun'
-      : state === 'pending-update'
-        ? 'Updated: Pending rerun'
-        : state === 'pending-delete'
-          ? 'Deleted: Pending rerun'
-          : null;
+  const pendingLabel = pendingLabels[state];
+  const reasonLabel = getResolutionReasonLabel(resolution.reason);
+  const canManage = showActions && context !== undefined && !!onDelete;
 
   return (
-    <Card key={key}>
-      <CardHeader>
-        <CardTitle className='flex items-start justify-between gap-2'>
-          <div className='flex min-w-0 items-center gap-2'>
-            <span
-              className={
-                state === 'pending-delete'
-                  ? 'text-muted-foreground line-through'
-                  : undefined
-              }
-            >
-              {resolution.reason}
-            </span>
-            {pendingLabel && (
-              <Tooltip>
-                <TooltipTrigger>
-                  <Badge variant='small' className='bg-warn-soft text-warn'>
-                    {pendingLabel}
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent>
-                  The operation will be applied on the next run.
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </div>
-          <Badge
-            variant='small'
-            className={getIssueSeverityBackgroundColor('HINT')}
-          >
-            {resolution.source}
-          </Badge>
-        </CardTitle>
-      </CardHeader>
+    <li className='flex flex-col gap-2 py-3'>
+      <div className='flex flex-wrap items-center gap-x-2 gap-y-1'>
+        <span
+          className={cn(
+            'font-medium',
+            state === 'pending-delete' && 'text-muted-foreground line-through'
+          )}
+          title={resolution.reason}
+        >
+          {reasonLabel}
+        </span>
+        {pendingLabel && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge
+                variant='small'
+                className='bg-warn-soft text-warn'
+                tabIndex={0}
+              >
+                {pendingLabel}
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              The change applies to the next run of the repository.
+            </TooltipContent>
+          </Tooltip>
+        )}
+      </div>
       {isEditing && context ? (
         <ResolutionForm
           context={context}
@@ -562,49 +564,90 @@ export function ResolutionCard({
           onSuccess={() => setEditingKey(null)}
         />
       ) : (
-        <CardContent className='flex items-start justify-between gap-2'>
-          <div className='min-w-0 flex-1 flex-col gap-2'>
-            <div className='italic'>{resolution.comment}</div>
-            <div className='flex items-start gap-2'>
-              <div className='text-muted-foreground shrink-0 font-semibold'>
-                {'externalId' in resolution
-                  ? 'ID Matcher:'
-                  : 'Message Matcher:'}
-              </div>
-              <div className='min-w-0 flex-1'>
-                {'externalId' in resolution ? (
-                  <div className='text-muted-foreground break-all whitespace-pre-wrap'>
-                    {resolution.externalId}
-                  </div>
-                ) : (
-                  <ExpandableResolutionMessage message={resolution.message} />
-                )}
-              </div>
+        <>
+          {resolution.comment.trim() ? (
+            <p className='break-words whitespace-pre-wrap'>
+              {resolution.comment}
+            </p>
+          ) : (
+            <p className='text-muted-foreground'>No comment.</p>
+          )}
+          <div className='flex items-start gap-2 text-xs'>
+            <span className='text-muted-foreground shrink-0'>
+              {'externalId' in resolution ? 'Matches ID' : 'Matches message'}
+            </span>
+            <div className='min-w-0 flex-1 font-mono'>
+              {'externalId' in resolution ? (
+                <div className='text-muted-foreground break-all'>
+                  {resolution.externalId}
+                </div>
+              ) : (
+                <ExpandableResolutionMessage message={resolution.message} />
+              )}
             </div>
           </div>
-          {showActions && context && onDelete && (
-            <div className='flex flex-col gap-1'>
+          <p className='text-muted-foreground text-xs'>
+            {resolutionSourceNotes[resolution.source]}
+          </p>
+          {canManage && (
+            <div className='flex flex-wrap gap-2'>
               <Button
                 variant='outline'
                 size='sm'
                 onClick={() => setEditingKey(key)}
               >
-                <Pencil className='h-4 w-4' />
+                <Pencil />
+                Edit
               </Button>
               <DeleteDialog
                 thingName='resolution'
                 thingLabel={
                   'externalId' in resolution
-                    ? `${resolution.reason} for ${resolution.externalId}`
-                    : resolution.reason
+                    ? `${reasonLabel} for ${resolution.externalId}`
+                    : reasonLabel
                 }
-                uiComponent={<DeleteIconButton />}
-                onDelete={onDelete}
+                description='The resolution stops applying with the next run.'
+                tooltip='Delete the resolution'
+                uiComponent={
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    className='text-err hover:text-err'
+                  >
+                    <Trash2 />
+                    Delete
+                  </Button>
+                }
+                onDelete={async () => {
+                  await ignoreRejection(async () => onDelete());
+                }}
               />
             </div>
           )}
-        </CardContent>
+        </>
       )}
-    </Card>
+    </li>
+  );
+}
+
+/** The resolutions of an item, and the form for a new one. */
+export function ResolutionList({
+  children,
+  form,
+}: {
+  children: ReactNode;
+  form?: ReactNode;
+}) {
+  const hasEntries = Array.isArray(children)
+    ? children.length > 0
+    : Boolean(children);
+
+  return (
+    <div data-resolution-form='' className='flex flex-col gap-3'>
+      {hasEntries && (
+        <ul className='flex flex-col divide-y border-y'>{children}</ul>
+      )}
+      {form}
+    </div>
   );
 }

@@ -291,6 +291,43 @@ export const toggleLicenseTable = (
   return normalizeLicenseFindingsSearch(result, packageIdType, license);
 };
 
+/**
+ * The license whose packages are shown, out of the licenses on the current
+ * page: the first one with an entry in the URL.
+ */
+export const getOpenLicense = (
+  search: LicenseFindingsSearchParameters,
+  licenses: string[]
+): string | undefined =>
+  Object.keys(search.licenseTables ?? {}).find((license) =>
+    licenses.includes(license)
+  );
+
+/**
+ * Show the packages of one license, or of none without a license. Only one
+ * license is open at a time, so the entries of the others are dropped; an
+ * already open license keeps its package controls.
+ */
+export const openLicenseTable = (
+  search: LicenseFindingsSearchParameters,
+  license: string | undefined,
+  packageIdType: PackageIdType
+): LicenseFindingsSearchParameters => {
+  const normalized = normalizeLicenseFindingsSearch(search, packageIdType);
+  const result = { ...normalized };
+  delete result.marked;
+  if (!license) return withLicenseTables(result, undefined);
+  const table = ownEntry(normalized.licenseTables, license);
+  return normalizeLicenseFindingsSearch(
+    withLicenseTables(
+      result,
+      table ? Object.fromEntries([[license, table]]) : undefined
+    ),
+    packageIdType,
+    license
+  );
+};
+
 /** Toggle one open license's package, discarding closed findings or consuming legacy defaults on open. */
 export const toggleLicensePackageTable = (
   search: LicenseFindingsSearchParameters,

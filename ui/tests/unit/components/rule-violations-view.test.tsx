@@ -38,12 +38,22 @@ const mocks = vi.hoisted(() => ({
   violations: vi.fn(),
 }));
 
+vi.mock('@/components/resolutions', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/components/resolutions')>()),
+  Resolutions: () => null,
+}));
+
 vi.mock('@/api/sdk.gen', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/api/sdk.gen')>()),
   getRepositoryRun: mocks.run,
   getRunRuleViolationRules: mocks.rules,
   getRunRuleViolations: mocks.violations,
   getRunStatistics: mocks.statistics,
+  getUserInfo: () => Promise.resolve({ data: {} }),
+}));
+
+vi.mock('@/hooks/use-user', () => ({
+  useUser: () => ({ isSuperuser: false }),
 }));
 
 const RuleViolationsComponent = Route.options.component!;
@@ -256,6 +266,136 @@ describe('rule violations table', () => {
           screen.getByRole('group', { name: 'Filter by severity' })
         ).getByRole('button', { name: /Error/ })
       ).toHaveAttribute('aria-pressed', 'true')
+    );
+  });
+
+  it('shows the resolved mark next to the rule', async () => {
+    mocks.violations.mockImplementation(
+      async ({ query }: { query?: ViolationsQuery }) => {
+        const page = getViolationsPage(query);
+
+        return {
+          data: {
+            ...page,
+            data: page.data.map((violation) => ({
+              ...violation,
+              resolutions: [
+                {
+                  message: violation.message,
+                  reason: 'CANT_FIX_EXCEPTION',
+                  comment: '',
+                  isDeleted: false,
+                  source: 'REPOSITORY_FILE',
+                },
+              ],
+            })),
+          },
+        };
+      }
+    );
+    renderInteractiveWithRouter(
+      <TooltipProvider>
+        <RuleViolationsComponent />
+      </TooltipProvider>,
+      {
+        path: '/organizations/1/products/2/repositories/3/runs/4/rule-violations',
+        routes: [
+          {
+            path: '/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/rule-violations/',
+          },
+        ],
+        withQueryClient: true,
+      }
+    );
+
+    const rule = await screen.findByText('TestRule');
+
+    expect(rule.closest('[role="gridcell"]')).toHaveTextContent(
+      'TestRuleResolved'
+    );
+    expect(
+      screen.queryByRole('columnheader', { name: /^Status/ })
+    ).not.toBeInTheDocument();
+  });
+
+  it('marks a rule violation resolved only with the next run, and offers the rerun', async () => {
+    mocks.violations.mockImplementation(
+      async ({ query }: { query?: ViolationsQuery }) => {
+        const page = getViolationsPage(query);
+
+        return {
+          data: {
+            ...page,
+            data: page.data.map((violation) => ({
+              ...violation,
+              resolutions: [],
+              unappliedResolutions: [
+                {
+                  message: violation.message,
+                  reason: 'CANT_FIX_EXCEPTION',
+                  comment: '',
+                  source: 'SERVER',
+                },
+              ],
+            })),
+          },
+        };
+      }
+    );
+    renderInteractiveWithRouter(
+      <TooltipProvider>
+        <RuleViolationsComponent />
+      </TooltipProvider>,
+      {
+        path: '/organizations/1/products/2/repositories/3/runs/4/rule-violations',
+        routes: [
+          {
+            path: '/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/rule-violations/',
+          },
+        ],
+        withQueryClient: true,
+      }
+    );
+
+    const rule = await screen.findByText('TestRule');
+
+    expect(rule.closest('[role="gridcell"]')).toHaveTextContent(
+      'TestRuleResolved (pending)'
+    );
+    expect(rule).not.toHaveClass('line-through');
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Resolution changes are pending. They apply to the next run.'
+    );
+    expect(screen.getByRole('button', { name: 'Rerun' })).toBeVisible();
+  });
+
+  it('opens the details of a rule violation by clicking its row', async () => {
+    const { router, user } = renderInteractiveWithRouter(
+      <TooltipProvider>
+        <RuleViolationsComponent />
+      </TooltipProvider>,
+      {
+        path: '/organizations/1/products/2/repositories/3/runs/4/rule-violations',
+        routes: [
+          {
+            path: '/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/rule-violations/',
+          },
+        ],
+        withQueryClient: true,
+      }
+    );
+
+    await user.click(await screen.findByText('TestRule'));
+
+    const details = await screen.findByRole('dialog');
+    expect(within(details).getByText('A violation')).toBeVisible();
+    for (const heading of ['Package', 'License', 'How to fix']) {
+      expect(
+        within(details).getByRole('heading', { name: heading })
+      ).toBeVisible();
+    }
+    await waitFor(() =>
+      expect(router.state.location.search).toMatchObject({ marked: '0' })
     );
   });
 });

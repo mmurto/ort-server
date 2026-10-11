@@ -30,22 +30,22 @@ const RepoLayout = () => {
     {
       items: [
         {
-          title: 'Overview',
+          title: 'Runs',
           to: '/organizations/$orgId/products/$productId/repositories/$repoId/runs',
           icon: () => <Eye className='h-4 w-4' />,
         },
       ],
     },
     {
-      label: 'Search',
+      label: 'Search runs',
       items: [
         {
-          title: 'Packages',
+          title: 'By package',
           to: '/organizations/$orgId/products/$productId/repositories/$repoId/search-package',
           icon: () => <Search className='h-4 w-4' />,
         },
         {
-          title: 'Vulnerabilities',
+          title: 'By vulnerability',
           to: '/organizations/$orgId/products/$productId/repositories/$repoId/search-vulnerability',
           icon: () => <Search className='h-4 w-4' />,
         },

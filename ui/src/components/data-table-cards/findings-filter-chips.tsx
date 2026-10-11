@@ -37,6 +37,11 @@ interface FindingsFilterChipsProps<TValue extends string> {
   selected: TValue[] | undefined;
   /** The number of all findings, if known. */
   total?: number;
+  /**
+   * What the counts include, shown as the title of the chips that have one,
+   * e.g. that they count the whole run regardless of the other filters.
+   */
+  countsTitle?: string;
   /** Set the selected values; `undefined` shows all findings. */
   onSelect: (selected: TValue[] | undefined) => void;
 }
@@ -46,14 +51,16 @@ const chipClassName =
 
 /**
  * Chips that filter the findings by one severity, with the number of findings
- * per severity where it is known. They drive the same search parameter as the
- * severity filter in the column header.
+ * per severity where it is known. The counts may ignore the other filters;
+ * `countsTitle` then says what they count. The chips drive the same search
+ * parameter as the severity filter in the column header.
  */
 export function FindingsFilterChips<TValue extends string>({
   label,
   chips,
   selected,
   total,
+  countsTitle,
   onSelect,
 }: FindingsFilterChipsProps<TValue>) {
   const noneSelected = !selected || selected.length === 0;
@@ -67,6 +74,7 @@ export function FindingsFilterChips<TValue extends string>({
       <button
         type='button'
         aria-pressed={noneSelected}
+        title={total !== undefined ? countsTitle : undefined}
         className={chipClassName}
         onClick={() => onSelect(undefined)}
       >
@@ -85,6 +93,7 @@ export function FindingsFilterChips<TValue extends string>({
             <button
               type='button'
               aria-pressed={isSelected}
+              title={chip.count !== undefined ? countsTitle : undefined}
               className={chipClassName}
               onClick={() =>
                 onSelect(isOnlySelected ? undefined : [chip.value])

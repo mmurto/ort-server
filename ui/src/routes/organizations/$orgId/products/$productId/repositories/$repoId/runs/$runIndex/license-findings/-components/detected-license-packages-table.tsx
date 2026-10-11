@@ -24,17 +24,13 @@ import {
   useParams,
   useSearch,
 } from '@tanstack/react-router';
-import { ChevronDown, ChevronUp } from 'lucide-react';
-import { useEffect, useRef } from 'react';
 
 import { DetectedLicense, PackageIdentifier } from '@/api';
 import { getRunPackagesWithDetectedLicenseOptions } from '@/api/@tanstack/react-query.gen';
-import { BreakableString } from '@/components/breakable-string';
-import { CopyToClipboard } from '@/components/copy-to-clipboard';
-import { DataTable } from '@/components/data-table/data-table';
+import { DataTableCards } from '@/components/data-table-cards/data-table-cards';
+import { CopyableValue } from '@/components/data-table-cards/findings-cells';
 import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
-import { Button } from '@/components/ui/button';
 import {
   Tooltip,
   TooltipContent,
@@ -51,14 +47,7 @@ import {
   selectNoTableState,
   useAppTable,
 } from '@/hooks/use-app-table';
-import type { AppRow } from '@/hooks/use-app-table';
-import { ACTION_COLUMN_SIZE } from '@/lib/constants';
-import {
-  KEEP_SCROLL_POSITION,
-  markPanelOpened,
-  panelKey,
-  scrollOpenedPanelIntoView,
-} from '@/lib/scroll';
+import { KEEP_SCROLL_POSITION } from '@/lib/scroll';
 import {
   licensePackagesTableStateSchema,
   packageIdTypeSchema,
@@ -97,40 +86,43 @@ const PackageIdCell = ({
     : packageIdTypeSchema.enum.ORT_ID;
 
   return (
-    <div className='flex items-center'>
+    <CopyableValue value={id} className='font-mono text-xs'>
       <Tooltip>
         <TooltipTrigger asChild>
           <Link
-            className='link text-left font-mono text-xs'
+            className='link break-all whitespace-normal'
             to='/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/packages'
             params={params}
             search={{ pkgId: id, pkgIdType: idType, marked: '0' }}
           >
-            <BreakableString text={id} />
+            {id}
           </Link>
         </TooltipTrigger>
         <TooltipContent>
           Inspect the package details in packages table
         </TooltipContent>
       </Tooltip>
-      <CopyToClipboard copyText={id} />
-    </div>
+    </CopyableValue>
   );
 };
 
 type DetectedLicensePackagesTableProps = {
-  row: AppRow<DetectedLicense>;
+  license: DetectedLicense;
   runId: number;
 };
 
+/**
+ * The packages with a detected license, each of which shows the findings of
+ * the license in the package when it is expanded.
+ */
 export const DetectedLicensePackagesTable = ({
-  row,
+  license: detectedLicense,
   runId,
 }: DetectedLicensePackagesTableProps) => {
   const search = useSearch({ from: licenseFindingsRoutePath });
   const navigate = useNavigate({ from: licenseFindingsRoutePath });
   const packageIdType = useUserSettingsStore((state) => state.packageIdType);
-  const license = row.original.license;
+  const license = detectedLicense.license;
   const tableState = getLicensePackagesTableState(search, license);
   const { pageIndex: packagePageIndex, pageSize: packagePageSize } =
     getLicenseTablePagination(tableState);
@@ -138,7 +130,8 @@ export const DetectedLicensePackagesTable = ({
   const packageSortBy = tableState.sortBy;
   const packageColumnId =
     packageIdType === packageIdTypeSchema.enum.PURL ? 'purl' : 'identifier';
-  const panel = useRef<HTMLElement>(null);
+  const packageColumnLabel =
+    packageIdType === packageIdTypeSchema.enum.PURL ? 'PURL' : 'ORT ID';
 
   const {
     data: packages,
@@ -149,7 +142,7 @@ export const DetectedLicensePackagesTable = ({
     ...getRunPackagesWithDetectedLicenseOptions({
       path: {
         runId,
-        license: row.original.license,
+        license,
       },
       query: {
         limit: packagePageSize,
@@ -162,36 +155,11 @@ export const DetectedLicensePackagesTable = ({
 
   const packageColumns = packageColumnHelper.columns([
     packageColumnHelper.display({
-      id: 'details',
-      header: 'Details',
-      size: ACTION_COLUMN_SIZE,
-      cell: function CellComponent({ row: packageRow }) {
-        return packageRow.getCanExpand() ? (
-          <Button
-            variant='outline'
-            size='sm'
-            aria-label={`License findings for ${packageRow.id} under ${license}`}
-            aria-expanded={packageRow.getIsExpanded()}
-            onClick={() => {
-              if (!packageRow.getIsExpanded()) {
-                markPanelOpened(panelKey(license, packageRow.id));
-              }
-              navigate({
-                search: (previous) =>
-                  toggleLicensePackageTable(previous, license, packageRow.id),
-                ...KEEP_SCROLL_POSITION,
-              });
-            }}
-            style={{ cursor: 'pointer' }}
-          >
-            {packageRow.getIsExpanded() ? (
-              <ChevronUp className='h-4 w-4' />
-            ) : (
-              <ChevronDown className='h-4 w-4' />
-            )}
-          </Button>
-        ) : null;
-      },
+      id: 'package',
+      header: packageColumnLabel,
+      cell: ({ row }) => (
+        <PackageIdCell pkg={row.original} packageIdType={packageIdType} />
+      ),
     }),
     packageColumnHelper.accessor(
       (pkg) =>
@@ -200,11 +168,7 @@ export const DetectedLicensePackagesTable = ({
           : identifierToString(pkg.identifier),
       {
         id: packageColumnId,
-        header:
-          packageIdType === packageIdTypeSchema.enum.PURL ? 'PURL' : 'ORT ID',
-        cell: ({ row }) => (
-          <PackageIdCell pkg={row.original} packageIdType={packageIdType} />
-        ),
+        header: packageColumnLabel,
         meta: {
           filter: {
             filterVariant: 'text',
@@ -239,6 +203,7 @@ export const DetectedLicensePackagesTable = ({
         sorting: packageSortBy ?? EMPTY_SORTING_STATE,
         expanded: getLicensePackagesExpandedState(search, license),
         columnFilters: [{ id: packageColumnId, value: packageIdFilter }],
+        columnVisibility: { [packageColumnId]: false },
       },
       getRowCanExpand: () => true,
       getRowId: (row) => identifierToString(row.identifier),
@@ -246,10 +211,6 @@ export const DetectedLicensePackagesTable = ({
     },
     selectNoTableState
   );
-
-  useEffect(() => {
-    scrollOpenedPanelIntoView(panelKey(license), panel.current);
-  }, [license, packages]);
 
   if (isPending) {
     return <LoadingIndicator />;
@@ -260,19 +221,19 @@ export const DetectedLicensePackagesTable = ({
   }
 
   const filtersInUse =
-    row.original.packageCount !== packages.pagination.totalCount;
+    detectedLicense.packageCount !== packages.pagination.totalCount;
   const matching = `, ${packages.pagination.totalCount} matching filters`;
 
   return (
     <section
-      ref={panel}
       aria-label={`Packages for ${license}`}
-      className='space-y-4 p-2'
+      className='flex flex-col gap-3'
     >
       <div className='text-muted-foreground text-[0.8125rem]'>
-        Packages with this detected license ({row.original.packageCount} in
+        Packages with this detected license ({detectedLicense.packageCount} in
         total
-        {filtersInUse && matching}).
+        {filtersInUse && matching}). Expand a package to see where the license
+        was found.
       </div>
       {packageIdFilter && tableState.packageIdType !== packageIdType && (
         <div className='text-muted-foreground text-[0.8125rem]'>
@@ -283,13 +244,40 @@ export const DetectedLicensePackagesTable = ({
           : {packageIdFilter}
         </div>
       )}
-      <DataTable
+      <DataTableCards
         table={packageTable}
-        className='[&_tbody_tr:first-child]:border-t'
+        aria-label={`Packages for ${license}`}
+        globalShortcuts={false}
+        layout={[
+          {
+            id: 'package',
+            width: 'minmax(0,1fr)',
+            sortBy: packageColumnId,
+            filters: [packageColumnId],
+            mobile: 'main',
+          },
+        ]}
+        onClearFilters={() =>
+          navigate({
+            search: (previous) =>
+              updateLicensePackagesTable(previous, license, {
+                packageId: undefined,
+                packageIdType,
+              }),
+            ...KEEP_SCROLL_POSITION,
+          })
+        }
+        onToggleExpanded={(packageRow) => {
+          navigate({
+            search: (previous) =>
+              toggleLicensePackageTable(previous, license, packageRow.id),
+            ...KEEP_SCROLL_POSITION,
+          });
+        }}
         renderSubComponent={({ row: packageRow }) => (
           <DetectedLicenseFindingsTable
             runId={runId}
-            license={row.original.license}
+            license={license}
             identifier={identifierToString(packageRow.original.identifier)}
             purl={packageRow.original.purl ?? undefined}
           />

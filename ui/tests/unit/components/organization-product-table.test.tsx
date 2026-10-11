@@ -91,6 +91,26 @@ vi.mock(
 );
 
 vi.mock(
+  '@/routes/organizations/$orgId/-components/product-latest-runs',
+  () => ({
+    ProductLatestRunStatuses: ({
+      productId,
+      repositoryCount,
+    }: {
+      productId: number;
+      repositoryCount: number;
+    }) => (
+      <span>
+        Latest run statuses of {productId} in {repositoryCount} repositories
+      </span>
+    ),
+    ProductLatestRunDate: ({ productId }: { productId: number }) => (
+      <span>Latest run date of {productId}</span>
+    ),
+  })
+);
+
+vi.mock(
   '@/routes/organizations/$orgId/-components/product-item-counts',
   () => ({
     ProductItemCounts: ({ productId }: { productId: number }) => (
@@ -138,13 +158,16 @@ const cells: {
     name: 'ProductRunStatusCell',
     Cell: ProductRunStatusCell,
     oneRepository: ['Run status of 7', 'Item counts of 2'],
-    severalRepositories: ['Contains 3 repositories', 'Item counts of 2'],
+    severalRepositories: [
+      'Latest run statuses of 2 in 3 repositories',
+      'Item counts of 2',
+    ],
   },
   {
     name: 'ProductLastRunDateCell',
     Cell: ProductLastRunDateCell,
     oneRepository: ['Run date of 7'],
-    severalRepositories: [],
+    severalRepositories: ['Latest run date of 2'],
   },
   {
     name: 'ProductJobStatusCell',

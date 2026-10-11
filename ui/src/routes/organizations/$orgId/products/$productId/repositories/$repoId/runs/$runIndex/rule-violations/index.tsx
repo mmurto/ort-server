@@ -31,12 +31,16 @@ import {
   getRunStatisticsOptions,
 } from '@/api/@tanstack/react-query.gen';
 import { zSeverity } from '@/api/zod.gen';
-import { DataTableCards } from '@/components/data-table-cards/data-table-cards';
+import {
+  DataTableCards,
+  type DataTableCardsDetails,
+} from '@/components/data-table-cards/data-table-cards';
 import {
   CopyableValue,
+  EmptyValue,
   FindingText,
   MiddleTruncate,
-  ResolvedMark,
+  ResolutionStateMark,
   SeverityMark,
 } from '@/components/data-table-cards/findings-cells';
 import {
@@ -44,17 +48,16 @@ import {
   sumCounts,
 } from '@/components/data-table-cards/findings-counts';
 import { FindingsFilterChips } from '@/components/data-table-cards/findings-filter-chips';
-import { FormattedValue } from '@/components/formatted-value';
+import { FindingPanelSection } from '@/components/finding-panel/finding-panel';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { MarkdownRenderer } from '@/components/markdown-renderer';
 import { SheetSection } from '@/components/page-header';
-import { Resolutions } from '@/components/resolutions';
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
+  BulkResolve,
+  PendingResolutionsBanner,
+  RESOLUTION_FORM_SELECTOR,
+  Resolutions,
+} from '@/components/resolutions';
 import {
   Tooltip,
   TooltipContent,
@@ -68,8 +71,8 @@ import {
 } from '@/helpers/handle-multisort';
 import { identifierToString } from '@/helpers/identifier-conversion';
 import {
-  getResolutionAccordionDefaultValue,
   getResolutionAccordionLabel,
+  getResolutionState,
   getResolvedStatus,
 } from '@/helpers/resolutions';
 import {
@@ -246,16 +249,13 @@ const RuleViolationsComponent = () => {
     ...getRunStatisticsOptions({ path: { runId: ortRun.id } }),
   });
 
-  // The run statistics count the rule violations per severity, but know
-  // nothing of the other filters, so the counts are only shown without them.
-  const severityCounts =
-    packageIdentifier === undefined && selectedRules === undefined
-      ? selectCountsByResolution(
-          statistics?.ruleViolationsCountTotalBySeverity,
-          statistics?.ruleViolationsCountBySeverity,
-          itemStatus
-        )
-      : undefined;
+  // The run statistics count the rule violations per severity in the whole
+  // run, regardless of the other filters.
+  const severityCounts = selectCountsByResolution(
+    statistics?.ruleViolationsCountTotalBySeverity,
+    statistics?.ruleViolationsCountBySeverity,
+    itemStatus
+  );
 
   const { data: ruleViolations } = useSuspenseQuery({
     ...getRunRuleViolationsOptions({
@@ -295,14 +295,21 @@ const RuleViolationsComponent = () => {
     columnHelper.display({
       id: 'ruleName',
       header: 'Rule',
-      cell: ({ row }) => (
-        <FindingText
-          resolved={getResolvedStatus(row.original) === 'Resolved'}
-          className='block truncate font-mono text-xs font-medium'
-        >
-          {row.original.rule}
-        </FindingText>
-      ),
+      cell: ({ row }) => {
+        const state = getResolutionState(row.original);
+
+        return (
+          <div className='flex min-w-0 items-center gap-2'>
+            <FindingText
+              resolved={state === 'resolved'}
+              className='truncate font-mono text-xs font-medium'
+            >
+              <span title={row.original.rule}>{row.original.rule}</span>
+            </FindingText>
+            <ResolutionStateMark state={state} />
+          </div>
+        );
+      },
     }),
     columnHelper.display({
       id: 'package',
@@ -313,14 +320,6 @@ const RuleViolationsComponent = () => {
       id: 'finding',
       header: 'License / finding',
       cell: ({ row }) => <RuleViolationFinding ruleViolation={row.original} />,
-    }),
-    columnHelper.display({
-      id: 'resolution',
-      header: 'Status',
-      cell: ({ row }) =>
-        getResolvedStatus(row.original) === 'Resolved' ? (
-          <ResolvedMark />
-        ) : null,
     }),
     columnHelper.accessor(
       (ruleViolation) => {
@@ -419,56 +418,81 @@ const RuleViolationsComponent = () => {
     }),
   ]);
 
-  const renderSubComponent = ({ row }: { row: AppRow<RuleViolation> }) => {
+  const renderDetails = ({
+    row,
+  }: {
+    row: AppRow<RuleViolation>;
+  }): DataTableCardsDetails => {
     const ruleViolation = row.original;
+    const licenseSources =
+      ruleViolation.licenseSources && ruleViolation.licenseSources.length > 0
+        ? ruleViolation.licenseSources.join(', ')
+        : undefined;
 
-    return (
-      <Accordion
-        type='multiple'
-        className='w-full'
-        defaultValue={getResolutionAccordionDefaultValue(ruleViolation)}
-      >
-        <AccordionItem value='resolutions'>
-          <AccordionTrigger className='font-semibold'>
-            {getResolutionAccordionLabel(ruleViolation)}
-          </AccordionTrigger>
-          <AccordionContent>
+    return {
+      title: (
+        <span className='font-mono text-[0.875rem]'>{ruleViolation.rule}</span>
+      ),
+      meta: (
+        <>
+          <SeverityMark
+            label={ruleViolation.severity}
+            colorClass={getRuleViolationSeverityBackgroundColor(
+              ruleViolation.severity
+            )}
+          />
+          <ResolutionStateMark state={getResolutionState(ruleViolation)} />
+        </>
+      ),
+      content: (
+        <>
+          {ruleViolation.message && (
+            <p className='text-[0.875rem] leading-relaxed whitespace-pre-line'>
+              {ruleViolation.message}
+            </p>
+          )}
+          <FindingPanelSection
+            title={ruleViolation.purl != null ? 'Package' : 'Project'}
+          >
+            <RuleViolationPackage ruleViolation={ruleViolation} />
+          </FindingPanelSection>
+          <FindingPanelSection title='License'>
+            {ruleViolation.license ? (
+              <div className='flex flex-col gap-0.5'>
+                <span className='font-mono text-xs break-all'>
+                  {ruleViolation.license}
+                </span>
+                {licenseSources && (
+                  <span className='text-muted-foreground'>
+                    Sources: {licenseSources}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <EmptyValue />
+            )}
+          </FindingPanelSection>
+          <FindingPanelSection
+            title={getResolutionAccordionLabel(ruleViolation)}
+          >
             <Resolutions
               item={ruleViolation}
               repositoryId={params.repoId}
               runId={ortRun.id}
             />
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem value='details'>
-          <AccordionTrigger className='font-semibold'>Details</AccordionTrigger>
-          <AccordionContent>
-            <div className='flex flex-col gap-4'>
-              <div>{ruleViolation.message}</div>
-              <div className='grid grid-cols-8 gap-2'>
-                <div className='col-span-2 font-semibold'>License:</div>
-                <div className='col-span-6'>
-                  <FormattedValue value={ruleViolation.license} />
-                </div>
-                <div className='col-span-2 font-semibold'>License sources:</div>
-                <div className='col-span-6'>
-                  <FormattedValue
-                    value={
-                      ruleViolation.licenseSources &&
-                      ruleViolation.licenseSources.length > 0
-                        ? ruleViolation.licenseSources.join(', ')
-                        : null
-                    }
-                  />
-                </div>
-                <div className='col-span-2 font-semibold'>How to fix:</div>
-              </div>
+          </FindingPanelSection>
+          <FindingPanelSection title='How to fix'>
+            {ruleViolation.howToFix.trim() ? (
               <MarkdownRenderer markdown={ruleViolation.howToFix} />
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-    );
+            ) : (
+              <div className='text-muted-foreground'>
+                No instructions available.
+              </div>
+            )}
+          </FindingPanelSection>
+        </>
+      ),
+    };
   };
 
   const [expanded, setExpanded] = useState<ExpandedState>(
@@ -536,11 +560,13 @@ const RuleViolationsComponent = () => {
           count: severityCounts ? (severityCounts[value] ?? 0) : undefined,
         }))}
         total={sumCounts(severityCounts)}
+        countsTitle='The number in the whole run, regardless of the other filters'
         selected={severity}
         onSelect={(severities) => {
           navigate({ search: { ...search, page: 1, severity: severities } });
         }}
       />
+      <PendingResolutionsBanner items={ruleViolations.data} run={params} />
       <DataTableCards
         onClearFilters={() =>
           navigate({
@@ -568,7 +594,7 @@ const RuleViolationsComponent = () => {
             id: 'ruleName',
             width: 'minmax(0,1.2fr)',
             sortBy: 'rule',
-            filters: ['rule'],
+            filters: ['rule', 'status'],
             mobile: 'main',
           },
           {
@@ -578,13 +604,11 @@ const RuleViolationsComponent = () => {
             filters: [columnId],
             mobile: 'sub',
           },
-          { id: 'finding', width: 'minmax(0,1.5fr)', mobile: 'hidden' },
           {
-            id: 'resolution',
-            width: 'max-content',
-            sortBy: 'status',
-            filters: ['status'],
-            mobile: 'end',
+            id: 'finding',
+            width: 'minmax(0,1.5fr)',
+            mobile: 'hidden',
+            withDetails: false,
           },
         ]}
         setMarkedOptions={(marked) => ({
@@ -597,7 +621,17 @@ const RuleViolationsComponent = () => {
           },
         })}
         noResultsContent={noResultsContent}
-        renderSubComponent={renderSubComponent}
+        renderDetails={renderDetails}
+        resolveTarget={RESOLUTION_FORM_SELECTOR}
+        bulkActions={({ rows, clear }) => (
+          <BulkResolve
+            items={rows.map((row) => row.original)}
+            itemType='rule-violation'
+            repositoryId={params.repoId}
+            runId={ortRun.id}
+            onDone={clear}
+          />
+        )}
         setCurrentPageOptions={(currentPage) => {
           return {
             to: Route.to,

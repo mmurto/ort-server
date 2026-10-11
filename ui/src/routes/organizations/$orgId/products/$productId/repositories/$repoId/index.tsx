@@ -24,7 +24,7 @@ import { getRepositoryRunsOptions } from '@/api/@tanstack/react-query.gen';
 import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
 
-const RunRedirectComponent = () => {
+const RepositoryRedirectComponent = () => {
   const params = Route.useParams();
   const navigate = useNavigate();
 
@@ -54,17 +54,16 @@ const RunRedirectComponent = () => {
     return <LoadError error={error} />;
   }
 
-  const firstRun = runs.data[0];
-
-  if (firstRun) {
+  // A repository opens on its runs, with the latest one on top; one without
+  // runs opens on the form for its first run.
+  if (runs.data.length > 0) {
     navigate({
-      to: '/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex',
+      to: '/organizations/$orgId/products/$productId/repositories/$repoId/runs',
       replace: true,
       params: {
         orgId: params.orgId,
         productId: params.productId,
         repoId: params.repoId,
-        runIndex: firstRun.index.toString(),
       },
     });
   } else {
@@ -83,5 +82,5 @@ const RunRedirectComponent = () => {
 export const Route = createFileRoute(
   '/organizations/$orgId/products/$productId/repositories/$repoId/'
 )({
-  component: RunRedirectComponent,
+  component: RepositoryRedirectComponent,
 });

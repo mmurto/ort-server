@@ -30,11 +30,14 @@ import {
   getRunStatisticsOptions,
 } from '@/api/@tanstack/react-query.gen';
 import { zSeverity } from '@/api/zod.gen';
-import { DataTableCards } from '@/components/data-table-cards/data-table-cards';
+import {
+  DataTableCards,
+  type DataTableCardsDetails,
+} from '@/components/data-table-cards/data-table-cards';
 import {
   CopyableValue,
   FindingText,
-  ResolvedMark,
+  ResolutionStateMark,
   SeverityMark,
 } from '@/components/data-table-cards/findings-cells';
 import {
@@ -42,18 +45,17 @@ import {
   sumCounts,
 } from '@/components/data-table-cards/findings-counts';
 import { FindingsFilterChips } from '@/components/data-table-cards/findings-filter-chips';
-import { FormattedValue } from '@/components/formatted-value';
+import { FindingPanelSection } from '@/components/finding-panel/finding-panel';
 import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { SheetSection } from '@/components/page-header';
-import { Resolutions } from '@/components/resolutions';
-import { TimestampWithUTC } from '@/components/timestamp-with-utc';
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
+  BulkResolve,
+  PendingResolutionsBanner,
+  RESOLUTION_FORM_SELECTOR,
+  Resolutions,
+} from '@/components/resolutions';
+import { TimestampWithUTC } from '@/components/timestamp-with-utc';
 import {
   Tooltip,
   TooltipContent,
@@ -68,8 +70,8 @@ import {
 } from '@/helpers/handle-multisort';
 import { identifierToString } from '@/helpers/identifier-conversion';
 import {
-  getResolutionAccordionDefaultValue,
   getResolutionAccordionLabel,
+  getResolutionState,
   getResolvedStatus,
 } from '@/helpers/resolutions';
 import {
@@ -189,15 +191,15 @@ const IssuesComponent = () => {
       id: 'issueMessage',
       header: 'Message',
       cell: ({ row }) => {
-        const resolved = getResolvedStatus(row.original) === 'Resolved';
+        const state = getResolutionState(row.original);
         const message = row.original.message.split('\n')[0];
 
         return (
           <div className='flex min-w-0 items-center gap-2'>
-            <FindingText resolved={resolved} className='truncate'>
+            <FindingText resolved={state === 'resolved'} className='truncate'>
               <span title={row.original.message}>{message}</span>
             </FindingText>
-            {resolved && <ResolvedMark />}
+            <ResolutionStateMark state={state} />
           </div>
         );
       },
@@ -333,16 +335,13 @@ const IssuesComponent = () => {
     ...getRunStatisticsOptions({ path: { runId: ortRun.id } }),
   });
 
-  // The run statistics count the issues per severity, but know nothing of the
-  // package filter, so the counts are only shown without it.
-  const severityCounts =
-    packageIdentifier === undefined
-      ? selectCountsByResolution(
-          statistics?.issuesCountTotalBySeverity,
-          statistics?.issuesCountBySeverity,
-          itemStatus
-        )
-      : undefined;
+  // The run statistics count the issues per severity in the whole run,
+  // regardless of the other filters.
+  const severityCounts = selectCountsByResolution(
+    statistics?.issuesCountTotalBySeverity,
+    statistics?.issuesCountBySeverity,
+    itemStatus
+  );
 
   const {
     data: issues,
@@ -365,49 +364,67 @@ const IssuesComponent = () => {
     }),
   });
 
-  const renderSubComponent = ({ row }: { row: AppRow<Issue> }) => {
+  const renderDetails = ({
+    row,
+  }: {
+    row: AppRow<Issue>;
+  }): DataTableCardsDetails => {
     const issue = row.original;
 
-    return (
-      <Accordion
-        type='multiple'
-        className='w-full'
-        defaultValue={getResolutionAccordionDefaultValue(issue)}
-      >
-        <AccordionItem value='resolutions'>
-          <AccordionTrigger className='font-semibold'>
-            {getResolutionAccordionLabel(issue)}
-          </AccordionTrigger>
-          <AccordionContent>
+    return {
+      title: (
+        <span className='line-clamp-3'>
+          {issue.message.split('\n')[0] || 'Issue'}
+        </span>
+      ),
+      meta: (
+        <>
+          <SeverityMark
+            label={issue.severity}
+            colorClass={getIssueSeverityBackgroundColor(issue.severity)}
+          />
+          <ResolutionStateMark state={getResolutionState(issue)} />
+          <span className='text-muted-foreground'>
+            {issue.source} · {getIssueCategory(issue.message)}
+          </span>
+        </>
+      ),
+      content: (
+        <>
+          <div className='text-muted-foreground flex flex-wrap gap-x-1 text-[0.8125rem]'>
+            <span>Created at</span>
+            <TimestampWithUTC
+              timestamp={issue.timestamp}
+              className='text-foreground'
+            />
+            <span>by</span>
+            <span className='text-foreground'>{issue.worker}</span>
+          </div>
+          <FindingPanelSection
+            title={issue.purl != null ? 'Package' : 'Project'}
+          >
+            <IssuePackage issue={issue} />
+          </FindingPanelSection>
+          {issue.affectedPath && (
+            <FindingPanelSection title='Affected path'>
+              <div className='font-mono text-xs break-all'>
+                {issue.affectedPath}
+              </div>
+            </FindingPanelSection>
+          )}
+          <FindingPanelSection title={getResolutionAccordionLabel(issue)}>
             <Resolutions
               item={issue}
               repositoryId={params.repoId}
               runId={ortRun.id}
             />
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem value='details'>
-          <AccordionTrigger className='font-semibold'>Details</AccordionTrigger>
-          <AccordionContent>
-            <div className='flex flex-col gap-4'>
-              <div className='flex flex-wrap gap-x-1 text-[0.8125rem]'>
-                <span className='text-muted-foreground'>Created at</span>
-                <TimestampWithUTC timestamp={issue.timestamp} className='' />
-                <span className='text-muted-foreground'>by</span>
-                <span>{issue.worker}</span>
-              </div>
-              {issue.affectedPath && (
-                <div className='flex gap-1 text-[0.8125rem]'>
-                  <div className='font-semibold'>Affected path:</div>
-                  <FormattedValue value={issue.affectedPath} />
-                </div>
-              )}
-              <IssueDetails issue={issue} />
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-    );
+          </FindingPanelSection>
+          <FindingPanelSection title='Message'>
+            <IssueDetails issue={issue} />
+          </FindingPanelSection>
+        </>
+      ),
+    };
   };
 
   // Control the expanded state of the subrows manually, so that when
@@ -481,11 +498,13 @@ const IssuesComponent = () => {
           count: severityCounts ? (severityCounts[value] ?? 0) : undefined,
         }))}
         total={sumCounts(severityCounts)}
+        countsTitle='The number in the whole run, regardless of the other filters'
         selected={severity}
         onSelect={(severities) => {
           navigate({ search: { ...search, page: 1, severity: severities } });
         }}
       />
+      <PendingResolutionsBanner items={issues.data} run={params} />
       <DataTableCards
         onClearFilters={() =>
           navigate({
@@ -513,6 +532,7 @@ const IssuesComponent = () => {
             width: 'minmax(0,1fr)',
             sortBy: 'source',
             mobile: 'hidden',
+            withDetails: false,
           },
           {
             id: 'issueMessage',
@@ -537,7 +557,17 @@ const IssuesComponent = () => {
             marked: marked === '' ? undefined : marked,
           },
         })}
-        renderSubComponent={renderSubComponent}
+        renderDetails={renderDetails}
+        resolveTarget={RESOLUTION_FORM_SELECTOR}
+        bulkActions={({ rows, clear }) => (
+          <BulkResolve
+            items={rows.map((row) => row.original)}
+            itemType='issue'
+            repositoryId={params.repoId}
+            runId={ortRun.id}
+            onDone={clear}
+          />
+        )}
         setCurrentPageOptions={(currentPage) => {
           return {
             to: Route.to,

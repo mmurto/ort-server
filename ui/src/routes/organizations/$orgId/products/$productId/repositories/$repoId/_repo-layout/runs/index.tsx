@@ -19,7 +19,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { ExternalLink, PlusIcon, Settings } from 'lucide-react';
+import { ExternalLink, History, PlusIcon, Settings } from 'lucide-react';
 
 import {
   getRepositoryOptions,
@@ -70,6 +70,15 @@ const RepositoryRunsComponent = () => {
     }),
   });
 
+  // The newest run, which the header offers to open directly.
+  const { data: latestRuns } = useQuery({
+    ...getRepositoryRunsOptions({
+      path: { repositoryId: Number.parseInt(params.repoId) },
+      query: { limit: 1, sort: '-index' },
+    }),
+  });
+  const latestRun = latestRuns?.data[0];
+
   if (repoIsPending) {
     return <LoadingIndicator />;
   }
@@ -119,6 +128,25 @@ const RepositoryRunsComponent = () => {
         }
         actions={
           <>
+            {latestRun && (
+              <Button asChild variant='outline'>
+                <Link
+                  to='/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex'
+                  params={{
+                    orgId: params.orgId,
+                    productId: params.productId,
+                    repoId: params.repoId,
+                    runIndex: latestRun.index.toString(),
+                  }}
+                >
+                  <History />
+                  Latest run
+                  <span className='text-muted-foreground tabular-nums'>
+                    {latestRun.index}
+                  </span>
+                </Link>
+              </Button>
+            )}
             {canWrite && (
               <Button asChild variant='outline'>
                 <Link

@@ -66,15 +66,15 @@ const Layout = () => {
       ],
     },
     {
-      label: 'Search',
+      label: 'Search runs',
       items: [
         {
-          title: 'Packages',
+          title: 'By package',
           to: '/organizations/$orgId/search-package',
           icon: () => <Search className='h-4 w-4' />,
         },
         {
-          title: 'Vulnerabilities',
+          title: 'By vulnerability',
           to: '/organizations/$orgId/search-vulnerability',
           icon: () => <Search className='h-4 w-4' />,
         },

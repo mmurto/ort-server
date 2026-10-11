@@ -136,4 +136,28 @@ describe('DependencyTreeRow', () => {
 
     expect(onToggle).toHaveBeenCalledExactlyOnceWith(collapsed);
   });
+
+  it('renders the extras of a package next to it, outside its toggle', () => {
+    const renderPackageExtras = vi.fn(
+      (_graph: unknown, packageIndex: number) => (
+        <a href='#details'>Details of {packageIndex}</a>
+      )
+    );
+    render(<DependencyTreeRow {...props({ renderPackageExtras })} />);
+
+    // `http-client` is the first package of the fixture graph.
+    const link = screen.getByRole('link', { name: 'Details of 0' });
+    expect(screen.getByRole('button')).not.toContainElement(link);
+    expect(renderPackageExtras).toHaveBeenCalledWith(graph, 0);
+  });
+
+  it('renders no extras for projects and scopes', () => {
+    const renderPackageExtras = vi.fn(() => <span>extras</span>);
+    render(
+      <DependencyTreeRow {...props({ row: rows[0]!, renderPackageExtras })} />
+    );
+
+    expect(screen.queryByText('extras')).not.toBeInTheDocument();
+    expect(renderPackageExtras).not.toHaveBeenCalled();
+  });
 });

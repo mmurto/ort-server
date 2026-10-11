@@ -18,7 +18,12 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { createFileRoute, Outlet } from '@tanstack/react-router';
+import {
+  createFileRoute,
+  Outlet,
+  useLocation,
+  useRouter,
+} from '@tanstack/react-router';
 import {
   Boxes,
   Bug,
@@ -34,7 +39,7 @@ import {
   ShieldQuestion,
   SquareScissors,
 } from 'lucide-react';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 
 import {
   getRepositoryRunOptions,
@@ -44,10 +49,44 @@ import { PageLayout } from '@/components/page-layout';
 import { SidebarNavProps } from '@/components/sidebar';
 import { config } from '@/config';
 import { isJobFinished, isRunFinished } from '@/helpers/job-helpers';
+import {
+  getRememberedSearch,
+  useRunPageSearchStore,
+} from '@/store/run-page-search.store';
 import { RunDetailsBar } from './-components/run-details-bar';
+
+type RailItem = SidebarNavProps['sections'][number]['items'][number];
 
 const Layout = () => {
   const params = Route.useParams();
+  const repoParams = {
+    orgId: params.orgId,
+    productId: params.productId,
+    repoId: params.repoId,
+  };
+  const repositoryPermissions = Route.useRouteContext().permissions.repository;
+  const router = useRouter();
+  const location = useLocation();
+  const searchByPath = useRunPageSearchStore((state) => state.searchByPath);
+  const rememberSearch = useRunPageSearchStore((state) => state.rememberSearch);
+
+  // Remember the filters of every page of the run, so its rail link returns to
+  // them.
+  useEffect(() => {
+    rememberSearch(location.pathname, location.search);
+  }, [location.pathname, location.search, rememberSearch]);
+
+  /** Links a rail item to the search last used on its page, if any. */
+  const withRememberedSearch = (item: RailItem): RailItem => {
+    if (item.to === undefined) return item;
+    const { pathname } = router.buildLocation({
+      to: item.to,
+      params: item.params,
+    } as Parameters<typeof router.buildLocation>[0]);
+    const remembered = getRememberedSearch(searchByPath, pathname);
+
+    return remembered === undefined ? item : { ...item, search: remembered };
+  };
 
   // The rail shows how many unresolved items each result section holds, once the run has them.
   const { data: ortRun } = useQuery(
@@ -194,10 +233,39 @@ const Layout = () => {
         },
       ],
     },
+    // The repository of the run, so that its runs and actions are one step away.
+    {
+      label: 'Repository',
+      items: [
+        {
+          title: 'All runs',
+          to: '/organizations/$orgId/products/$productId/repositories/$repoId/runs',
+          params: repoParams,
+        },
+        {
+          title: 'New run',
+          to: '/organizations/$orgId/products/$productId/repositories/$repoId/create-run',
+          params: repoParams,
+          visible: repositoryPermissions?.includes('TRIGGER_ORT_RUN'),
+        },
+        {
+          title: 'Settings',
+          to: '/organizations/$orgId/products/$productId/repositories/$repoId/settings',
+          params: repoParams,
+          visible: repositoryPermissions?.includes('WRITE'),
+        },
+      ],
+    },
   ];
 
   return (
-    <PageLayout sections={sections} topBar={<RunDetailsBar />}>
+    <PageLayout
+      sections={sections.map((section) => ({
+        ...section,
+        items: section.items.map(withRememberedSearch),
+      }))}
+      topBar={<RunDetailsBar />}
+    >
       <Suspense fallback={<div>Loading...</div>}>
         <Outlet />
       </Suspense>

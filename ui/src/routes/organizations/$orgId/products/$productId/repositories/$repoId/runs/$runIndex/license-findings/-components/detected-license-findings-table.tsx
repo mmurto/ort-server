@@ -19,14 +19,12 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { useEffect, useRef } from 'react';
 
 import { LicenseFinding } from '@/api';
 import { getRunDetectedLicenseFindingsOptions } from '@/api/@tanstack/react-query.gen';
 import swhLogo from '@/assets/software-heritage-logo.svg';
-import { BreakableString } from '@/components/breakable-string';
 import { CopyToClipboard } from '@/components/copy-to-clipboard';
-import { DataTable } from '@/components/data-table/data-table';
+import { DataTableCards } from '@/components/data-table-cards/data-table-cards';
 import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import {
@@ -40,11 +38,7 @@ import {
   useAppTable,
 } from '@/hooks/use-app-table';
 import { createLicenseFindingCurationTemplate } from '@/lib/license-finding-curation';
-import {
-  KEEP_SCROLL_POSITION,
-  panelKey,
-  scrollOpenedPanelIntoView,
-} from '@/lib/scroll';
+import { KEEP_SCROLL_POSITION } from '@/lib/scroll';
 import { buildSwhBrowseUrl } from '@/lib/software-heritage';
 import { formatLineRange } from '@/lib/utils';
 import {
@@ -71,7 +65,6 @@ export const DetectedLicenseFindingsTable = ({
   purl,
 }: DetectedLicenseFindingsTableProps) => {
   const search = useSearch({ from: licenseFindingsRoutePath });
-  const panel = useRef<HTMLElement>(null);
   const { pageIndex: findingsPageIndex, pageSize: findingsPageSize } =
     getLicenseTablePagination(
       getLicenseFindingsTableState(search, license, identifier)
@@ -119,15 +112,14 @@ export const DetectedLicenseFindingsTable = ({
         });
 
         return (
-          <div className='flex items-start gap-2'>
-            <BreakableString
-              text={row.original.path}
-              className='font-mono text-xs'
-            />
+          <div className='flex min-w-0 items-start gap-1'>
+            <span className='min-w-0 font-mono text-xs break-all'>
+              {row.original.path}
+            </span>
             <CopyToClipboard
               copyText={curationTemplate}
               tooltipText='Copy license finding curation template to clipboard'
-              className='h-5 px-1 align-middle'
+              className='h-5 shrink-0 px-1 align-middle'
             />
             {url && (
               <Tooltip>
@@ -151,33 +143,31 @@ export const DetectedLicenseFindingsTable = ({
           </div>
         );
       },
-      meta: {
-        isGrow: true,
-      },
     }),
     findingColumnHelper.accessor('startLine', {
       id: 'startLine',
       header: 'Line Range',
-      cell: ({ row }) =>
-        formatLineRange(row.original.startLine, row.original.endLine),
-      meta: {
-        widthPercentage: 10,
-      },
+      cell: ({ row }) => (
+        <span className='text-muted-foreground whitespace-nowrap tabular-nums'>
+          {formatLineRange(row.original.startLine, row.original.endLine)}
+        </span>
+      ),
     }),
     findingColumnHelper.accessor('score', {
       id: 'score',
       header: 'Score',
-      meta: {
-        widthPercentage: 10,
-      },
-      cell: ({ row }) => row.original.score ?? '-',
+      cell: ({ row }) => (
+        <span className='tabular-nums'>{row.original.score ?? '-'}</span>
+      ),
     }),
     findingColumnHelper.accessor('scanner', {
       id: 'scanner',
       header: 'Scanner',
-      meta: {
-        widthPercentage: 15,
-      },
+      cell: ({ row }) => (
+        <span className='text-muted-foreground wrap-break-word'>
+          {row.original.scanner}
+        </span>
+      ),
     }),
   ]);
 
@@ -199,10 +189,6 @@ export const DetectedLicenseFindingsTable = ({
     selectNoTableState
   );
 
-  useEffect(() => {
-    scrollOpenedPanelIntoView(panelKey(license, identifier), panel.current);
-  }, [license, identifier, findings]);
-
   if (isPending) {
     return <LoadingIndicator />;
   }
@@ -213,16 +199,22 @@ export const DetectedLicenseFindingsTable = ({
 
   return (
     <section
-      ref={panel}
       aria-label={`License findings for ${identifier} under ${license}`}
-      className='space-y-2 p-2'
+      className='flex flex-col gap-2'
     >
       <div className='text-muted-foreground text-[0.8125rem]'>
         License findings ({findings.pagination.totalCount} in total).
       </div>
-      <DataTable
+      <DataTableCards
         table={findingsTable}
-        className='[&_tbody_tr:first-child]:border-t'
+        aria-label={`License findings for ${identifier}`}
+        globalShortcuts={false}
+        layout={[
+          { id: 'path', width: 'minmax(0,2fr)', mobile: 'main' },
+          { id: 'startLine', width: 'max-content', mobile: 'end' },
+          { id: 'score', width: 'max-content', mobile: 'end' },
+          { id: 'scanner', width: 'minmax(0,1fr)', mobile: 'sub' },
+        ]}
         setCurrentPageOptions={(currentPage) => {
           return {
             to: '.',

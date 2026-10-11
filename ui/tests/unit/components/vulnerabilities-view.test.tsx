@@ -48,7 +48,8 @@ vi.mock('@/api/sdk.gen', async (importOriginal) => ({
   getRunVulnerabilities: mocks.vulnerabilities,
 }));
 
-vi.mock('@/components/resolutions', () => ({
+vi.mock('@/components/resolutions', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/components/resolutions')>()),
   Resolutions: () => null,
 }));
 
@@ -191,13 +192,14 @@ describe('vulnerabilities table', () => {
     const { container, router, user } = renderVulnerabilities();
 
     const link = await screen.findByRole('link', { name: idOf('library') });
+    // Clicking a row opens its details.
     await user.click(
-      within(link.closest<HTMLElement>('[role="row"]')!).getByRole('button', {
-        name: 'Expand row',
-      })
+      within(link.closest<HTMLElement>('[role="row"]')!).getAllByRole(
+        'gridcell'
+      )[0]!
     );
     expect(
-      await screen.findByRole('button', { name: 'Resolve vulnerability' })
+      await screen.findByRole('heading', { name: 'Resolve vulnerability' })
     ).toBeVisible();
 
     await act(() =>
@@ -228,9 +230,9 @@ describe('vulnerabilities table', () => {
       screen.queryByRole('link', { name: idOf('library') })
     ).not.toBeInTheDocument();
     expect(container).toHaveTextContent('5 in total, 1 matching filters');
-    // The table collapses expanded rows when it receives new data.
+    // The details close when the table receives new data.
     expect(
-      screen.queryByRole('button', { name: 'Resolve vulnerability' })
+      screen.queryByRole('heading', { name: 'Resolve vulnerability' })
     ).not.toBeInTheDocument();
   });
 });

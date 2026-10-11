@@ -140,22 +140,82 @@ export function getResolutionAccordionLabel(item: ItemWithResolutions) {
   return 'Resolve item';
 }
 
+/** The kind of item a resolution is for. */
+export type ResolutionItemType = 'issue' | 'rule-violation' | 'vulnerability';
+
+export function getResolutionItemType(
+  item: ItemWithResolutions
+): ResolutionItemType {
+  if (isVulnerabilityItem(item)) return 'vulnerability';
+  if (isRuleViolationItem(item)) return 'rule-violation';
+  return 'issue';
+}
+
+/**
+ * What a resolution of the item matches: the external ID of a vulnerability,
+ * the message of a rule violation or an issue.
+ */
+export function getResolutionIdentifier(item: ItemWithResolutions): string {
+  return isVulnerabilityItem(item)
+    ? item.vulnerability.externalId
+    : (item as Issue | RuleViolation).message;
+}
+
+function getAppliedResolutions(item: ItemWithResolutions) {
+  if (isVulnerabilityItem(item))
+    return getAppliedVulnerabilityResolutions(item);
+  if (isRuleViolationItem(item))
+    return getAppliedRuleViolationResolutions(item);
+  return getAppliedIssueResolutions(item);
+}
+
+function getUnappliedResolutions(item: ItemWithResolutions) {
+  if (isVulnerabilityItem(item))
+    return getUnappliedVulnerabilityResolutions(item);
+  if (isRuleViolationItem(item))
+    return getUnappliedRuleViolationResolutions(item);
+  return getUnappliedIssueResolutions(item);
+}
+
+/**
+ * Whether the item is resolved in this run (`resolved`), only by resolutions
+ * that apply to the next run (`pending`), or not at all (`unresolved`). The
+ * same for all kinds of items: only resolutions the run applied count as
+ * resolved, as for the server's resolved filter.
+ */
+export type ResolutionState = 'resolved' | 'pending' | 'unresolved';
+
+export function getResolutionState(item: ItemWithResolutions): ResolutionState {
+  if (getAppliedResolutions(item).length > 0) return 'resolved';
+  if (getUnappliedResolutions(item).length > 0) return 'pending';
+  return 'unresolved';
+}
+
+/**
+ * Whether resolutions of the item were created, changed or deleted after the
+ * run, so they only apply to the next run.
+ */
+export function hasPendingResolutionChanges(item: ItemWithResolutions) {
+  return (
+    getUnappliedResolutions(item).length > 0 ||
+    getAppliedResolutions(item).some((resolution) => resolution.isDeleted)
+  );
+}
+
+/** Whether the item has a resolution managed in ORT Server. */
+export function hasServerResolution(item: ItemWithResolutions) {
+  return (
+    getAppliedResolutions(item).some(
+      (resolution) => resolution.source === 'SERVER' && !resolution.isDeleted
+    ) ||
+    getUnappliedResolutions(item).some(
+      (resolution) => resolution.source === 'SERVER'
+    )
+  );
+}
+
 export function getResolvedStatus(
   item: ItemWithResolutions
 ): 'Resolved' | 'Unresolved' {
-  if (isVulnerabilityItem(item)) {
-    return getAppliedVulnerabilityResolutions(item).length > 0
-      ? 'Resolved'
-      : 'Unresolved';
-  }
-
-  if (isRuleViolationItem(item)) {
-    return hasRuleViolationResolutionActivity(item) ? 'Resolved' : 'Unresolved';
-  }
-
-  if (isIssueItem(item)) {
-    return hasIssueResolutionActivity(item) ? 'Resolved' : 'Unresolved';
-  }
-
-  return 'Unresolved';
+  return getResolutionState(item) === 'resolved' ? 'Resolved' : 'Unresolved';
 }

@@ -19,7 +19,6 @@
 
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
-import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 import { DetectedLicense } from '@/api';
@@ -29,14 +28,14 @@ import {
   getRunDetectedLicensesOptions,
 } from '@/api/@tanstack/react-query.gen';
 import {
-  DataTable,
-  DEFAULT_PAGE_SIZE,
-} from '@/components/data-table/data-table';
+  DataTableCards,
+  type DataTableCardsDetails,
+} from '@/components/data-table-cards/data-table-cards';
+import { DEFAULT_PAGE_SIZE } from '@/components/data-table/data-table';
 import { SpdxExpressionBadgeGroup } from '@/components/licenses';
 import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { SheetSection } from '@/components/page-header';
-import { Button } from '@/components/ui/button';
 import {
   convertToBackendSorting,
   EMPTY_SORTING_STATE,
@@ -51,29 +50,22 @@ import type { AppRow } from '@/hooks/use-app-table';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useInfiniteList } from '@/hooks/use-infinite-list';
 import { DROPDOWN_PAGE_SIZE } from '@/lib/constants';
-import { KEEP_SCROLL_POSITION, markPanelOpened, panelKey } from '@/lib/scroll';
 import { useUserSettingsStore } from '@/store/user-settings.store';
 import { DetectedLicensePackagesTable } from './detected-license-packages-table';
 import {
   clearDetectedLicenseMarkers,
   getDetectedLicenseQueryFilter,
-  getLicenseTablesExpandedState,
+  getOpenLicense,
   normalizeLicenseFindingsSearch,
+  openLicenseTable,
   resetLicensePackageIdentifierControls,
-  toggleLicenseTable,
 } from './license-findings-state';
 
 const licenseColumnHelper = createAppColumnHelper<DetectedLicense>();
+const packagesCount = (count: number) =>
+  `${count} package${count === 1 ? '' : 's'}`;
 const licenseFindingsRoutePath =
   '/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/license-findings/';
-
-const renderSubComponent = ({
-  row,
-  runId,
-}: {
-  row: AppRow<DetectedLicense>;
-  runId: number;
-}) => <DetectedLicensePackagesTable row={row} runId={runId} />;
 
 export const LicenseFindingsView = () => {
   const params = useParams({ from: licenseFindingsRoutePath });
@@ -149,40 +141,6 @@ export const LicenseFindingsView = () => {
   });
 
   const columns = licenseColumnHelper.columns([
-    licenseColumnHelper.display({
-      id: 'details',
-      header: 'Details',
-      meta: {
-        widthPercentage: 8,
-      },
-      cell: function CellComponent({ row }) {
-        return row.getCanExpand() ? (
-          <Button
-            variant='outline'
-            size='sm'
-            aria-label={`Packages for ${row.original.license}`}
-            aria-expanded={row.getIsExpanded()}
-            onClick={() => {
-              if (!row.getIsExpanded()) {
-                markPanelOpened(panelKey(row.id));
-              }
-              navigate({
-                search: (previous) =>
-                  toggleLicenseTable(previous, row.id, packageIdType),
-                ...KEEP_SCROLL_POSITION,
-              });
-            }}
-            style={{ cursor: 'pointer' }}
-          >
-            {row.getIsExpanded() ? (
-              <ChevronUp className='h-4 w-4' />
-            ) : (
-              <ChevronDown className='h-4 w-4' />
-            )}
-          </Button>
-        ) : null;
-      },
-    }),
     licenseColumnHelper.accessor('license', {
       id: 'license',
       header: 'Detected License',
@@ -190,7 +148,6 @@ export const LicenseFindingsView = () => {
         <SpdxExpressionBadgeGroup expression={row.original.license} />
       ),
       meta: {
-        isGrow: true,
         filter: {
           filterVariant: 'infinite-select',
           align: 'end',
@@ -219,11 +176,19 @@ export const LicenseFindingsView = () => {
     licenseColumnHelper.accessor('packageCount', {
       id: 'packageCount',
       header: 'Package Count',
-      meta: {
-        widthPercentage: 14,
-      },
+      cell: ({ row }) => (
+        <span className='text-muted-foreground whitespace-nowrap tabular-nums'>
+          {packagesCount(row.original.packageCount)}
+        </span>
+      ),
     }),
   ]);
+
+  // The packages of one license are shown next to the licenses.
+  const openLicense = getOpenLicense(
+    search,
+    detectedLicenseFindings.data.map(({ license }) => license)
+  );
 
   const table = useAppTable(
     {
@@ -238,7 +203,7 @@ export const LicenseFindingsView = () => {
           pageSize,
         },
         sorting: search.sortBy ?? EMPTY_SORTING_STATE,
-        expanded: getLicenseTablesExpandedState(search),
+        expanded: openLicense ? { [openLicense]: true } : {},
         columnFilters: [{ id: 'license', value: detectedLicenses }],
       },
       getRowCanExpand: () => true,
@@ -275,6 +240,22 @@ export const LicenseFindingsView = () => {
     return <LoadError error={error} />;
   }
 
+  const renderDetails = ({
+    row,
+  }: {
+    row: AppRow<DetectedLicense>;
+  }): DataTableCardsDetails => ({
+    title: <SpdxExpressionBadgeGroup expression={row.original.license} />,
+    meta: (
+      <span className='text-muted-foreground tabular-nums'>
+        {packagesCount(row.original.packageCount)}
+      </span>
+    ),
+    content: (
+      <DetectedLicensePackagesTable license={row.original} runId={ortRun.id} />
+    ),
+  });
+
   const filtersInUse =
     totalDetectedLicenses.pagination.totalCount !==
     detectedLicenseFindings.pagination.totalCount;
@@ -296,12 +277,41 @@ export const LicenseFindingsView = () => {
         Licenses as detected in projects and packages by the configured
         scanners.
       </p>
-      <DataTable
+      <DataTableCards
         table={table}
+        aria-label='Detected licenses'
+        layout={[
+          {
+            id: 'license',
+            width: 'minmax(0,1fr)',
+            sortBy: 'license',
+            filters: ['license'],
+            mobile: 'main',
+          },
+          {
+            id: 'packageCount',
+            width: 'max-content',
+            sortBy: 'packageCount',
+            mobile: 'end',
+          },
+        ]}
         noResultsContent={noResultsContent}
-        renderSubComponent={({ row }) =>
-          renderSubComponent({ row, runId: ortRun.id })
+        onClearFilters={() =>
+          navigate({
+            search: (previous) =>
+              clearDetectedLicenseMarkers({
+                ...previous,
+                page: 1,
+                detectedLicense: undefined,
+              }),
+          })
         }
+        setMarkedOptions={(license) => ({
+          to: '.',
+          search: (previous) =>
+            openLicenseTable(previous, license || undefined, packageIdType),
+        })}
+        renderDetails={renderDetails}
         setCurrentPageOptions={(currentPage) => {
           return {
             to: '.',

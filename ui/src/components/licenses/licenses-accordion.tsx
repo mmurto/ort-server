@@ -30,6 +30,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { identifierToString } from '@/helpers/identifier-conversion';
+import { cn } from '@/lib/utils';
 import { SpdxExpressionBadgeGroup } from './spdx-expression-badge-group';
 
 const routeApi = getRouteApi(
@@ -42,11 +43,13 @@ export type LicensesAccordionProps = {
   declaredLicenses: string[];
 };
 
-export const LicensesAccordion = ({
+/** The declared and detected licenses of a package or project. */
+export const LicensesList = ({
   runId,
   identifier,
   declaredLicenses,
-}: LicensesAccordionProps) => {
+  className,
+}: LicensesAccordionProps & { className?: string }) => {
   const params = routeApi.useParams();
   const identifierString = identifierToString(identifier);
   const { data: licenses, isPending } = useQuery({
@@ -56,68 +59,75 @@ export const LicensesAccordion = ({
   });
 
   return (
-    <Accordion type='multiple' className='w-full'>
-      <AccordionItem value='licenses'>
-        <AccordionTrigger className='py-0 font-bold'>Licenses</AccordionTrigger>
-        <AccordionContent>
-          <div className='grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-2 gap-y-2 pt-2 pl-2 text-sm'>
-            <div className='font-semibold'>Declared:</div>
-            {declaredLicenses.length ? (
-              <div className='flex flex-wrap gap-1'>
-                {declaredLicenses.map((license, index) => (
-                  <SpdxExpressionBadgeGroup
-                    key={`${license}-${index}`}
-                    expression={license}
-                    suffix={
-                      index < declaredLicenses.length - 1 ? ',' : undefined
-                    }
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className='text-muted-foreground italic'>
-                No declared licenses.
-              </div>
-            )}
+    <div
+      className={cn(
+        'grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-2 gap-y-2 text-sm',
+        className
+      )}
+    >
+      <div className='font-semibold'>Declared:</div>
+      {declaredLicenses.length ? (
+        <div className='flex flex-wrap gap-1'>
+          {declaredLicenses.map((license, index) => (
+            <SpdxExpressionBadgeGroup
+              key={`${license}-${index}`}
+              expression={license}
+              suffix={index < declaredLicenses.length - 1 ? ',' : undefined}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className='text-muted-foreground italic'>
+          No declared licenses.
+        </div>
+      )}
 
-            <div className='font-semibold'>Detected:</div>
-            {isPending ? (
-              <LoadingIndicator />
-            ) : licenses?.length ? (
-              <div className='flex flex-wrap gap-1'>
-                {licenses.map((license, index) => (
-                  <Link
-                    key={`${license}-${index}`}
-                    className='hover:opacity-80'
-                    to='/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/license-findings'
-                    params={params}
-                    search={{
-                      detectedLicense: [license],
-                      marked: license,
-                      page: 1,
-                      licenseTables: {
-                        [license]: {
-                          packageMarked: identifierString,
-                          packages: { [identifierString]: {} },
-                        },
-                      },
-                    }}
-                  >
-                    <SpdxExpressionBadgeGroup
-                      expression={license}
-                      suffix={index < licenses.length - 1 ? ',' : undefined}
-                    />
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div className='text-muted-foreground italic'>
-                No licenses detected.
-              </div>
-            )}
-          </div>
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
+      <div className='font-semibold'>Detected:</div>
+      {isPending ? (
+        <LoadingIndicator />
+      ) : licenses?.length ? (
+        <div className='flex flex-wrap gap-1'>
+          {licenses.map((license, index) => (
+            <Link
+              key={`${license}-${index}`}
+              className='hover:opacity-80'
+              to='/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/license-findings'
+              params={params}
+              search={{
+                detectedLicense: [license],
+                marked: license,
+                page: 1,
+                licenseTables: {
+                  [license]: {
+                    packageMarked: identifierString,
+                    packages: { [identifierString]: {} },
+                  },
+                },
+              }}
+            >
+              <SpdxExpressionBadgeGroup
+                expression={license}
+                suffix={index < licenses.length - 1 ? ',' : undefined}
+              />
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <div className='text-muted-foreground italic'>
+          No licenses detected.
+        </div>
+      )}
+    </div>
   );
 };
+
+export const LicensesAccordion = (props: LicensesAccordionProps) => (
+  <Accordion type='multiple' className='w-full'>
+    <AccordionItem value='licenses'>
+      <AccordionTrigger className='py-0 font-bold'>Licenses</AccordionTrigger>
+      <AccordionContent>
+        <LicensesList {...props} className='pt-2 pl-2' />
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+);
