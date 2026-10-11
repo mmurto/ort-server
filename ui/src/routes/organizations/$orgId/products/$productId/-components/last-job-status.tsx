@@ -25,9 +25,9 @@ import { useLatestRepositoryRun } from '@/hooks/use-latest-repository-run';
 export const LastJobStatus = ({ repoId }: { repoId: number }) => (
   <QueryBoundary
     fallback={
-      <div className='flex min-h-3 items-center space-x-1'>
+      <div className='flex min-h-3 items-center gap-0.5'>
         {Array.from({ length: 5 }).map((_, index) => (
-          <Skeleton key={index} className='h-3 w-3 rounded-full' />
+          <Skeleton key={index} className='h-1.5 w-4' />
         ))}
       </div>
     }

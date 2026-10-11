@@ -22,10 +22,17 @@ import { Lock } from 'lucide-react';
 
 export const Route = createFileRoute('/403/')({
   component: () => (
-    <div className='flex flex-col items-center justify-center'>
-      <Lock size={64} className='mt-8' />
-      <h1 className='mt-4 text-center text-3xl font-bold'>403 Forbidden</h1>
-      <p className='mt-4'>Sorry, you are not allowed to access this page.</p>
+    <div className='flex flex-col gap-3 py-8'>
+      <div className='label-caps flex items-center gap-1.5'>
+        <Lock className='size-3.5' />
+        Error 403
+      </div>
+      <h1 className='text-2xl font-semibold tracking-[-0.015em]'>
+        403 Forbidden
+      </h1>
+      <p className='text-muted-foreground text-[0.8125rem]'>
+        Sorry, you are not allowed to access this page.
+      </p>
     </div>
   ),
 });

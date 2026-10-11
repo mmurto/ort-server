@@ -18,16 +18,12 @@
  */
 
 import { QueryBoundary } from '@/components/query-boundary';
-import { Badge } from '@/components/ui/badge';
+import { StatusMark } from '@/components/status-mark';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getStatusBackgroundColor } from '@/helpers/get-status-class';
 import { useLatestRepositoryRun } from '@/hooks/use-latest-repository-run';
 
 export const LastRunStatus = ({ repoId }: { repoId: number }) => (
-  <QueryBoundary
-    fallback={<Skeleton className='h-5 w-16 rounded-md' />}
-    resetKey={repoId}
-  >
+  <QueryBoundary fallback={<Skeleton className='h-5 w-16' />} resetKey={repoId}>
     <LastRunStatusInner repoId={repoId} />
   </QueryBoundary>
 );
@@ -37,9 +33,5 @@ const LastRunStatusInner = ({ repoId }: { repoId: number }) => {
 
   if (!run) return <div className='min-h-5' />;
 
-  return (
-    <Badge className={`border ${getStatusBackgroundColor(run.status)}`}>
-      {run.status}
-    </Badge>
-  );
+  return <StatusMark status={run.status} />;
 };

@@ -39,6 +39,7 @@ import { DataTableCards } from '@/components/data-table-cards/data-table-cards';
 import { MarkItems } from '@/components/data-table/mark-items';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { MarkdownRenderer } from '@/components/markdown-renderer';
+import { SheetSection } from '@/components/page-header';
 import { Resolutions } from '@/components/resolutions';
 import {
   Accordion,
@@ -48,13 +49,6 @@ import {
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -147,7 +141,7 @@ const VulnerabilityCard = ({
           <Tooltip>
             <TooltipTrigger asChild>
               <Link
-                className='link text-left hover:underline'
+                className='link text-left font-mono text-xs'
                 to='/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/packages'
                 params={{
                   orgId: params.orgId,
@@ -167,17 +161,17 @@ const VulnerabilityCard = ({
           <CopyToClipboard copyText={id} className='h-5 px-2 align-middle' />
         </div>
         <Badge
-          className='bg-blue-300 whitespace-nowrap text-black'
+          className='bg-neutral-soft text-foreground font-mono whitespace-nowrap'
           variant='small'
         >
           {vulnerability.vulnerability.externalId}
         </Badge>
       </div>
       <div className='flex items-center justify-between'>
-        <div className='text-muted-foreground wrap-break-word italic'>
+        <div className='text-muted-foreground text-[0.8125rem] wrap-break-word'>
           {vulnerability.vulnerability.summary || 'No summary available'}
         </div>
-        <div className='text-muted-foreground'>
+        <div className='text-muted-foreground text-[0.8125rem]'>
           {vulnerability.advisor.name}
         </div>
       </div>
@@ -200,7 +194,7 @@ const VulnerabilityCard = ({
           </Badge>
         </div>
         {(vulnerability.firstFixedVersions?.length ?? 0) > 0 && (
-          <Badge className='bg-green-300 whitespace-nowrap text-black'>
+          <Badge className='bg-ok-soft text-ok border-transparent whitespace-nowrap'>
             Fix available
           </Badge>
         )}
@@ -507,7 +501,7 @@ const VulnerabilitiesComponent = () => {
                 )}
               </>
             ) : (
-              <div className='text-muted-foreground text-sm'>
+              <div className='text-muted-foreground text-[0.8125rem]'>
                 No fixed versions available.
               </div>
             )}
@@ -536,7 +530,7 @@ const VulnerabilitiesComponent = () => {
                   vulnerability.description || '_No description available._'
                 }
               />
-              <div className='mt-2 text-lg font-semibold'>
+              <div className='mt-2 font-semibold'>
                 Links to vulnerability references
               </div>
               <Table>
@@ -557,10 +551,12 @@ const VulnerabilitiesComponent = () => {
                         <TableCell>{reference.severity || '-'}</TableCell>
                         <TableCell>{reference.scoringSystem || '-'}</TableCell>
                         <TableCell>{reference.score || '-'}</TableCell>
-                        <TableCell>{reference.vector || '-'}</TableCell>
+                        <TableCell className='font-mono text-xs break-all whitespace-normal'>
+                          {reference.vector || '-'}
+                        </TableCell>
                         <TableCell>
                           <Link
-                            className='link font-semibold break-all hover:underline'
+                            className='link break-all'
                             to={reference.url}
                             target='_blank'
                           >
@@ -627,56 +623,51 @@ const VulnerabilitiesComponent = () => {
   const matching = `, ${vulnerabilities.pagination.totalCount} matching filters`;
   const advisorWasIncludedInRun = ortRun.jobs.advisor != null;
   const noResultsContent = !advisorWasIncludedInRun ? (
-    <div className='text-muted-foreground text-sm'>
+    <div className='text-muted-foreground text-[0.8125rem]'>
       No vulnerabilities are available because the advisor job was not enabled
       for this run.
     </div>
   ) : undefined;
 
   return (
-    <Card className='h-fit'>
-      <CardHeader>
-        <CardTitle>
-          Vulnerabilities ({totalVulnerabilities.pagination.totalCount} in total
-          {filtersInUse && matching})
-        </CardTitle>
-        <CardDescription>
-          This view shows the vulnerabilities found in any of the packages used
-          as dependencies of a project. As vulnerabilities may be only
-          discovered over time, new vulnerabilities may arise even without
-          changes to the any of the projects or their dependencies. Therefore,
-          it is important to check for vulnerabilities on a regular basis.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <DataTableCards
-          table={table}
-          noResultsContent={noResultsContent}
-          renderSubComponent={renderSubComponent}
-          setCurrentPageOptions={(currentPage) => {
-            return {
-              to: Route.to,
-              search: { ...search, page: currentPage },
-            };
-          }}
-          setPageSizeOptions={(size) => {
-            return {
-              to: Route.to,
-              search: { ...search, page: 1, pageSize: size },
-            };
-          }}
-          setSortingOptions={(sortBy) => {
-            return {
-              to: Route.to,
-              search: {
-                ...search,
-                sortBy: updateColumnSorting(search.sortBy, sortBy),
-              },
-            };
-          }}
-        />
-      </CardContent>
-    </Card>
+    <SheetSection
+      title='Vulnerabilities'
+      meta={`${totalVulnerabilities.pagination.totalCount} in total${filtersInUse ? matching : ''}`}
+    >
+      <p className='text-muted-foreground -mt-2 max-w-[75ch] text-[0.8125rem]'>
+        This view shows the vulnerabilities found in any of the packages used as
+        dependencies of a project. As vulnerabilities may be only discovered
+        over time, new vulnerabilities may arise even without changes to the any
+        of the projects or their dependencies. Therefore, it is important to
+        check for vulnerabilities on a regular basis.
+      </p>
+      <DataTableCards
+        table={table}
+        noResultsContent={noResultsContent}
+        renderSubComponent={renderSubComponent}
+        setCurrentPageOptions={(currentPage) => {
+          return {
+            to: Route.to,
+            search: { ...search, page: currentPage },
+          };
+        }}
+        setPageSizeOptions={(size) => {
+          return {
+            to: Route.to,
+            search: { ...search, page: 1, pageSize: size },
+          };
+        }}
+        setSortingOptions={(sortBy) => {
+          return {
+            to: Route.to,
+            search: {
+              ...search,
+              sortBy: updateColumnSorting(search.sortBy, sortBy),
+            },
+          };
+        }}
+      />
+    </SheetSection>
   );
 };
 

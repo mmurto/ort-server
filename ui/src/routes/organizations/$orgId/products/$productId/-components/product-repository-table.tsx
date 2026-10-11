@@ -126,7 +126,7 @@ export const ProductRepositoryTable = () => {
               </div>
               {row.original.name && (
                 <Link
-                  className='link block hover:underline'
+                  className='text-muted-foreground hover:text-foreground block font-mono text-xs break-all hover:underline'
                   to={
                     '/organizations/$orgId/products/$productId/repositories/$repoId'
                   }
@@ -135,7 +135,7 @@ export const ProductRepositoryTable = () => {
                   {row.original.url}
                 </Link>
               )}
-              <div className='text-muted-foreground text-sm md:inline'>
+              <div className='text-muted-foreground text-[0.8125rem]'>
                 {row.original.type}
                 {row.original.description
                   ? ` | ${row.original.description}`
@@ -168,7 +168,7 @@ export const ProductRepositoryTable = () => {
             productId: row.original.productId.toString(),
             repoId: row.original.id.toString(),
           }}
-          className='link hover:underline'
+          className='link tabular-nums hover:underline'
         >
           <TotalRuns repoId={row.original.id} />
         </Link>

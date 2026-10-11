@@ -41,6 +41,7 @@ import {
 } from '@/components/licenses';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { PackageCuration } from '@/components/package-curation';
+import { SheetSection } from '@/components/page-header';
 import { RenderProperty } from '@/components/render-property';
 import { TimestampWithUTC } from '@/components/timestamp-with-utc';
 import {
@@ -51,13 +52,6 @@ import {
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   Tooltip,
   TooltipContent,
@@ -123,7 +117,7 @@ const PackageCard = ({ pkg }: { pkg: Package }) => {
   return (
     <div className='flex flex-col gap-1'>
       <div className='flex items-start justify-between gap-4'>
-        <div className='min-w-0 text-left font-semibold'>
+        <div className='min-w-0 text-left font-mono text-xs font-medium'>
           <BreakableString text={id} />
           <CopyToClipboard copyText={id} className='h-5 px-2 align-middle' />
         </div>
@@ -131,18 +125,18 @@ const PackageCard = ({ pkg }: { pkg: Package }) => {
           <TimestampWithUTC
             timestamp={pkg.publishedAt}
             label='Publishing timestamp'
-            className='shrink-0 text-sm'
+            className='text-muted-foreground shrink-0 text-[0.8125rem]'
           />
         )}
       </div>
       <div className='flex items-start justify-between gap-4'>
         {declaredLicenses.length > 0 ? (
-          <div className='flex min-w-0 gap-2 text-sm'>
+          <div className='flex min-w-0 gap-2 text-[0.8125rem]'>
             <div className='text-muted-foreground'>Declared License:</div>
             <LicenseList licenses={declaredLicenses} />
           </div>
         ) : (
-          <div className='text-muted-foreground italic'>
+          <div className='text-muted-foreground text-[0.8125rem]'>
             No declared license
           </div>
         )}
@@ -150,7 +144,7 @@ const PackageCard = ({ pkg }: { pkg: Package }) => {
           href={pkg.homepageUrl}
           target='_blank'
           rel='noopener noreferrer'
-          className='link max-w-1/2 min-w-0 text-right wrap-break-word hover:underline'
+          className='link max-w-1/2 min-w-0 text-right text-[0.8125rem] wrap-break-word'
         >
           {pkg.homepageUrl}
         </a>
@@ -241,7 +235,7 @@ const renderSubComponent = ({
       {alternativeId && (
         <div className='flex gap-2'>
           <div className='font-semibold'>{alternativeIdLabel}:</div>
-          <div className='min-w-0'>
+          <div className='min-w-0 font-mono text-xs'>
             <BreakableString text={alternativeId} />
             <CopyToClipboard
               copyText={alternativeId}
@@ -629,48 +623,43 @@ const PackagesComponent = () => {
   const matching = `, ${packages.pagination.totalCount} matching filters`;
 
   return (
-    <Card className='h-fit'>
-      <CardHeader>
-        <CardTitle>
-          Packages ({totalPackages.pagination.totalCount} in total
-          {filtersInUse && matching})
-        </CardTitle>
-        <CardDescription>
-          This view shows the flat set of de-duplicated packages discovered for
-          all projects.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <DataTableCards
-          table={table}
-          renderSubComponent={({ row }) =>
-            renderSubComponent({ row, packageIdType, runId: ortRun.id })
-          }
-          setCurrentPageOptions={(currentPage) => {
-            return {
-              to: Route.to,
-              search: { ...search, page: currentPage },
-            };
-          }}
-          setPageSizeOptions={(size) => {
-            return {
-              to: Route.to,
-              search: { ...search, page: 1, pageSize: size },
-            };
-          }}
-          setSortingOptions={(sortBy) => {
-            return {
-              to: Route.to,
-              search: {
-                ...search,
-                page: 1,
-                sortBy: updateColumnSorting(search.sortBy, sortBy),
-              },
-            };
-          }}
-        />
-      </CardContent>
-    </Card>
+    <SheetSection
+      title='Packages'
+      meta={`${totalPackages.pagination.totalCount} in total${filtersInUse ? matching : ''}`}
+    >
+      <p className='text-muted-foreground -mt-2 text-[0.8125rem]'>
+        This view shows the flat set of de-duplicated packages discovered for
+        all projects.
+      </p>
+      <DataTableCards
+        table={table}
+        renderSubComponent={({ row }) =>
+          renderSubComponent({ row, packageIdType, runId: ortRun.id })
+        }
+        setCurrentPageOptions={(currentPage) => {
+          return {
+            to: Route.to,
+            search: { ...search, page: currentPage },
+          };
+        }}
+        setPageSizeOptions={(size) => {
+          return {
+            to: Route.to,
+            search: { ...search, page: 1, pageSize: size },
+          };
+        }}
+        setSortingOptions={(sortBy) => {
+          return {
+            to: Route.to,
+            search: {
+              ...search,
+              page: 1,
+              sortBy: updateColumnSorting(search.sortBy, sortBy),
+            },
+          };
+        }}
+      />
+    </SheetSection>
   );
 };
 

@@ -22,14 +22,7 @@ import { isSortable, useSortable } from '@dnd-kit/react/sortable';
 import { useQuery } from '@tanstack/react-query';
 import { Link, type LinkProps } from '@tanstack/react-router';
 import { AxiosError } from 'axios';
-import {
-  Building2,
-  FolderGit2,
-  GripVerticalIcon,
-  Package,
-  PlayCircle,
-  Star,
-} from 'lucide-react';
+import { GripVerticalIcon } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
 
 import type { Organization, OrtRun, Product, Repository } from '@/api';
@@ -40,13 +33,7 @@ import {
   getRepositoryRunOptions,
 } from '@/api/@tanstack/react-query.gen';
 import { FavoriteButton } from '@/components/favorite-button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { SheetSection } from '@/components/page-header';
 import { cn } from '@/lib/utils';
 import {
   buildOrganizationFavorite,
@@ -91,7 +78,6 @@ const favoriteRefreshQueryOptions = {
 type FavoriteGroup = {
   type: FavoriteType;
   title: string;
-  icon: typeof Building2;
   items: FavoriteItem[];
 };
 
@@ -100,13 +86,6 @@ const favoriteTypeLabels: Record<FavoriteType, string> = {
   product: 'Products',
   repository: 'Repositories',
   run: 'Runs',
-};
-
-const favoriteTypeIcons: Record<FavoriteType, typeof Building2> = {
-  organization: Building2,
-  product: Package,
-  repository: FolderGit2,
-  run: PlayCircle,
 };
 
 type FavoriteRefreshData = {
@@ -263,14 +242,22 @@ const FavoriteListItem = ({ favorite }: { favorite: FavoriteItem }) => {
     updateFavorite,
   ]);
 
+  const parents = favorite.breadcrumbs.slice(0, -1);
+  const name = favorite.breadcrumbs.at(-1) ?? favorite.name;
+
   return (
-    <li className='flex items-center justify-between gap-3 rounded-lg border p-2'>
+    <li className='flex min-h-9 items-center justify-between gap-3 border-b py-1'>
       <Link
         to={favorite.to as LinkProps['to']}
         params={favorite.params as LinkProps['params']}
-        className='link min-w-0 flex-1 text-sm break-words hover:underline'
+        className='link min-w-0 flex-1 text-[0.8125rem] break-words'
       >
-        {favorite.breadcrumbs.join(' / ')}
+        {parents.map((parent, index) => (
+          <span key={index} className='text-muted-foreground font-normal'>
+            {parent} /{' '}
+          </span>
+        ))}
+        {name}
       </Link>
       <FavoriteButton
         favorite={favorite}
@@ -282,42 +269,36 @@ const FavoriteListItem = ({ favorite }: { favorite: FavoriteItem }) => {
   );
 };
 
-const FavoriteGroupCard = ({
+const FavoriteGroupList = ({
   group,
   dragHandle,
 }: {
   group: FavoriteGroup;
   dragHandle?: ReactNode;
 }) => {
-  const Icon = group.icon;
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className='flex items-center gap-2 text-base'>
-          {dragHandle}
-          <Icon className='h-4 w-4' />
-          {group.title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {group.items.length > 0 ? (
-          <ul className='space-y-2'>
-            {group.items.map((favorite) => (
-              <FavoriteListItem key={favorite.id} favorite={favorite} />
-            ))}
-          </ul>
-        ) : (
-          <HomeEmptyState>
-            No favorite {group.title.toLowerCase()} yet.
-          </HomeEmptyState>
-        )}
-      </CardContent>
-    </Card>
+    <div className='flex flex-col gap-1'>
+      <h3 className='label-caps flex h-6 items-center gap-1.5'>
+        {dragHandle}
+        {group.title}
+        <span className='font-normal tabular-nums'>{group.items.length}</span>
+      </h3>
+      {group.items.length > 0 ? (
+        <ul className='border-t'>
+          {group.items.map((favorite) => (
+            <FavoriteListItem key={favorite.id} favorite={favorite} />
+          ))}
+        </ul>
+      ) : (
+        <HomeEmptyState>
+          No favorite {group.title.toLowerCase()} yet.
+        </HomeEmptyState>
+      )}
+    </div>
   );
 };
 
-const SortableFavoriteGroupCard = ({
+const SortableFavoriteGroup = ({
   group,
   index,
 }: {
@@ -333,16 +314,16 @@ const SortableFavoriteGroupCard = ({
 
   return (
     <div ref={ref} className={cn(isDragging && 'opacity-60')}>
-      <FavoriteGroupCard
+      <FavoriteGroupList
         group={group}
         dragHandle={
           <button
             ref={handleRef}
             type='button'
             aria-label={`Reorder ${group.title}`}
-            className='text-muted-foreground flex h-4 w-4 cursor-grab items-center justify-center rounded-sm hover:text-black focus-visible:ring-2 focus-visible:outline-none active:cursor-grabbing'
+            className='text-muted-foreground hover:text-foreground focus-visible:ring-ring -ml-1 flex size-4 cursor-grab items-center justify-center rounded-xs focus-visible:ring-2 focus-visible:outline-none active:cursor-grabbing'
           >
-            <GripVerticalIcon className='h-4 w-4' />
+            <GripVerticalIcon className='size-3.5' />
           </button>
         }
       />
@@ -361,7 +342,6 @@ export const HomeFavoritesSection = ({
   const groups: FavoriteGroup[] = favoriteGroupOrder.map((type) => ({
     type,
     title: favoriteTypeLabels[type],
-    icon: favoriteTypeIcons[type],
     items: [...favorites.filter((favorite) => favorite.type === type)].sort(
       (first, second) =>
         first.breadcrumbs
@@ -373,57 +353,48 @@ export const HomeFavoritesSection = ({
   }));
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className='flex items-center gap-2'>
-          <Star className='fill-foreground text-foreground h-5 w-5 dark:fill-white dark:text-white' />
-          Favorites
-        </CardTitle>
-        <CardDescription>
-          Star organizations, products, repositories, and runs to keep them on
-          your home page.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {favorites.length > 0 ? (
-          <DragDropProvider
-            onDragEnd={(event) => {
-              if (event.canceled) return;
+    <SheetSection
+      title='Favorites'
+      meta={favorites.length > 0 ? `${favorites.length} starred` : undefined}
+    >
+      {favorites.length > 0 ? (
+        <DragDropProvider
+          onDragEnd={(event) => {
+            if (event.canceled) return;
 
-              const { source } = event.operation;
+            const { source } = event.operation;
 
-              if (isSortable(source)) {
-                const { initialIndex, index } = source;
+            if (isSortable(source)) {
+              const { initialIndex, index } = source;
 
-                if (initialIndex !== index) {
-                  setFavoriteGroupOrder(
-                    moveItem(
-                      groups.map((group) => group.type),
-                      initialIndex,
-                      index
-                    )
-                  );
-                }
+              if (initialIndex !== index) {
+                setFavoriteGroupOrder(
+                  moveItem(
+                    groups.map((group) => group.type),
+                    initialIndex,
+                    index
+                  )
+                );
               }
-            }}
-          >
-            <div className='flex flex-col gap-4'>
-              {groups.map((group, index) => (
-                <SortableFavoriteGroupCard
-                  key={group.type}
-                  group={group}
-                  index={index}
-                />
-              ))}
-            </div>
-          </DragDropProvider>
-        ) : (
-          <HomeEmptyState>
-            Use the star button on organization, product, repository, or run
-            pages to add favorites here.
-          </HomeEmptyState>
-        )}
-      </CardContent>
-    </Card>
+            }
+          }}
+        >
+          <div className='flex flex-col gap-5'>
+            {groups.map((group, index) => (
+              <SortableFavoriteGroup
+                key={group.type}
+                group={group}
+                index={index}
+              />
+            ))}
+          </div>
+        </DragDropProvider>
+      ) : (
+        <HomeEmptyState>
+          Use the star button on organization, product, repository, or run pages
+          to add favorites here.
+        </HomeEmptyState>
+      )}
+    </SheetSection>
   );
 };

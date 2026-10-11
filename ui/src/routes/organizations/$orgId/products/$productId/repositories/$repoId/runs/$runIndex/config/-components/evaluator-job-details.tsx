@@ -31,7 +31,7 @@ export const EvaluatorJobDetails = ({ run }: EvaluatorJobDetailsProps) => {
   if (!jobConfigs) return null;
 
   return (
-    <div className='ml-4 flex flex-col gap-4 text-sm'>
+    <div className='flex flex-col gap-4 text-[0.8125rem]'>
       <RenderProperty
         label='Ruleset'
         value={run.resolvedJobConfigs?.ruleSet}

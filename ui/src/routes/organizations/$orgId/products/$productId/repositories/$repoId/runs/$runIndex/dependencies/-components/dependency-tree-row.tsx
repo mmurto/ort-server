@@ -120,7 +120,7 @@ const RowLabel = ({
 
       return (
         <div className='flex min-w-0 flex-wrap items-center gap-2'>
-          <span className='block min-w-0 text-sm font-semibold break-all'>
+          <span className='block min-w-0 text-[0.8125rem] font-semibold break-all'>
             <HighlightedMatch searchTerm={searchTerm} text={projectLabel} />
           </span>
           <PackageCountBadge count={row.packageCount} />
@@ -148,7 +148,7 @@ const RowLabel = ({
     case 'package':
       return (
         <div className='flex min-w-0 flex-1 flex-wrap items-center gap-2'>
-          <span className='min-w-0 text-sm font-medium break-all'>
+          <span className='min-w-0 font-mono text-xs font-medium break-all'>
             <HighlightedMatch
               searchTerm={searchTerm}
               text={formatDependencyGraphPackageLabel(
@@ -166,7 +166,7 @@ const RowLabel = ({
     case 'cycle':
       return (
         <div className='flex flex-wrap items-center gap-2'>
-          <span className='min-w-0 text-sm font-medium break-all'>
+          <span className='min-w-0 font-mono text-xs font-medium break-all'>
             <HighlightedMatch
               searchTerm={searchTerm}
               text={formatDependencyGraphPackageLabel(

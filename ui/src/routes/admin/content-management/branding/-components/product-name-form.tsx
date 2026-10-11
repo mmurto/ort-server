@@ -120,7 +120,7 @@ export function ProductNameForm() {
   }
 
   return (
-    <Card>
+    <Card className='max-w-2xl'>
       <CardHeader>
         <CardTitle>Product Name</CardTitle>
         <CardDescription>
@@ -130,13 +130,17 @@ export function ProductNameForm() {
         </CardDescription>
       </CardHeader>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
-          <CardContent className='space-y-4'>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className='flex flex-col gap-6'
+        >
+          <CardContent className='flex flex-col gap-5'>
             <FormField
               control={form.control}
               name='productName'
               render={({ field }) => (
                 <FormItem>
+                  <FormLabel>Product name</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -148,20 +152,32 @@ export function ProductNameForm() {
               control={form.control}
               name='isEnabled'
               render={({ field }) => (
-                <FormItem className='flex items-center gap-2'>
+                <FormItem className='flex flex-row items-center gap-2'>
                   <FormControl>
                     <Switch
                       checked={field.value}
                       onCheckedChange={field.onChange}
                     />
                   </FormControl>
-                  <FormLabel>Enable customization</FormLabel>
+                  <FormLabel className='font-normal'>
+                    Enable customization
+                  </FormLabel>
                   <FormMessage />
                 </FormItem>
               )}
             />
           </CardContent>
-          <CardFooter className='flex gap-2'>
+          <CardFooter className='gap-2'>
+            <Button type='submit' disabled={isPending}>
+              {isPending ? (
+                <>
+                  <span className='sr-only'>Saving ...</span>
+                  <Loader2 size={16} className='mx-3 animate-spin' />
+                </>
+              ) : (
+                'Save'
+              )}
+            </Button>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -176,16 +192,6 @@ export function ProductNameForm() {
                 Revert to the saved product name and clear unsaved edits.
               </TooltipContent>
             </Tooltip>
-            <Button type='submit' disabled={isPending}>
-              {isPending ? (
-                <>
-                  <span className='sr-only'>Saving ...</span>
-                  <Loader2 size={16} className='mx-3 animate-spin' />
-                </>
-              ) : (
-                'Save'
-              )}
-            </Button>
           </CardFooter>
         </form>
       </Form>

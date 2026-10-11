@@ -59,15 +59,20 @@ export const ProductTotalRunsCell = ({ product }: { product: Product }) => {
     return (
       <>
         <span className='sr-only'>Loading...</span>
-        <Loader2 size={16} className='mx-3 animate-spin' />
+        <Loader2 className='text-muted-foreground size-3.5 animate-spin' />
       </>
     );
 
-  if (isError) return <span>Error loading data.</span>;
+  if (isError)
+    return (
+      <span className='text-muted-foreground text-[0.8125rem]'>
+        Error loading data.
+      </span>
+    );
 
   if (data.pagination.totalCount === 1 && data.data[0])
     return <TotalRuns repoId={data.data[0].id} />;
-  else return <span>-</span>;
+  else return <span className='text-muted-foreground'>-</span>;
 };
 
 export const ProductRunStatusCell = ({ product }: { product: Product }) => {
@@ -82,18 +87,25 @@ export const ProductRunStatusCell = ({ product }: { product: Product }) => {
     return (
       <>
         <span className='sr-only'>Loading...</span>
-        <Loader2 size={16} className='mx-3 animate-spin' />
+        <Loader2 className='text-muted-foreground size-3.5 animate-spin' />
       </>
     );
 
-  if (isError) return <span>Error loading data.</span>;
+  if (isError)
+    return (
+      <span className='text-muted-foreground text-[0.8125rem]'>
+        Error loading data.
+      </span>
+    );
 
   return (
     <div className='flex flex-col gap-1'>
       {data.pagination.totalCount === 1 && data.data[0] ? (
         <LastRunStatus repoId={data.data[0].id} />
       ) : (
-        <span>Contains {data.pagination.totalCount} repositories</span>
+        <span className='text-muted-foreground text-[0.8125rem]'>
+          Contains {data.pagination.totalCount} repositories
+        </span>
       )}
       <div className='flex'>
         <ProductItemCounts productId={product.id} />
@@ -114,11 +126,16 @@ export const ProductLastRunDateCell = ({ product }: { product: Product }) => {
     return (
       <>
         <span className='sr-only'>Loading...</span>
-        <Loader2 size={16} className='mx-3 animate-spin' />
+        <Loader2 className='text-muted-foreground size-3.5 animate-spin' />
       </>
     );
 
-  if (isError) return <span>Error loading data.</span>;
+  if (isError)
+    return (
+      <span className='text-muted-foreground text-[0.8125rem]'>
+        Error loading data.
+      </span>
+    );
 
   if (data.pagination.totalCount === 1 && data.data[0])
     return <LastRunDate repoId={data.data[0].id} />;
@@ -137,11 +154,16 @@ export const ProductJobStatusCell = ({ product }: { product: Product }) => {
     return (
       <>
         <span className='sr-only'>Loading...</span>
-        <Loader2 size={16} className='mx-3 animate-spin' />
+        <Loader2 className='text-muted-foreground size-3.5 animate-spin' />
       </>
     );
 
-  if (isError) return <span>Error loading data.</span>;
+  if (isError)
+    return (
+      <span className='text-muted-foreground text-[0.8125rem]'>
+        Error loading data.
+      </span>
+    );
 
   if (data.pagination.totalCount === 1 && data.data[0])
     return <LastJobStatus repoId={data.data[0].id} />;
@@ -210,9 +232,11 @@ export const OrganizationProductTable = () => {
               />
             )}
           </div>
-          <div className='text-muted-foreground text-sm md:inline'>
-            {row.original.description}
-          </div>
+          {row.original.description && (
+            <div className='text-muted-foreground text-[0.8125rem]'>
+              {row.original.description}
+            </div>
+          )}
         </>
       ),
       meta: {

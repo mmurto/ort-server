@@ -32,15 +32,9 @@ import { DataTable } from '@/components/data-table/data-table';
 import { DeleteDialog } from '@/components/delete-dialog';
 import { DeleteIconButton } from '@/components/delete-icon-button';
 import { LoadingIndicator } from '@/components/loading-indicator';
+import { PageHeader, SheetSection } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { buttonVariants } from '@/components/ui/button-variants';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   Tooltip,
   TooltipContent,
@@ -148,12 +142,14 @@ const InfrastructureServices = () => {
       accessorKey: 'details',
       header: undefined,
       cell: ({ row }) => (
-        <div className='flex flex-col'>
-          <div>{row.original.name}</div>
-          <div className='text-muted-foreground text-sm'>
-            {row.original.description}
-          </div>
-          <div>{row.original.url}</div>
+        <div className='flex flex-col gap-0.5'>
+          <div className='font-medium'>{row.original.name}</div>
+          {row.original.description && (
+            <div className='text-muted-foreground text-[0.8125rem]'>
+              {row.original.description}
+            </div>
+          )}
+          <div className='font-mono text-xs break-all'>{row.original.url}</div>
         </div>
       ),
       enableColumnFilter: false,
@@ -162,7 +158,7 @@ const InfrastructureServices = () => {
       accessorKey: 'usernameSecretRef',
       header: 'Username Secret',
       cell: ({ row }) => (
-        <div className='flex items-baseline'>
+        <div className='flex items-baseline font-mono text-xs'>
           {row.original.usernameSecretRef}
         </div>
       ),
@@ -172,7 +168,7 @@ const InfrastructureServices = () => {
       accessorKey: 'passwordSecretRef',
       header: 'Password Secret',
       cell: ({ row }) => (
-        <div className='flex items-baseline'>
+        <div className='flex items-baseline font-mono text-xs'>
           {row.original.passwordSecretRef}
         </div>
       ),
@@ -226,22 +222,20 @@ const InfrastructureServices = () => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Infrastructure Services</CardTitle>
-        <CardDescription>
-          Manage infrastructure services for {product.name}
-        </CardDescription>
-        <div className='py-2'>
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title='Infrastructure Services'
+        description={`Manage infrastructure services for ${product.name}`}
+        actions={
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button asChild size='sm' className='ml-auto gap-1'>
+              <Button asChild>
                 <Link
                   to='/organizations/$orgId/products/$productId/infrastructure-services/create'
                   params={{ orgId: params.orgId, productId: params.productId }}
                 >
+                  <PlusIcon />
                   Add infrastructure service
-                  <PlusIcon className='h-4 w-4' />
                 </Link>
               </Button>
             </TooltipTrigger>
@@ -249,9 +243,12 @@ const InfrastructureServices = () => {
               Create a new infrastructure service for this product
             </TooltipContent>
           </Tooltip>
-        </div>
-      </CardHeader>
-      <CardContent>
+        }
+      />
+      <SheetSection
+        title='All services'
+        meta={`${infraServices.pagination.totalCount} in total`}
+      >
         <DataTable
           table={table}
           setCurrentPageOptions={(currentPage) => {
@@ -267,8 +264,8 @@ const InfrastructureServices = () => {
             };
           }}
         />
-      </CardContent>
-    </Card>
+      </SheetSection>
+    </div>
   );
 };
 

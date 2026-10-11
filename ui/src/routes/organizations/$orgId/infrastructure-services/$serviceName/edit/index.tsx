@@ -30,14 +30,10 @@ import {
 } from '@/api/@tanstack/react-query.gen';
 import { MultiSelectField } from '@/components/form/multi-select-field';
 import { LoadingIndicator } from '@/components/loading-indicator';
+import { PageHeader } from '@/components/page-header';
 import { SecretSelect } from '@/components/secret-select';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -123,176 +119,183 @@ const EditInfrastructureServicePage = () => {
   };
 
   return (
-    <Card>
-      <CardHeader>Edit Infrastructure Service</CardHeader>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardContent className='space-y-4'>
-            <FormField
-              control={form.control}
-              name='name'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    The name of the infrastructure service (cannot be changed).
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-              disabled
-            />
-            <FormField
-              control={form.control}
-              name='url'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Url</FormLabel>
-                  <FormControl autoFocus>
-                    <Input {...field} type='url' />
-                  </FormControl>
-                  <FormDescription>
-                    The URL of the infrastructure service.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='description'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder='(optional)' />
-                  </FormControl>
-                  <FormDescription>
-                    The description of the infrastructure service.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='usernameSecretRef'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Username Secret</FormLabel>
-                  <SecretSelect
-                    value={field.value}
-                    onChange={field.onChange}
-                    placeholder='Select an existing username secret from the list'
-                    orgId={params.orgId}
-                    permissions={permissions}
-                  />
-                  <FormDescription>
-                    The name of the organization secret that contains the
-                    username of the credentials for the infrastructure service.
-                    Please note that the secret first needs to be created in
-                    order to use it here.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='passwordSecretRef'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password Secret</FormLabel>
-                  <SecretSelect
-                    value={field.value}
-                    onChange={field.onChange}
-                    placeholder='Select an existing password secret from the list'
-                    orgId={params.orgId}
-                    permissions={permissions}
-                  />
-                  <FormDescription>
-                    The name of the organization secret that contains the
-                    password of the credentials for the infrastructure service.
-                    Please note that the secret first needs to be created in
-                    order to use it here.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <MultiSelectField
-              form={form}
-              name='credentialsTypes'
-              label='Add Credentials To Files'
-              description={
-                <div className='space-y-2'>
-                  <p>
-                    Choose which files the credentials of the service should be
-                    added to. Note that you can choose multiple files, or none
-                    at all, in which case the credentials for this service will
-                    be ignored when generating configuration files for
-                    credentials.
-                  </p>
-                  <p>
-                    In some cases, there could be conflicting services; for
-                    instance, if multiple repositories with different
-                    credentials are defined on the same repository server.
-                    Therefore it is also possible to choose not to include the
-                    credentials in any files.
-                  </p>
-                </div>
-              }
-              options={[
-                {
-                  id: 'NETRC_FILE',
-                  label: 'Netrc File',
-                },
-                {
-                  id: 'GIT_CREDENTIALS_FILE',
-                  label: 'Git Credentials File',
-                },
-                {
-                  id: 'NO_AUTHENTICATION',
-                  label: 'Do not use for authentication',
-                },
-              ]}
-              className='mt-4!'
-            />
-          </CardContent>
-          <CardFooter>
-            <Button
-              type='button'
-              className='m-1'
-              variant='outline'
-              onClick={() =>
-                navigate({
-                  to: '/organizations/$orgId/infrastructure-services',
-                  params: { orgId: params.orgId },
-                })
-              }
-              disabled={isPending}
-            >
-              Cancel
-            </Button>
-            <Button type='submit' disabled={isPending}>
-              {isPending ? (
-                <>
-                  <span className='sr-only'>
-                    Editing infrastructure service...
-                  </span>
-                  <Loader2 size={16} className='mx-3 animate-spin' />
-                </>
-              ) : (
-                'Submit'
-              )}
-            </Button>
-          </CardFooter>
-        </form>
-      </Form>
-    </Card>
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title='Edit Infrastructure Service'
+        description='Change how runs reach this service and which credentials they use.'
+      />
+      <Card className='max-w-2xl'>
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className='flex flex-col gap-6'
+          >
+            <CardContent className='flex flex-col gap-5'>
+              <FormField
+                control={form.control}
+                name='name'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      The name of the infrastructure service (cannot be
+                      changed).
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+                disabled
+              />
+              <FormField
+                control={form.control}
+                name='url'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Url</FormLabel>
+                    <FormControl autoFocus>
+                      <Input {...field} type='url' />
+                    </FormControl>
+                    <FormDescription>
+                      The URL of the infrastructure service.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='description'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder='(optional)' />
+                    </FormControl>
+                    <FormDescription>
+                      The description of the infrastructure service.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='usernameSecretRef'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Username Secret</FormLabel>
+                    <SecretSelect
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder='Select an existing username secret from the list'
+                      orgId={params.orgId}
+                      permissions={permissions}
+                    />
+                    <FormDescription>
+                      The name of the organization secret that contains the
+                      username of the credentials for the infrastructure
+                      service. Please note that the secret first needs to be
+                      created in order to use it here.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='passwordSecretRef'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password Secret</FormLabel>
+                    <SecretSelect
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder='Select an existing password secret from the list'
+                      orgId={params.orgId}
+                      permissions={permissions}
+                    />
+                    <FormDescription>
+                      The name of the organization secret that contains the
+                      password of the credentials for the infrastructure
+                      service. Please note that the secret first needs to be
+                      created in order to use it here.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <MultiSelectField
+                form={form}
+                name='credentialsTypes'
+                label='Add Credentials To Files'
+                description={
+                  <div className='space-y-2'>
+                    <p>
+                      Choose which files the credentials of the service should
+                      be added to. Note that you can choose multiple files, or
+                      none at all, in which case the credentials for this
+                      service will be ignored when generating configuration
+                      files for credentials.
+                    </p>
+                    <p>
+                      In some cases, there could be conflicting services; for
+                      instance, if multiple repositories with different
+                      credentials are defined on the same repository server.
+                      Therefore it is also possible to choose not to include the
+                      credentials in any files.
+                    </p>
+                  </div>
+                }
+                options={[
+                  {
+                    id: 'NETRC_FILE',
+                    label: 'Netrc File',
+                  },
+                  {
+                    id: 'GIT_CREDENTIALS_FILE',
+                    label: 'Git Credentials File',
+                  },
+                  {
+                    id: 'NO_AUTHENTICATION',
+                    label: 'Do not use for authentication',
+                  },
+                ]}
+              />
+            </CardContent>
+            <CardFooter className='gap-2'>
+              <Button type='submit' disabled={isPending}>
+                {isPending ? (
+                  <>
+                    <span className='sr-only'>
+                      Editing infrastructure service...
+                    </span>
+                    <Loader2 size={16} className='mx-3 animate-spin' />
+                  </>
+                ) : (
+                  'Submit'
+                )}
+              </Button>
+              <Button
+                type='button'
+                variant='outline'
+                onClick={() =>
+                  navigate({
+                    to: '/organizations/$orgId/infrastructure-services',
+                    params: { orgId: params.orgId },
+                  })
+                }
+                disabled={isPending}
+              >
+                Cancel
+              </Button>
+            </CardFooter>
+          </form>
+        </Form>
+      </Card>
+    </div>
   );
 };
 

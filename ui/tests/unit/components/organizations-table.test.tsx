@@ -155,9 +155,7 @@ describe('organizations table', () => {
       offset: 0,
       filter: 'core',
     });
-    expect(
-      screen.getByText('Organizations (25 in total, 1 matching filters)')
-    ).toBeVisible();
+    expect(screen.getByText('25 in total, 1 matching filters')).toBeVisible();
   });
 
   it('shows the next page', async () => {

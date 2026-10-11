@@ -52,7 +52,9 @@ const columnHelper = createAppColumnHelper<UserWithGroups>();
 const columns = columnHelper.columns([
   columnHelper.accessor('user.username', {
     header: 'Username',
-    cell: ({ row }) => <>{row.original.user.username}</>,
+    cell: ({ row }) => (
+      <span className='font-medium'>{row.original.user.username}</span>
+    ),
   }),
   columnHelper.accessor('user.firstName', {
     header: 'First name',
@@ -64,7 +66,9 @@ const columns = columnHelper.columns([
   }),
   columnHelper.accessor('user.email', {
     header: 'Email address',
-    cell: ({ row }) => <>{row.original.user.email}</>,
+    cell: ({ row }) => (
+      <span className='text-muted-foreground'>{row.original.user.email}</span>
+    ),
   }),
   columnHelper.accessor('groups', {
     header: 'Role',
@@ -88,7 +92,10 @@ const columns = columnHelper.columns([
       return (
         <Tooltip>
           <TooltipTrigger asChild>
-            <IconComponent size={16} />
+            <span className='inline-flex items-center gap-1.5 text-[0.8125rem]'>
+              <IconComponent className='text-muted-foreground size-3.5' />
+              {effectiveRole.charAt(0) + effectiveRole.slice(1).toLowerCase()}
+            </span>
           </TooltipTrigger>
           <TooltipContent>{effectiveRole}</TooltipContent>
         </Tooltip>

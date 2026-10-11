@@ -44,6 +44,7 @@ import { LoadingIndicator } from '@/components/loading-indicator';
 import { OrtRunJobStatus } from '@/components/ort-run-job-status';
 import { RunDuration } from '@/components/run-duration';
 import { Sha1Component } from '@/components/sha1-component';
+import { StatusMark } from '@/components/status-mark';
 import { TimestampWithUTC } from '@/components/timestamp-with-utc';
 import {
   Accordion,
@@ -61,7 +62,6 @@ import {
 } from '@/components/ui/tooltip';
 import { config } from '@/config';
 import { diffResolvedJobConfigs } from '@/helpers/config-diff';
-import { getStatusBackgroundColor } from '@/helpers/get-status-class';
 import {
   createAppColumnHelper,
   selectNoTableState,
@@ -103,7 +103,7 @@ const pollInterval = config.pollInterval;
 
 const columnHelper = createAppColumnHelper<OrtRunSummary>();
 
-const SummaryCard = ({
+const RunComparisonToggle = ({
   summary,
   comparison,
 }: {
@@ -124,132 +124,115 @@ const SummaryCard = ({
     comparison.onSelectRun(summary);
   };
 
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Toggle
+          aria-label={comparisonTooltip}
+          className={
+            isSelectedForComparison
+              ? 'border-brand text-brand data-[state=on]:text-brand'
+              : undefined
+          }
+          pressed={isSelectedForComparison}
+          variant='outline'
+          size='xs'
+          onPressedChange={handleComparisonPressedChange}
+        >
+          <GitCompare className='size-3.5' />
+        </Toggle>
+      </TooltipTrigger>
+      <TooltipContent>{comparisonTooltip}</TooltipContent>
+    </Tooltip>
+  );
+};
+
+/** The revision of a run, with its configuration context and labels folded below. */
+const RevisionCell = ({
+  summary,
+  comparison,
+}: {
+  summary: OrtRunSummary;
+  comparison: RunComparisonContext;
+}) => {
   const hasLabels = Object.keys(summary.labels).length > 0;
 
   return (
-    <div className='grid grid-cols-12 gap-2'>
-      {/* Left column - status, job status, duration */}
-      <div className='col-span-5 flex flex-col gap-2'>
-        <Badge
-          className={`border ${getStatusBackgroundColor(summary.status)} w-fit`}
-        >
-          {summary.status}
-        </Badge>
-        <div className='col-span-2 flex flex-col items-start justify-center gap-2'>
-          <RunItemCounts summary={summary} />
-        </div>
-        <OrtRunJobStatus
-          jobs={summary.jobs}
-          orgId={summary.organizationId.toString()}
-          productId={summary.productId.toString()}
-          repoId={summary.repositoryId.toString()}
-          runIndex={summary.index.toString()}
-        />
-        <RunDuration
-          createdAt={summary.createdAt}
-          finishedAt={summary.finishedAt ?? undefined}
-        />
-      </div>
-
-      {/* Right column - created at, revision, configuration */}
-      <div className='col-span-7 flex flex-col items-end gap-1'>
-        <div className='flex flex-wrap items-baseline justify-end gap-x-1'>
-          <div className='text-muted-foreground shrink-0 whitespace-nowrap'>
-            Created at
-          </div>
-          <TimestampWithUTC
-            timestamp={summary.createdAt}
-            className='shrink-0 whitespace-nowrap'
-          />
-          {summary.userDisplayName && (
-            <div className='flex min-w-0 items-baseline gap-1'>
-              <div className='text-muted-foreground shrink-0'>by</div>
-              {summary.userDisplayName.username ? (
-                <Tooltip>
-                  <TooltipTrigger className='min-w-0 text-right'>
-                    {summary.userDisplayName.fullName ||
-                      summary.userDisplayName.username}
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {summary.userDisplayName.username}
-                  </TooltipContent>
-                </Tooltip>
-              ) : (
-                <span className='min-w-0 text-right'>
-                  {summary.userDisplayName.fullName}
-                </span>
-              )}
-            </div>
+    <div className='flex min-w-0 flex-col gap-1'>
+      <div className='flex min-w-0 items-baseline gap-1.5'>
+        <span className='truncate font-medium'>{summary.revision}</span>
+        {summary.resolvedRevision &&
+          summary.revision !== summary.resolvedRevision && (
+            <Sha1Component sha1={summary.resolvedRevision} />
           )}
-        </div>
-        <div className='flex items-baseline gap-1 text-sm'>
-          <div className='text-muted-foreground'>Revision</div>{' '}
-          {summary.revision}
-          {summary.resolvedRevision &&
-            summary.revision !== summary.resolvedRevision && (
-              <Sha1Component sha1={summary.resolvedRevision} />
-            )}
-        </div>
-        <Accordion type='multiple' className='w-full rounded-sm'>
-          <AccordionItem value='configuration'>
-            <AccordionTrigger
-              className='w-auto flex-none justify-end gap-2'
-              headerClassName='items-center justify-end gap-2'
-              beforeTrigger={
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Toggle
-                      aria-label={comparisonTooltip}
-                      className={
-                        isSelectedForComparison
-                          ? 'border-yellow-500 dark:border-yellow-400'
-                          : undefined
-                      }
-                      pressed={isSelectedForComparison}
-                      variant='outline'
-                      size='xs'
-                      onPressedChange={handleComparisonPressedChange}
-                    >
-                      <GitCompare className='h-4 w-4' />
-                    </Toggle>
-                  </TooltipTrigger>
-                  <TooltipContent>{comparisonTooltip}</TooltipContent>
-                </Tooltip>
-              }
-            >
-              <div className='text-sm'>Configuration</div>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className='flex flex-col items-end gap-1'>
-                <div className='flex gap-2 text-sm'>
-                  <div className='text-muted-foreground'>Context:</div>{' '}
-                  {summary.jobConfigContext}
-                  {summary.resolvedJobConfigContext &&
-                    summary.jobConfigContext !==
-                      summary.resolvedJobConfigContext && (
-                      <Sha1Component sha1={summary.resolvedJobConfigContext} />
-                    )}
-                </div>
-                {hasLabels && (
-                  <div className='flex w-full flex-wrap justify-end gap-2'>
-                    {Object.entries(summary.labels!).map(([key, value]) => (
-                      <Badge
-                        key={key}
-                        className='max-w-full min-w-0 shrink bg-gray-200 break-words whitespace-normal text-gray-800 dark:bg-gray-700 dark:text-gray-200'
-                      >
-                        {key}: {value}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
       </div>
+      <Accordion type='multiple' className='w-full'>
+        <AccordionItem value='configuration' className='border-b-0'>
+          <AccordionTrigger
+            className='text-muted-foreground hover:text-foreground flex-none items-center gap-1 py-0 text-[0.8125rem] font-normal hover:no-underline [&>svg]:size-3.5 [&>svg]:translate-y-0'
+            headerClassName='items-center gap-2'
+            beforeTrigger={
+              <RunComparisonToggle summary={summary} comparison={comparison} />
+            }
+          >
+            Configuration
+          </AccordionTrigger>
+          <AccordionContent className='flex flex-col gap-1.5 pt-2 pb-0'>
+            <div className='flex flex-wrap items-baseline gap-1.5 text-[0.8125rem]'>
+              <span className='text-muted-foreground'>Context</span>
+              <span>{summary.jobConfigContext}</span>
+              {summary.resolvedJobConfigContext &&
+                summary.jobConfigContext !==
+                  summary.resolvedJobConfigContext && (
+                  <Sha1Component sha1={summary.resolvedJobConfigContext} />
+                )}
+            </div>
+            {hasLabels && (
+              <div className='flex w-full flex-wrap gap-1'>
+                {Object.entries(summary.labels!).map(([key, value]) => (
+                  <Badge
+                    key={key}
+                    variant='secondary'
+                    className='max-w-full min-w-0 shrink font-mono font-normal break-words whitespace-normal'
+                  >
+                    {key}: {value}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </div>
   );
 };
+
+const CreatedCell = ({ summary }: { summary: OrtRunSummary }) => (
+  <div className='text-muted-foreground flex min-w-0 flex-col text-[0.8125rem] tabular-nums'>
+    <TimestampWithUTC
+      timestamp={summary.createdAt}
+      className='w-fit text-left whitespace-nowrap'
+    />
+    {summary.userDisplayName && (
+      <div className='flex min-w-0 items-baseline gap-1'>
+        <span className='shrink-0'>by</span>
+        {summary.userDisplayName.username ? (
+          <Tooltip>
+            <TooltipTrigger className='text-foreground min-w-0 truncate text-left'>
+              {summary.userDisplayName.fullName ||
+                summary.userDisplayName.username}
+            </TooltipTrigger>
+            <TooltipContent>{summary.userDisplayName.username}</TooltipContent>
+          </Tooltip>
+        ) : (
+          <span className='text-foreground min-w-0 truncate'>
+            {summary.userDisplayName.fullName}
+          </span>
+        )}
+      </div>
+    )}
+  </div>
+);
 
 type FavoriteContext = {
   organization?: Organization;
@@ -267,9 +250,9 @@ const RunIndexCell = ({
   const { organization, product, repository } = favoriteContext;
 
   return (
-    <div className='flex items-center gap-1.5'>
+    <div className='flex items-center gap-1'>
       <Link
-        className='link hover:underline'
+        className='link tabular-nums'
         to={
           '/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex'
         }
@@ -305,8 +288,8 @@ const createColumns = (
 ) =>
   columnHelper.columns([
     columnHelper.accessor('index', {
-      header: 'Index',
-      size: 70,
+      header: 'Run',
+      size: 76,
       cell: ({ row }) => (
         <RunIndexCell
           favoriteContext={favoriteContext}
@@ -316,10 +299,39 @@ const createColumns = (
       enableColumnFilter: false,
     }),
     columnHelper.display({
-      id: 'card',
-      header: 'Run Details',
+      id: 'status',
+      header: 'Status',
+      size: 170,
+      cell: ({ row }) => <StatusMark status={row.original.status} />,
+      enableColumnFilter: false,
+    }),
+    columnHelper.display({
+      id: 'jobs',
+      header: 'Jobs',
+      size: 120,
       cell: ({ row }) => (
-        <SummaryCard summary={row.original} comparison={comparison} />
+        <OrtRunJobStatus
+          jobs={row.original.jobs}
+          orgId={row.original.organizationId.toString()}
+          productId={row.original.productId.toString()}
+          repoId={row.original.repositoryId.toString()}
+          runIndex={row.original.index.toString()}
+        />
+      ),
+      enableColumnFilter: false,
+    }),
+    columnHelper.display({
+      id: 'findings',
+      header: 'Findings',
+      size: 210,
+      cell: ({ row }) => <RunItemCounts summary={row.original} />,
+      enableColumnFilter: false,
+    }),
+    columnHelper.display({
+      id: 'revision',
+      header: 'Revision',
+      cell: ({ row }) => (
+        <RevisionCell summary={row.original} comparison={comparison} />
       ),
       meta: {
         isGrow: true,
@@ -327,9 +339,30 @@ const createColumns = (
       enableColumnFilter: false,
     }),
     columnHelper.display({
+      id: 'created',
+      header: 'Created',
+      size: 180,
+      cell: ({ row }) => <CreatedCell summary={row.original} />,
+      enableColumnFilter: false,
+    }),
+    columnHelper.display({
+      id: 'duration',
+      header: 'Duration',
+      size: 100,
+      cell: ({ row }) => (
+        <div className='text-muted-foreground text-[0.8125rem] tabular-nums'>
+          <RunDuration
+            createdAt={row.original.createdAt}
+            finishedAt={row.original.finishedAt ?? undefined}
+          />
+        </div>
+      ),
+      enableColumnFilter: false,
+    }),
+    columnHelper.display({
       id: 'actions',
       header: 'Actions',
-      size: 70,
+      size: 124,
       cell: function Row({ row }) {
         const queryClient = useQueryClient();
 
@@ -378,10 +411,10 @@ const createColumns = (
         }
 
         return (
-          <div className='flex flex-col items-center gap-2'>
+          <div className='flex items-center gap-1'>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant='outline' asChild size='sm' className='w-10'>
+                <Button variant='outline' asChild size='icon'>
                   <Link
                     to={
                       '/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex'
@@ -393,7 +426,7 @@ const createColumns = (
                       runIndex: row.original.index.toString(),
                     }}
                   >
-                    <View className='h-4 w-4' />
+                    <View />
                   </Link>
                 </Button>
               </TooltipTrigger>
@@ -404,8 +437,7 @@ const createColumns = (
                 <Button
                   variant='outline'
                   asChild
-                  size='sm'
-                  className='w-10'
+                  size='icon'
                   disabled={canTriggerRun === false}
                 >
                   <Link
@@ -419,7 +451,7 @@ const createColumns = (
                       rerunIndex: row.original.index,
                     }}
                   >
-                    <Repeat className='h-4 w-4' />
+                    <Repeat />
                   </Link>
                 </Button>
               </TooltipTrigger>

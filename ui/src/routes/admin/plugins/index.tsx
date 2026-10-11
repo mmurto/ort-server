@@ -29,6 +29,7 @@ import {
   restrictPluginMutation,
 } from '@/api/@tanstack/react-query.gen';
 import { MarkdownRenderer } from '@/components/markdown-renderer';
+import { PageHeader } from '@/components/page-header';
 import { PluginAvailabilityToggle } from '@/components/plugin-availability-toggle';
 import {
   Accordion,
@@ -36,13 +37,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card.tsx';
 import { ApiError } from '@/lib/api-error';
 import { queryClient } from '@/lib/query-client.ts';
 import { toast, toastError } from '@/lib/toast';
@@ -114,48 +108,61 @@ const PluginList = ({
 
   return (
     <AccordionItem value={value}>
-      <AccordionTrigger className='px-6'>
-        <div>
-          <div className='text-base font-semibold'>{title}</div>
-          <div className='text-muted-foreground text-sm font-normal'>
+      <AccordionTrigger>
+        <div className='flex flex-col gap-0.5'>
+          <div className='flex items-baseline gap-2 text-[0.9375rem] font-semibold'>
+            {title}
+            <span className='text-muted-foreground text-[0.8125rem] font-normal'>
+              {plugins.length}
+            </span>
+          </div>
+          <div className='text-muted-foreground text-[0.8125rem] font-normal'>
             {description}
           </div>
         </div>
       </AccordionTrigger>
-      <AccordionContent className='px-12'>
-        {plugins.map((plugin) => (
-          <Card key={plugin.id} className='mb-2'>
-            <CardHeader className='flex items-start justify-between'>
-              <div>
-                <CardTitle>{plugin.displayName}</CardTitle>
-                <MarkdownRenderer
-                  markdown={plugin.summary}
-                  className='mt-1.5 max-w-none'
+      <AccordionContent>
+        {plugins.length === 0 ? (
+          <p className='text-muted-foreground text-[0.8125rem]'>
+            No plugins of this type are installed.
+          </p>
+        ) : (
+          <ul className='divide-y border-t'>
+            {plugins.map((plugin) => (
+              <li
+                key={plugin.id}
+                className='flex flex-wrap items-start justify-between gap-x-8 gap-y-2 py-3'
+              >
+                <div className='flex min-w-0 flex-1 flex-col gap-1'>
+                  <div className='flex flex-wrap items-baseline gap-x-3'>
+                    <span className='font-semibold'>{plugin.displayName}</span>
+                    <Link
+                      className='link text-[0.8125rem]'
+                      to={'/admin/plugins/$pluginType/$pluginId'}
+                      params={{
+                        pluginType: plugin.type,
+                        pluginId: plugin.id,
+                      }}
+                    >
+                      Manage Templates
+                    </Link>
+                  </div>
+                  <MarkdownRenderer
+                    markdown={plugin.summary}
+                    className='text-muted-foreground max-w-[75ch] text-[0.8125rem]'
+                  />
+                </div>
+                <PluginAvailabilityToggle
+                  availability={plugin.availability}
+                  onAvailabilityChange={(availability) =>
+                    handleAvailabilityChange(plugin, availability)
+                  }
+                  disabled={isMutating}
                 />
-              </div>
-              <PluginAvailabilityToggle
-                availability={plugin.availability}
-                onAvailabilityChange={(availability) =>
-                  handleAvailabilityChange(plugin, availability)
-                }
-                disabled={isMutating}
-              />
-            </CardHeader>
-            <CardContent>
-              <Button variant='link' asChild className='h-auto p-0'>
-                <Link
-                  to={'/admin/plugins/$pluginType/$pluginId'}
-                  params={{
-                    pluginType: plugin.type,
-                    pluginId: plugin.id,
-                  }}
-                >
-                  Manage Templates
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
+              </li>
+            ))}
+          </ul>
+        )}
       </AccordionContent>
     </AccordionItem>
   );
@@ -181,44 +188,50 @@ const PluginsComponent = () => {
   const scanners = plugins?.filter((plugin) => plugin.type === 'SCANNER') || [];
 
   return (
-    <Accordion type='single' collapsible className='rounded-lg border'>
-      <PluginList
-        value='advisors'
-        title='Advisors'
-        description='Advisors integrate external vulnerability databases to get information about vulnerabilities in packages.'
-        plugins={advisors}
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title='Installed Plugins'
+        description='Set which plugins are available for runs and manage their templates'
       />
-      <PluginList
-        value='package-configuration-providers'
-        title='Package Configuration Providers'
-        description='Providers for package configurations which are used to set path excludes and license finding curations for packages.'
-        plugins={packageConfigurationProviders}
-      />
-      <PluginList
-        value='package-curation-providers'
-        title='Package Curation Providers'
-        description='Providers for package curations which are used to correct metadata of packages.'
-        plugins={packageCurationProviders}
-      />
-      <PluginList
-        value='package-managers'
-        title='Package Managers'
-        description='Package managers are used to detect packages and their dependencies.'
-        plugins={packageManagers}
-      />
-      <PluginList
-        value='reporters'
-        title='Reporters'
-        description='Reporters generate reports like SBOMs from the data collected in a run.'
-        plugins={reporters}
-      />
-      <PluginList
-        value='scanners'
-        title='Scanners'
-        description='Scanners scan packages for license and copyright information.'
-        plugins={scanners}
-      />
-    </Accordion>
+      <Accordion type='single' collapsible className='border-y'>
+        <PluginList
+          value='advisors'
+          title='Advisors'
+          description='Advisors integrate external vulnerability databases to get information about vulnerabilities in packages.'
+          plugins={advisors}
+        />
+        <PluginList
+          value='package-configuration-providers'
+          title='Package Configuration Providers'
+          description='Providers for package configurations which are used to set path excludes and license finding curations for packages.'
+          plugins={packageConfigurationProviders}
+        />
+        <PluginList
+          value='package-curation-providers'
+          title='Package Curation Providers'
+          description='Providers for package curations which are used to correct metadata of packages.'
+          plugins={packageCurationProviders}
+        />
+        <PluginList
+          value='package-managers'
+          title='Package Managers'
+          description='Package managers are used to detect packages and their dependencies.'
+          plugins={packageManagers}
+        />
+        <PluginList
+          value='reporters'
+          title='Reporters'
+          description='Reporters generate reports like SBOMs from the data collected in a run.'
+          plugins={reporters}
+        />
+        <PluginList
+          value='scanners'
+          title='Scanners'
+          description='Scanners scan packages for license and copyright information.'
+          plugins={scanners}
+        />
+      </Accordion>
+    </div>
   );
 };
 

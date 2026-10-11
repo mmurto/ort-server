@@ -85,7 +85,7 @@ export function FilterRegex({
               }}
             />
             {!evaluateRegex().isValid && (
-              <p className='pt-1 text-xs text-red-600'>
+              <p className='text-err pt-1 text-xs'>
                 {evaluateRegex().message?.issues[0]?.message}
               </p>
             )}
@@ -101,7 +101,7 @@ export function FilterRegex({
           >
             <XCircle
               className={cn(
-                'h-fit text-gray-400',
+                'text-muted-foreground h-fit',
                 value.length === 0 ? 'opacity-40' : 'opacity-100'
               )}
             />

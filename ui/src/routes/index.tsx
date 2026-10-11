@@ -21,7 +21,7 @@ import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 
 import { getServerSettingByKeyOptions } from '@/api/@tanstack/react-query.gen';
-import { Card, CardContent } from '@/components/ui/card';
+import { PageHeader } from '@/components/page-header';
 import { useUser } from '@/hooks/use-user';
 import { useHomeFavorites, useHomeRecentRuns } from '@/providers/home-data';
 import { HomeFavoritesSection } from './-components/home-favorites-section';
@@ -45,21 +45,13 @@ const HomePage = () => {
       : PRODUCT_NAME;
 
   return (
-    <div className='mx-auto flex w-full max-w-7xl flex-col gap-4'>
-      <div>
-        <h1 className='text-3xl font-bold tracking-tight'>
-          Welcome to {productName}
-          {userDisplayName && `, ${userDisplayName}`}!
-        </h1>
-      </div>
-      <HomeOrganizationsSection />
-      <Card>
-        <CardContent className='text-muted-foreground text-sm'>
-          Please note that the information displayed below is only persisted in
-          your current browser.
-        </CardContent>
-      </Card>
-      <div className='grid gap-4 xl:grid-cols-2'>
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title={`Welcome to ${productName}${userDisplayName ? `, ${userDisplayName}` : ''}!`}
+        description='Your favorites and the runs you started recently. Both are kept in this browser only.'
+        actions={<HomeOrganizationsSection />}
+      />
+      <div className='grid gap-x-12 gap-y-10 xl:grid-cols-2'>
         <HomeFavoritesSection favorites={favorites} />
         <HomeRecentRunsSection recentRuns={recentRuns} />
       </div>

@@ -19,6 +19,7 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 
+import { PageHeader } from '@/components/page-header';
 import { FaviconForm } from './-components/favicon-form';
 import { FooterForm } from './-components/footer-form';
 import { HomeIconForm } from './-components/home-icon-form';
@@ -26,7 +27,11 @@ import { ProductNameForm } from './-components/product-name-form';
 
 function BrandingComponent() {
   return (
-    <div className='flex flex-col gap-4'>
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title='Branding'
+        description='Customize the product name, icons and footer shown across the server'
+      />
       <ProductNameForm />
       <FaviconForm />
       <HomeIconForm />

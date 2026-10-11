@@ -91,7 +91,7 @@ export const ManagerDependenciesTab = ({
       </div>
 
       {searchTerm && !hasMatches && (
-        <div className='text-muted-foreground text-sm'>
+        <div className='text-muted-foreground text-[0.8125rem]'>
           No packages match your search. Showing the full graph.
         </div>
       )}

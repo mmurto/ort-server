@@ -50,7 +50,7 @@ export const SecretOptionInput = ({
 }: SecretOptionInputProps) => (
   <FormControl>
     {secrets.length === 0 && option.defaultValue == null ? (
-      <FormMessage className='font-semibold text-red-600'>
+      <FormMessage className='text-err font-medium'>
         No secrets available. Create a new secret to be able to use this option.
       </FormMessage>
     ) : (
@@ -83,7 +83,7 @@ export const SecretOptionInput = ({
         {field.value &&
           field.value !== ADMIN_SECRET_VALUE &&
           !secrets.some((secret) => secret.name === field.value) && (
-            <FormMessage className='font-semibold text-red-600'>
+            <FormMessage className='text-err font-medium'>
               The selected secret '{field.value}' does not exist. The value
               could come from a previous run or could be a default value set by
               an administrator. Select a valid secret or create a new secret

@@ -44,7 +44,7 @@ export const HighlightedMatch = ({
   return (
     <>
       <span className='link'>{prefix}</span>
-      <span className='font-bold text-green-600'>{match}</span>
+      <span className='bg-warn-soft text-foreground font-bold'>{match}</span>
       <span className='link'>{suffix}</span>
     </>
   );

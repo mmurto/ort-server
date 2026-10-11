@@ -19,15 +19,32 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { AudioWaveform, List, ListVideo, Loader2 } from 'lucide-react';
 
 import {
   getOrganizationsOptions,
   getRunsOptions,
 } from '@/api/@tanstack/react-query.gen';
 import { zOrtRunStatus } from '@/api/zod.gen';
-import { StatisticsCard } from '@/components/statistics-card';
+import { PageHeader } from '@/components/page-header';
+import { StatisticsCard, StatisticsRow } from '@/components/statistics-card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { toastError } from '@/lib/toast';
+
+const figure = (
+  isLoading: boolean,
+  isError: boolean,
+  count: number | undefined
+) =>
+  isLoading ? (
+    <>
+      <span className='sr-only'>Loading...</span>
+      <Skeleton className='h-8 w-12' />
+    </>
+  ) : isError ? (
+    <span className='text-err text-[0.8125rem]'>Error fetching data</span>
+  ) : (
+    count
+  );
 
 const OverviewContent = () => {
   const {
@@ -64,72 +81,43 @@ const OverviewContent = () => {
   }
 
   return (
-    <div className='space-y-4'>
-      <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4'>
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title='Administration'
+        description='Server-wide figures, users, plugins and branding'
+      />
+      <StatisticsRow className='[&>a:hover]:bg-muted/60'>
         <Link to='/organizations'>
           <StatisticsCard
             title='Organizations'
-            icon={() => <List className='h-4 w-4' />}
-            value={
-              orgsIsLoading ? (
-                <>
-                  <span className='sr-only'>Loading...</span>
-                  <Loader2 size={16} className='animate-spin' />
-                </>
-              ) : orgIsError ? (
-                <span className='text-sm text-red-500'>
-                  Error fetching data
-                </span>
-              ) : (
-                orgs?.pagination.totalCount
-              )
-            }
-            className='hover:bg-muted/50 h-full'
+            value={figure(
+              orgsIsLoading,
+              !!orgIsError,
+              orgs?.pagination.totalCount
+            )}
           />
         </Link>
         <Link to='/admin/runs'>
           <StatisticsCard
             title='Runs'
-            icon={() => <ListVideo className='h-4 w-4' />}
-            value={
-              runsIsLoading ? (
-                <>
-                  <span className='sr-only'>Loading...</span>
-                  <Loader2 size={16} className='animate-spin' />
-                </>
-              ) : runsIsError ? (
-                <span className='text-sm text-red-500'>
-                  Error fetching data
-                </span>
-              ) : (
-                runs?.pagination.totalCount
-              )
-            }
-            className='hover:bg-muted/50 h-full'
+            value={figure(
+              runsIsLoading,
+              !!runsIsError,
+              runs?.pagination.totalCount
+            )}
           />
         </Link>
         <Link to='/admin/runs' search={{ status: [zOrtRunStatus.enum.ACTIVE] }}>
           <StatisticsCard
             title='Active runs'
-            icon={() => <AudioWaveform className='h-4 w-4' />}
-            value={
-              activeRunsIsLoading ? (
-                <>
-                  <span className='sr-only'>Loading...</span>
-                  <Loader2 size={16} className='animate-spin' />
-                </>
-              ) : activeRunsIsError ? (
-                <span className='text-sm text-red-500'>
-                  Error fetching data
-                </span>
-              ) : (
-                activeRuns?.pagination.totalCount
-              )
-            }
-            className='hover:bg-muted/50 h-full'
+            value={figure(
+              activeRunsIsLoading,
+              !!activeRunsIsError,
+              activeRuns?.pagination.totalCount
+            )}
           />
         </Link>
-      </div>
+      </StatisticsRow>
     </div>
   );
 };

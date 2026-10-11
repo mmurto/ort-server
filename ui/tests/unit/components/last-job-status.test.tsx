@@ -90,14 +90,14 @@ describe('LastJobStatus', () => {
     });
   });
 
-  it('renders five skeleton dots while the latest run is loading', () => {
+  it('renders five skeleton segments while the latest run is loading', () => {
     mocks.suspend = true;
 
     const markup = renderLastJobStatus();
 
-    expect(markup).toContain('flex min-h-3 items-center space-x-1');
+    expect(markup).toContain('flex min-h-3 items-center gap-0.5');
     expect(markup.match(/data-slot="skeleton"/g)).toHaveLength(5);
-    expect(markup.match(/h-3 w-3 rounded-full/g)).toHaveLength(5);
+    expect(markup.match(/h-1\.5 w-4/g)).toHaveLength(5);
     expect(markup).toContain('Loading data...');
     expect(mocks.jobStatusProps).toBeUndefined();
   });

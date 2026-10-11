@@ -155,9 +155,7 @@ describe('product vulnerabilities table', () => {
       rating: 'HIGH',
       sort: '-rating',
     });
-    expect(container).toHaveTextContent(
-      'Vulnerabilities (25 in total, 13 matching filters)'
-    );
+    expect(container).toHaveTextContent('25 in total, 13 matching filters');
   });
 
   it('links the affected repositories to the package search of the product', async () => {

@@ -29,8 +29,8 @@ import {
   type RunsFilterValues,
 } from '@/components/form/runs-filter-form';
 import { LoadingIndicator } from '@/components/loading-indicator';
+import { SheetSection } from '@/components/page-header';
 import { RunDuration } from '@/components/run-duration';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   ChartConfig,
   ChartContainer,
@@ -51,7 +51,7 @@ import { toastError } from '@/lib/toast';
 const chartConfig = {
   infrastructure: {
     label: 'Infrastructure',
-    color: 'gray',
+    color: 'var(--muted-foreground)',
   },
   analyzer: {
     label: 'Analyzer',
@@ -163,161 +163,163 @@ export const JobDurations = ({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className='flex items-center justify-between'>
-          Durations
-          <div className='flex flex-col items-end'>
-            <div className='flex items-center space-x-2'>
-              <div className='text-sm font-normal'>Show durations for</div>
-              <RunsFilterForm
-                initialValues={applied}
-                onApply={(values) => {
-                  // Normalize and apply; this triggers refetch via derived params.
-                  setApplied({
-                    fetchMode: values.fetchMode,
-                    nRuns:
-                      values.fetchMode === 'CUSTOM_RUNS'
-                        ? (values.nRuns ?? DEFAULT_RUNS)
-                        : undefined,
-                  });
-                }}
-              />
-            </div>
-            <div className='flex items-center gap-3'>
-              <Checkbox
-                id='infra'
-                checked={showInfrastructure}
-                onCheckedChange={(value) => {
-                  setShowInfrastructure(value === true);
-                }}
-              />
-              <Label htmlFor='infra'>Include infrastructure durations</Label>
-            </div>
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ChartContainer
-          config={chartConfig}
-          className='h-[200px] min-h-[200px] w-full'
-        >
-          <BarChart
-            accessibilityLayer
-            data={chartData}
-            onClick={(data) => {
-              handleBarClick(data.activeLabel as string);
-            }}
-          >
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey='runId'
-              tickLine={false}
-              tickMargin={10}
-              axisLine={false}
-              reversed
+    <SheetSection
+      title='Durations'
+      actions={
+        <div className='flex flex-wrap items-center justify-end gap-x-6 gap-y-2'>
+          <div className='flex items-center gap-2'>
+            <span className='text-muted-foreground text-[0.8125rem]'>
+              Show durations for
+            </span>
+            <RunsFilterForm
+              initialValues={applied}
+              onApply={(values) => {
+                // Normalize and apply; this triggers refetch via derived params.
+                setApplied({
+                  fetchMode: values.fetchMode,
+                  nRuns:
+                    values.fetchMode === 'CUSTOM_RUNS'
+                      ? (values.nRuns ?? DEFAULT_RUNS)
+                      : undefined,
+                });
+              }}
             />
-            <ChartTooltip
-              wrapperStyle={{ zIndex: 1000 }}
-              content={(props) => (
-                <ChartTooltipContent
-                  {...props}
-                  hideLabel
-                  className='w-[230px]'
-                  formatter={(value, name, item, index) => {
-                    return (
-                      <>
-                        <div className='flex w-full items-baseline justify-between'>
-                          <div className='flex items-baseline gap-2'>
-                            <div
-                              className='size-2.5 shrink-0 rounded-[2px]'
-                              style={{
-                                backgroundColor: `var(--color-${name})`,
-                              }}
-                            />
-                            <div>
-                              {chartConfig[name as keyof typeof chartConfig]
-                                .label || name}
-                            </div>
-                          </div>
-                          <div className='text-muted-foreground font-mono text-xs'>
-                            {convertDurationToHms(Number(value))}
+          </div>
+          <div className='flex items-center gap-2'>
+            <Checkbox
+              id='infra'
+              checked={showInfrastructure}
+              onCheckedChange={(value) => {
+                setShowInfrastructure(value === true);
+              }}
+            />
+            <Label htmlFor='infra' className='font-normal'>
+              Include infrastructure durations
+            </Label>
+          </div>
+        </div>
+      }
+    >
+      <ChartContainer
+        config={chartConfig}
+        className='h-[200px] min-h-[200px] w-full'
+      >
+        <BarChart
+          accessibilityLayer
+          data={chartData}
+          onClick={(data) => {
+            handleBarClick(data.activeLabel as string);
+          }}
+        >
+          <CartesianGrid vertical={false} stroke='var(--border)' />
+          <XAxis
+            dataKey='runId'
+            tickLine={false}
+            tickMargin={10}
+            axisLine={false}
+            tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
+            reversed
+          />
+          <ChartTooltip
+            wrapperStyle={{ zIndex: 1000 }}
+            content={(props) => (
+              <ChartTooltipContent
+                {...props}
+                hideLabel
+                className='w-[230px]'
+                formatter={(value, name, item, index) => {
+                  return (
+                    <>
+                      <div className='flex w-full items-baseline justify-between'>
+                        <div className='flex items-baseline gap-2'>
+                          <div
+                            className='size-2.5 shrink-0 rounded-xs'
+                            style={{
+                              backgroundColor: `var(--color-${name})`,
+                            }}
+                          />
+                          <div>
+                            {chartConfig[name as keyof typeof chartConfig]
+                              .label || name}
                           </div>
                         </div>
-                        {index === item.payload.finishedDurations - 1 && (
-                          <div className='flex w-full flex-col items-center justify-between'>
-                            <div className='flex w-full items-center justify-between'>
-                              Total{showInfrastructure ? ' run' : ' jobs'}{' '}
-                              duration:
-                              <div className='text-muted-foreground mt-0.5 flex flex-col font-mono text-xs'>
-                                <RunDuration
-                                  createdAt={
-                                    showInfrastructure
-                                      ? item.payload.createdAt
-                                      : undefined
-                                  }
-                                  finishedAt={item.payload.finishedAt}
-                                  duration={
-                                    showInfrastructure
-                                      ? undefined
-                                      : item.payload.jobsDurationTotal
-                                  }
-                                />
-                              </div>
-                            </div>
-                            <div className='text-muted-foreground mt-0.5 text-xs'>
-                              Click bar to go to run
+                        <div className='text-muted-foreground font-mono text-xs'>
+                          {convertDurationToHms(Number(value))}
+                        </div>
+                      </div>
+                      {index === item.payload.finishedDurations - 1 && (
+                        <div className='flex w-full flex-col items-center justify-between'>
+                          <div className='flex w-full items-center justify-between'>
+                            Total{showInfrastructure ? ' run' : ' jobs'}{' '}
+                            duration:
+                            <div className='text-muted-foreground mt-0.5 flex flex-col font-mono text-xs'>
+                              <RunDuration
+                                createdAt={
+                                  showInfrastructure
+                                    ? item.payload.createdAt
+                                    : undefined
+                                }
+                                finishedAt={item.payload.finishedAt}
+                                duration={
+                                  showInfrastructure
+                                    ? undefined
+                                    : item.payload.jobsDurationTotal
+                                }
+                              />
                             </div>
                           </div>
-                        )}
-                      </>
-                    );
-                  }}
-                />
-              )}
-            />
-            <ChartLegend content={<ChartLegendContent order={legendOrder} />} />
-            {showInfrastructure && (
-              <Bar
-                dataKey='infrastructure'
-                stackId='a'
-                fill='var(--color-infrastructure)'
-                className='cursor-pointer'
+                          <div className='text-muted-foreground mt-0.5 text-xs'>
+                            Click bar to go to run
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  );
+                }}
               />
             )}
+          />
+          <ChartLegend content={<ChartLegendContent order={legendOrder} />} />
+          {showInfrastructure && (
             <Bar
-              dataKey='analyzer'
+              dataKey='infrastructure'
               stackId='a'
-              fill='var(--color-analyzer)'
+              fill='var(--color-infrastructure)'
               className='cursor-pointer'
             />
-            <Bar
-              dataKey='advisor'
-              stackId='a'
-              fill='var(--color-advisor)'
-              className='cursor-pointer'
-            />
-            <Bar
-              dataKey='scanner'
-              stackId='a'
-              fill='var(--color-scanner)'
-              className='cursor-pointer'
-            />
-            <Bar
-              dataKey='evaluator'
-              stackId='a'
-              fill='var(--color-evaluator)'
-              className='cursor-pointer'
-            />
-            <Bar
-              dataKey='reporter'
-              stackId='a'
-              fill='var(--color-reporter)'
-              className='cursor-pointer'
-            />
-          </BarChart>
-        </ChartContainer>
-      </CardContent>
-    </Card>
+          )}
+          <Bar
+            dataKey='analyzer'
+            stackId='a'
+            fill='var(--color-analyzer)'
+            className='cursor-pointer'
+          />
+          <Bar
+            dataKey='advisor'
+            stackId='a'
+            fill='var(--color-advisor)'
+            className='cursor-pointer'
+          />
+          <Bar
+            dataKey='scanner'
+            stackId='a'
+            fill='var(--color-scanner)'
+            className='cursor-pointer'
+          />
+          <Bar
+            dataKey='evaluator'
+            stackId='a'
+            fill='var(--color-evaluator)'
+            className='cursor-pointer'
+          />
+          <Bar
+            dataKey='reporter'
+            stackId='a'
+            fill='var(--color-reporter)'
+            className='cursor-pointer'
+          />
+        </BarChart>
+      </ChartContainer>
+    </SheetSection>
   );
 };

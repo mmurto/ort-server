@@ -26,13 +26,9 @@ import { z } from 'zod';
 
 import { postOrganizationSecretMutation } from '@/api/@tanstack/react-query.gen';
 import { PasswordInput } from '@/components/form/password-input.tsx';
+import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -93,68 +89,89 @@ const CreateOrganizationSecretPage = () => {
   }
 
   return (
-    <Card>
-      <CardHeader>Create Organization Secret</CardHeader>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
-          <CardContent className='space-y-4'>
-            <FormField
-              control={form.control}
-              name='name'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl autoFocus>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='value'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Value</FormLabel>
-                  <FormControl>
-                    <PasswordInput {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='description'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder='(optional)' />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-          <CardFooter>
-            <Button type='submit' disabled={isPending}>
-              {isPending ? (
-                <>
-                  <span className='sr-only'>
-                    Creating organization secret...
-                  </span>
-                  <Loader2 size={16} className='mx-3 animate-spin' />
-                </>
-              ) : (
-                'Create'
-              )}
-            </Button>
-          </CardFooter>
-        </form>
-      </Form>
-    </Card>
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title='Create Organization Secret'
+        description='Store a credential that runs of this organization can use.'
+      />
+      <Card className='max-w-2xl'>
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className='flex flex-col gap-6'
+          >
+            <CardContent className='flex flex-col gap-5'>
+              <FormField
+                control={form.control}
+                name='name'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl autoFocus>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='value'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Value</FormLabel>
+                    <FormControl>
+                      <PasswordInput {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='description'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder='(optional)' />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+            <CardFooter className='gap-2'>
+              <Button type='submit' disabled={isPending}>
+                {isPending ? (
+                  <>
+                    <span className='sr-only'>
+                      Creating organization secret...
+                    </span>
+                    <Loader2 size={16} className='mx-3 animate-spin' />
+                  </>
+                ) : (
+                  'Create'
+                )}
+              </Button>
+              <Button
+                type='button'
+                variant='outline'
+                onClick={() =>
+                  navigate({
+                    to: '/organizations/$orgId/secrets',
+                    params: { orgId: params.orgId },
+                  })
+                }
+                disabled={isPending}
+              >
+                Cancel
+              </Button>
+            </CardFooter>
+          </form>
+        </Form>
+      </Card>
+    </div>
   );
 };
 

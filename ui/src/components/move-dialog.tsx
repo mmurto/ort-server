@@ -101,8 +101,8 @@ export const MoveDialog = ({
       {/* Adding the preventDefault will prevent focusing on the trigger after closing the modal (which would cause the tooltip to show) */}
       <AlertDialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
         <AlertDialogHeader>
-          <div className='flex items-center'>
-            <OctagonAlert className='h-8 w-8 pr-2 text-red-500' />
+          <div className='flex items-center gap-2'>
+            <OctagonAlert className='text-err size-5 shrink-0' />
             <AlertDialogTitle>{title || 'Confirm Move'}</AlertDialogTitle>
           </div>
         </AlertDialogHeader>
@@ -139,12 +139,12 @@ export const MoveDialog = ({
               }
               setOpen(false);
             }}
-            className='bg-red-500'
+            variant='destructive'
           >
             {isPending ? (
               <>
                 <span className='sr-only'>Moving...</span>
-                <Loader2 size={16} className='mx-3 animate-spin' />
+                <Loader2 className='mx-3 size-4 animate-spin' />
               </>
             ) : (
               'Move'

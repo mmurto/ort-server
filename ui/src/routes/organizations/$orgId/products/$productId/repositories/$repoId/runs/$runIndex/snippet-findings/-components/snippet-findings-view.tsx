@@ -31,16 +31,10 @@ import {
 import { BreakableString } from '@/components/breakable-string';
 import { CopyToClipboard } from '@/components/copy-to-clipboard';
 import { DataTableCards } from '@/components/data-table-cards/data-table-cards';
+import { SheetSection } from '@/components/page-header';
 import { Sha1Component } from '@/components/sha1-component';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   EMPTY_SORTING_STATE,
   updateColumnSorting,
@@ -82,7 +76,7 @@ const ProvenanceDetails = ({
           href={provenance.artifactUrl}
           target='_blank'
           rel='noopener noreferrer'
-          className='link hover:underline'
+          className='link'
         >
           <BreakableString text={provenance.artifactUrl} />
         </a>
@@ -97,7 +91,7 @@ const ProvenanceDetails = ({
           href={provenance.vcsUrl}
           target='_blank'
           rel='noopener noreferrer'
-          className='link hover:underline'
+          className='link'
         >
           <BreakableString text={provenance.vcsUrl} />
         </a>
@@ -121,7 +115,7 @@ const SnippetFindingProvenanceCard = ({
   return (
     <div className='flex flex-col gap-2'>
       <div className='flex items-start justify-between gap-4'>
-        <div className='min-w-0 basis-2/3 text-left font-semibold'>
+        <div className='min-w-0 basis-2/3 text-left font-mono text-xs font-medium'>
           <BreakableString text={identifier} />
           <CopyToClipboard
             copyText={identifier}
@@ -130,14 +124,14 @@ const SnippetFindingProvenanceCard = ({
         </div>
         <div className='flex shrink-0 items-center gap-2'>
           <Badge variant='small'>{provenance.provenanceType}</Badge>
-          <div className='text-muted-foreground ml-4 text-sm'>
+          <div className='text-muted-foreground ml-4 text-[0.8125rem]'>
             {provenance.snippetFindingCount} finding
             {provenance.snippetFindingCount === 1 ? '' : 's'}
           </div>
         </div>
       </div>
 
-      <div className='flex items-center gap-2 text-sm'>
+      <div className='flex items-center gap-2 text-[0.8125rem]'>
         <div className='text-muted-foreground shrink-0'>Provenance:</div>
         <ProvenanceDetails provenance={provenance} />
       </div>
@@ -271,62 +265,57 @@ export const SnippetFindingsView = () => {
 
   const scannerWasIncludedInRun = ortRun.jobs.scanner != null;
   const noResultsContent = !scannerWasIncludedInRun ? (
-    <div className='text-muted-foreground text-sm'>
+    <div className='text-muted-foreground text-[0.8125rem]'>
       No detected snippets are available because the scanner job was not enabled
       for this run.
     </div>
   ) : provenances.pagination.totalCount === 0 ? (
-    <div className='text-muted-foreground text-sm'>
+    <div className='text-muted-foreground text-[0.8125rem]'>
       No detected snippets were found for this run, or no snippet scanner was
       used.
     </div>
   ) : undefined;
 
   return (
-    <Card className='h-fit'>
-      <CardHeader>
-        <CardTitle>
-          Detected Snippets ({provenances.pagination.totalCount} package
-          provenances with findings)
-        </CardTitle>
-        <CardDescription>
-          Snippet findings detected in package provenances by the configured
-          scanners.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <DataTableCards
-          table={table}
-          noResultsContent={noResultsContent}
-          renderSubComponent={({ row }) => (
-            <ProvenanceSnippetFindingsTable
-              runId={ortRun.id}
-              provenance={row.original}
-            />
-          )}
-          setCurrentPageOptions={(currentPage) => {
-            return {
-              to: '.',
-              search: { ...search, page: currentPage },
-            };
-          }}
-          setPageSizeOptions={(size) => {
-            return {
-              to: '.',
-              search: { ...search, page: 1, pageSize: size },
-            };
-          }}
-          setSortingOptions={(sortBy) => {
-            return {
-              to: '.',
-              search: {
-                ...search,
-                sortBy: updateColumnSorting(search.sortBy, sortBy),
-              },
-            };
-          }}
-        />
-      </CardContent>
-    </Card>
+    <SheetSection
+      title='Detected snippets'
+      meta={`${provenances.pagination.totalCount} package provenances with findings`}
+    >
+      <p className='text-muted-foreground -mt-2 text-[0.8125rem]'>
+        Snippet findings detected in package provenances by the configured
+        scanners.
+      </p>
+      <DataTableCards
+        table={table}
+        noResultsContent={noResultsContent}
+        renderSubComponent={({ row }) => (
+          <ProvenanceSnippetFindingsTable
+            runId={ortRun.id}
+            provenance={row.original}
+          />
+        )}
+        setCurrentPageOptions={(currentPage) => {
+          return {
+            to: '.',
+            search: { ...search, page: currentPage },
+          };
+        }}
+        setPageSizeOptions={(size) => {
+          return {
+            to: '.',
+            search: { ...search, page: 1, pageSize: size },
+          };
+        }}
+        setSortingOptions={(sortBy) => {
+          return {
+            to: '.',
+            search: {
+              ...search,
+              sortBy: updateColumnSorting(search.sortBy, sortBy),
+            },
+          };
+        }}
+      />
+    </SheetSection>
   );
 };

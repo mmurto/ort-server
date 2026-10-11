@@ -38,15 +38,9 @@ import {
   SpdxExpressionBadgeGroup,
 } from '@/components/licenses';
 import { LoadingIndicator } from '@/components/loading-indicator';
+import { SheetSection } from '@/components/page-header';
 import { RenderProperty } from '@/components/render-property';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   convertToBackendSorting,
   EMPTY_SORTING_STATE,
@@ -102,7 +96,7 @@ const ProjectCard = ({ project }: { project: Project }) => {
   return (
     <div className='flex flex-col gap-1'>
       <div className='flex items-center justify-between'>
-        <div className='font-semibold'>
+        <div className='font-mono text-xs font-medium'>
           <BreakableString text={identifierToString(project.identifier)} />
         </div>
         {project.homepageUrl ? (
@@ -110,29 +104,37 @@ const ProjectCard = ({ project }: { project: Project }) => {
             href={project.homepageUrl}
             target='_blank'
             rel='noopener noreferrer'
-            className='link hover:underline'
+            className='link text-[0.8125rem]'
           >
             {project.homepageUrl}
           </a>
         ) : (
-          <div className='text-muted-foreground italic'>No homepage</div>
+          <div className='text-muted-foreground text-[0.8125rem]'>
+            No homepage
+          </div>
         )}
       </div>
       {project.definitionFilePath ? (
-        <div className='flex gap-2 text-sm'>
+        <div className='flex items-baseline gap-2 text-[0.8125rem]'>
           <div className='text-muted-foreground'>Definition File:</div>
-          <div className='wrap-break-word'>{project.definitionFilePath}</div>
+          <div className='font-mono text-xs wrap-break-word'>
+            {project.definitionFilePath}
+          </div>
         </div>
       ) : (
-        <div className='text-muted-foreground italic'>No definition file</div>
+        <div className='text-muted-foreground text-[0.8125rem]'>
+          No definition file
+        </div>
       )}
       {declaredLicenses.length > 0 ? (
-        <div className='flex gap-2 text-sm'>
-          <div className='font-semibold'>Declared License: </div>
+        <div className='flex gap-2 text-[0.8125rem]'>
+          <div className='text-muted-foreground'>Declared License: </div>
           <LicenseList licenses={declaredLicenses} />
         </div>
       ) : (
-        <div className='text-muted-foreground italic'>No declared license</div>
+        <div className='text-muted-foreground text-[0.8125rem]'>
+          No declared license
+        </div>
       )}
     </div>
   );
@@ -171,13 +173,15 @@ const renderSubComponent = ({
         <div className='font-semibold'>Processed Declared License</div>
         <div className='ml-2'>
           <div className='space-y-1'>
-            <div className='text-sm font-semibold'>SPDX expression</div>
+            <div className='text-[0.8125rem] font-semibold'>
+              SPDX expression
+            </div>
             {project.processedDeclaredLicense.spdxExpression ? (
               <SpdxExpressionBadgeGroup
                 expression={project.processedDeclaredLicense.spdxExpression}
               />
             ) : (
-              <div className='text-muted-foreground italic'>N/A</div>
+              <div className='text-muted-foreground'>N/A</div>
             )}
           </div>
           <RenderProperty
@@ -186,13 +190,15 @@ const renderSubComponent = ({
             type='keyvalue'
           />
           <div className='space-y-1'>
-            <div className='text-sm font-semibold'>Unmapped licenses</div>
+            <div className='text-[0.8125rem] font-semibold'>
+              Unmapped licenses
+            </div>
             {project.processedDeclaredLicense.unmappedLicenses.length > 0 ? (
               <LicenseList
                 licenses={project.processedDeclaredLicense.unmappedLicenses}
               />
             ) : (
-              <div className='text-muted-foreground italic'>N/A</div>
+              <div className='text-muted-foreground'>N/A</div>
             )}
           </div>
         </div>
@@ -473,49 +479,46 @@ const ProjectsComponent = () => {
   const matching = `, ${projects.pagination.totalCount} matching filters`;
 
   return (
-    <Card className='h-fit'>
-      <CardHeader>
-        <CardTitle>
-          Projects ({totalProjects.pagination.totalCount} in total
-          {filtersInUse && matching})
-        </CardTitle>
-        <CardDescription>This view shows all projects.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <DataTableCards
-          table={table}
-          renderSubComponent={({ row }) =>
-            renderSubComponent({ row, runId: ortRun.id })
-          }
-          setCurrentPageOptions={(currentPage) => {
-            return {
-              to: Route.to,
-              search: { ...search, page: currentPage },
-            };
-          }}
-          setPageSizeOptions={(size) => {
-            return {
-              to: Route.to,
-              search: { ...search, page: 1, pageSize: size },
-            };
-          }}
-          setSortingOptions={(sortBy) => {
-            return {
-              to: Route.to,
-              search: {
-                ...search,
-                sortBy: updateColumnSorting(
-                  search.sortBy?.filter((sort) =>
-                    supportedSortColumns.has(sort.id)
-                  ),
-                  sortBy
+    <SheetSection
+      title='Projects'
+      meta={`${totalProjects.pagination.totalCount} in total${filtersInUse ? matching : ''}`}
+    >
+      <p className='text-muted-foreground -mt-2 text-[0.8125rem]'>
+        This view shows all projects.
+      </p>
+      <DataTableCards
+        table={table}
+        renderSubComponent={({ row }) =>
+          renderSubComponent({ row, runId: ortRun.id })
+        }
+        setCurrentPageOptions={(currentPage) => {
+          return {
+            to: Route.to,
+            search: { ...search, page: currentPage },
+          };
+        }}
+        setPageSizeOptions={(size) => {
+          return {
+            to: Route.to,
+            search: { ...search, page: 1, pageSize: size },
+          };
+        }}
+        setSortingOptions={(sortBy) => {
+          return {
+            to: Route.to,
+            search: {
+              ...search,
+              sortBy: updateColumnSorting(
+                search.sortBy?.filter((sort) =>
+                  supportedSortColumns.has(sort.id)
                 ),
-              },
-            };
-          }}
-        />
-      </CardContent>
-    </Card>
+                sortBy
+              ),
+            },
+          };
+        }}
+      />
+    </SheetSection>
   );
 };
 

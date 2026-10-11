@@ -137,7 +137,7 @@ export const ItemCountsSkeleton = ({ wide = false }: { wide?: boolean }) => (
     {[0, 1, 2].map((index) => (
       <Skeleton
         key={index}
-        className={cn('h-6 rounded-md', wide ? 'w-14' : 'w-12')}
+        className={cn('h-6 rounded-xs', wide ? 'w-14' : 'w-12')}
       />
     ))}
   </div>

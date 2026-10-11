@@ -167,7 +167,7 @@ export const StatisticsRow = ({
 }) => (
   <div
     className={cn(
-      'grid grid-cols-2 border-y md:grid-cols-4 [&>*]:border-b [&>*]:md:border-b-0 [&>*:not(:first-child)]:md:border-l [&>*:nth-child(even)]:border-l',
+      'grid grid-cols-2 border-y md:auto-cols-fr md:grid-flow-col md:grid-cols-none [&>*]:border-b [&>*]:md:border-b-0 [&>*:not(:first-child)]:md:border-l [&>*:nth-child(even)]:border-l',
       className
     )}
   >

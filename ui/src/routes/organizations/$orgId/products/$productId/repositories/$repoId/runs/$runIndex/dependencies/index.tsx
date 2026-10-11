@@ -26,13 +26,7 @@ import {
   getRunDependencyGraphOptions,
 } from '@/api/@tanstack/react-query.gen';
 import { LoadingIndicator } from '@/components/loading-indicator';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { SheetSection } from '@/components/page-header';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Toggle } from '@/components/ui/toggle';
 import { convertToBackendSorting } from '@/helpers/handle-multisort';
@@ -130,7 +124,7 @@ const SortControls = ({ className }: { className?: string }) => {
 
   return (
     <div className={cn('flex items-center gap-1.5', className)}>
-      <span className='text-muted-foreground text-sm'>Sort:</span>
+      <span className='text-muted-foreground text-[0.8125rem]'>Sort:</span>
       {sortFields.map(({ id, label }) => (
         <SortChip
           key={id}
@@ -174,48 +168,46 @@ const DependenciesComponent = () => {
   const defaultManager = managerEntries[0]?.[0];
 
   return (
-    <Card className='h-fit'>
-      <CardHeader>
-        <CardTitle>Dependency Graphs</CardTitle>
-        <CardDescription>
-          The dependency graphs per ecosystem as discovered during the run. The
-          number of unique packages per ecosystem is shown in each tab.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {managerEntries.length === 0 ? (
-          <div className='text-muted-foreground text-sm'>
-            No dependency graphs are available for this run.
+    <SheetSection
+      title='Dependency graphs'
+      meta={`${managerEntries.length} ${managerEntries.length === 1 ? 'ecosystem' : 'ecosystems'}`}
+    >
+      <p className='text-muted-foreground -mt-2 max-w-[75ch] text-[0.8125rem]'>
+        The dependency graphs per ecosystem as discovered during the run. The
+        number of unique packages per ecosystem is shown in each tab.
+      </p>
+      {managerEntries.length === 0 ? (
+        <div className='text-muted-foreground text-[0.8125rem]'>
+          No dependency graphs are available for this run.
+        </div>
+      ) : (
+        <Tabs defaultValue={defaultManager} className='gap-4'>
+          <div className='flex flex-wrap items-center gap-4'>
+            <TabsList className='h-auto justify-start gap-1 overflow-x-auto'>
+              {managerEntries.map(([managerName, graph]) => (
+                <TabsTrigger
+                  key={managerName}
+                  value={managerName}
+                  className='flex-none gap-2'
+                >
+                  {managerName}
+                  <PackageCountBadge count={graph.packageCount} />
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            <SortControls className='ml-auto' />
           </div>
-        ) : (
-          <Tabs defaultValue={defaultManager} className='gap-4'>
-            <div className='flex flex-wrap items-center gap-4'>
-              <TabsList className='h-auto justify-start gap-1 overflow-x-auto'>
-                {managerEntries.map(([managerName, graph]) => (
-                  <TabsTrigger
-                    key={managerName}
-                    value={managerName}
-                    className='flex-none gap-2'
-                  >
-                    {managerName}
-                    <PackageCountBadge count={graph.packageCount} />
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              <SortControls className='ml-auto' />
-            </div>
 
-            {managerEntries.map(([managerName, graph]) => (
-              <ManagerDependenciesTab
-                key={managerName}
-                graph={graph}
-                managerName={managerName}
-              />
-            ))}
-          </Tabs>
-        )}
-      </CardContent>
-    </Card>
+          {managerEntries.map(([managerName, graph]) => (
+            <ManagerDependenciesTab
+              key={managerName}
+              graph={graph}
+              managerName={managerName}
+            />
+          ))}
+        </Tabs>
+      )}
+    </SheetSection>
   );
 };
 

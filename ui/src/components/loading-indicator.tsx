@@ -17,13 +17,17 @@
  * License-Filename: LICENSE
  */
 
-import { Loader2 } from 'lucide-react';
-
+/** A quiet loading mark: a thin indeterminate bar that sweeps across a hairline track. */
 export const LoadingIndicator = () => {
   return (
-    <div className='flex h-full w-full flex-col items-center justify-center'>
+    <div className='flex h-full w-full flex-col items-center justify-center py-2'>
       <div className='sr-only'>Loading data...</div>
-      <Loader2 className='h-12 w-12 animate-spin' />
+      <div
+        aria-hidden
+        className='bg-border relative h-0.5 w-16 overflow-hidden'
+      >
+        <div className='bg-brand animate-out slide-out-to-right-[400%] repeat-infinite absolute inset-y-0 -left-1/3 w-1/3 duration-[1100ms] ease-in-out' />
+      </div>
     </div>
   );
 };

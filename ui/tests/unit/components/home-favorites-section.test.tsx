@@ -117,7 +117,9 @@ const addFavorite = (id: number, name: string) =>
   );
 
 const favoritesCard = () =>
-  screen.getByText('Favorites').closest('[data-slot="card"]') as HTMLElement;
+  screen
+    .getByRole('heading', { name: /^Favorites/ })
+    .closest('section') as HTMLElement;
 
 const groupTitles = () =>
   within(favoritesCard())
@@ -163,8 +165,8 @@ describe('home page', () => {
     ).toEqual(
       expect.arrayContaining([
         'FavoriteListItem',
-        'FavoriteGroupCard',
-        'SortableFavoriteGroupCard',
+        'FavoriteGroupList',
+        'SortableFavoriteGroup',
       ])
     );
     expect(

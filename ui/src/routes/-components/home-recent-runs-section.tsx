@@ -20,7 +20,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, type LinkProps } from '@tanstack/react-router';
 import { AxiosError } from 'axios';
-import { PlayCircle, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useEffect } from 'react';
 
 import { OrtRunStatus } from '@/api';
@@ -30,20 +30,14 @@ import {
 } from '@/api/@tanstack/react-query.gen';
 import { ItemCounts } from '@/components/item-counts';
 import { OrtRunJobStatus } from '@/components/ort-run-job-status';
+import { SheetSection } from '@/components/page-header';
 import { RunDuration } from '@/components/run-duration';
+import { StatusMark } from '@/components/status-mark';
 import { TimestampWithUTC } from '@/components/timestamp-with-utc';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { config } from '@/config';
-import { getStatusBackgroundColor } from '@/helpers/get-status-class';
 import { isJobFinished } from '@/helpers/job-helpers';
+import { cn } from '@/lib/utils';
 import { RecentRunItem, useHomeRecentRunActions } from '@/providers/home-data';
 import { HomeEmptyState } from './home-empty-state';
 
@@ -118,107 +112,107 @@ const RecentRunListItem = ({ recentRun }: { recentRun: RecentRunItem }) => {
 
   return (
     <li
-      className={`space-y-1 rounded-lg border px-3 py-2 text-sm ${
-        isUnavailable ? 'opacity-60' : ''
-      }`}
+      className={cn(
+        'flex flex-col gap-1 border-b py-2.5',
+        isUnavailable && 'opacity-60'
+      )}
     >
-      <div className='flex items-start justify-between gap-3'>
+      <div className='flex items-center gap-3'>
+        <div className='min-w-0 flex-1 text-[0.8125rem] break-words'>
+          <span className='text-muted-foreground'>
+            {recentRun.organizationName} / {recentRun.productName} /{' '}
+          </span>
+          <span className='font-medium'>{recentRun.repositoryName}</span>
+        </div>
         <Link
           to={recentRun.to as LinkProps['to']}
           params={params as LinkProps['params']}
-          className='min-w-0 font-medium hover:underline'
+          className='link shrink-0 text-[0.8125rem] tabular-nums'
         >
-          <span className='link'>Run {recentRun.runIndex}</span>
-          <span className='text-muted-foreground'> of </span>
-          <span className='break-words'>
-            {recentRun.organizationName} / {recentRun.productName} /{' '}
-            {recentRun.repositoryName}
-          </span>
+          Run {recentRun.runIndex}
         </Link>
-        <div className='flex shrink-0 items-center gap-1'>
+        <div className='flex w-36 shrink-0 items-center justify-end gap-1'>
           {isUnavailable ? (
-            <Badge variant='outline'>Unavailable</Badge>
+            <span className='bg-neutral-soft text-muted-foreground inline-flex h-5 items-center rounded-xs px-1.5 text-[0.6875rem] leading-4 font-semibold tracking-[0.06em] uppercase'>
+              Unavailable
+            </span>
           ) : (
-            status && (
-              <Badge className={`border ${getStatusBackgroundColor(status)}`}>
-                {status}
-              </Badge>
-            )
+            status && <StatusMark status={status} />
           )}
           {isUnavailable && (
             <Button
               type='button'
               variant='ghost'
               size='icon'
-              className='h-5 w-5'
+              className='size-5'
               aria-label='Remove run from the list'
               onClick={() => removeRecentRun(recentRun.id)}
             >
-              <X className='h-3 w-3' />
+              <X className='size-3' />
             </Button>
           )}
         </div>
       </div>
 
       {isUnavailable && (
-        <div className='text-muted-foreground'>
+        <p className='text-muted-foreground text-[0.8125rem]'>
           This run can no longer be loaded. It may have been deleted, or you may
           no longer have access to it.
-        </div>
+        </p>
       )}
 
-      <div className='flex items-center justify-between gap-3'>
+      <div className='text-muted-foreground flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-[0.8125rem] tabular-nums'>
         <div className='flex min-w-0 flex-wrap items-center gap-1'>
-          <span className='text-muted-foreground'>Created at</span>
-          {createdAt && <TimestampWithUTC timestamp={createdAt} />}
+          <span>Started</span>
+          {createdAt && (
+            <TimestampWithUTC
+              timestamp={createdAt}
+              className='text-foreground'
+            />
+          )}
           {createdAt && !isUnavailable && (
             // A run without a finishing time keeps counting, which must not happen for a
             // run that is not there anymore.
-            <div className='flex items-center'>
+            <span className='flex items-center'>
               {'('}
               <RunDuration
                 createdAt={createdAt}
                 finishedAt={run?.finishedAt ?? undefined}
               />
               {')'}
-            </div>
+            </span>
           )}
         </div>
         {run?.jobs && (
-          <div className='shrink-0'>
+          <div className='flex shrink-0 items-center gap-4'>
             <OrtRunJobStatus jobs={run.jobs} {...params} />
+            <ItemCounts
+              statistics={statistics.data}
+              compact
+              showIssues={Boolean(isJobFinished(run.jobs.analyzer?.status))}
+              showVulnerabilities={Boolean(
+                isJobFinished(run.jobs.advisor?.status)
+              )}
+              showRuleViolations={Boolean(
+                isJobFinished(run.jobs.evaluator?.status)
+              )}
+              link={{
+                params,
+                issuesSearch: {
+                  sortBy: [{ id: 'severity', desc: true }],
+                  itemResolved: ['Unresolved'],
+                },
+                vulnerabilitiesSearch: {
+                  sortBy: [{ id: 'rating', desc: true }],
+                  itemResolved: ['Unresolved'],
+                },
+                ruleViolationsSearch: {
+                  sortBy: [{ id: 'severity', desc: true }],
+                  itemResolved: ['Unresolved'],
+                },
+              }}
+            />
           </div>
-        )}
-      </div>
-
-      <div className='flex min-h-6 justify-end'>
-        {run?.jobs && (
-          <ItemCounts
-            statistics={statistics.data}
-            compact
-            showIssues={Boolean(isJobFinished(run.jobs.analyzer?.status))}
-            showVulnerabilities={Boolean(
-              isJobFinished(run.jobs.advisor?.status)
-            )}
-            showRuleViolations={Boolean(
-              isJobFinished(run.jobs.evaluator?.status)
-            )}
-            link={{
-              params,
-              issuesSearch: {
-                sortBy: [{ id: 'severity', desc: true }],
-                itemResolved: ['Unresolved'],
-              },
-              vulnerabilitiesSearch: {
-                sortBy: [{ id: 'rating', desc: true }],
-                itemResolved: ['Unresolved'],
-              },
-              ruleViolationsSearch: {
-                sortBy: [{ id: 'severity', desc: true }],
-                itemResolved: ['Unresolved'],
-              },
-            }}
-          />
         )}
       </div>
     </li>
@@ -232,29 +226,18 @@ export const HomeRecentRunsSection = ({
   recentRuns: RecentRunItem[];
 }) => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className='flex items-center gap-2'>
-          <PlayCircle className='text-foreground h-5 w-5 dark:text-white' />
-          Recently started runs
-        </CardTitle>
-        <CardDescription>
-          Runs started recently (max. 10) are shown here.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {recentRuns.length > 0 ? (
-          <ul className='space-y-2'>
-            {recentRuns.map((recentRun) => (
-              <RecentRunListItem key={recentRun.id} recentRun={recentRun} />
-            ))}
-          </ul>
-        ) : (
-          <HomeEmptyState>
-            Runs you start from the UI in this browser will appear here.
-          </HomeEmptyState>
-        )}
-      </CardContent>
-    </Card>
+    <SheetSection title='Recently started runs' meta='Last 10'>
+      {recentRuns.length > 0 ? (
+        <ul className='border-t'>
+          {recentRuns.map((recentRun) => (
+            <RecentRunListItem key={recentRun.id} recentRun={recentRun} />
+          ))}
+        </ul>
+      ) : (
+        <HomeEmptyState>
+          Runs you start from the UI in this browser will appear here.
+        </HomeEmptyState>
+      )}
+    </SheetSection>
   );
 };

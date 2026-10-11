@@ -27,14 +27,8 @@ import { BreakableString } from '@/components/breakable-string';
 import { DataTable } from '@/components/data-table/data-table';
 import { RegexForm } from '@/components/form/regex-form';
 import { LoadingIndicator } from '@/components/loading-indicator';
+import { PageHeader, SheetSection } from '@/components/page-header';
 import { TimestampWithUTC } from '@/components/timestamp-with-utc';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   EMPTY_SORTING_STATE,
   updateColumnSorting,
@@ -81,6 +75,11 @@ function SearchPackageComponent() {
     }),
     columnHelper.accessor('revision', {
       header: 'Revision',
+      cell: ({ row }) => (
+        <span className='font-mono text-xs break-all'>
+          {row.original.revision}
+        </span>
+      ),
     }),
     columnHelper.accessor('ortRunIndex', {
       header: 'Run Index',
@@ -128,7 +127,9 @@ function SearchPackageComponent() {
               marked: '0',
             }}
           >
-            <BreakableString text={id} />
+            <span className='font-mono text-xs'>
+              <BreakableString text={id} />
+            </span>
           </Link>
         );
       },
@@ -178,16 +179,13 @@ function SearchPackageComponent() {
   }
 
   return (
-    <Card className='h-fit'>
-      <CardHeader>
-        <CardTitle>Search Package</CardTitle>
-        <CardDescription>
-          Search for ORT runs in repositories of this product that contain
-          matching packages.
-        </CardDescription>
-      </CardHeader>
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title='Search Package'
+        description='Search for ORT runs in repositories of this product that contain matching packages.'
+      />
       <RegexForm
-        className='mx-12'
+        className='max-w-2xl'
         initialValue={identifier}
         onRegexChange={(regex) => {
           navigate({
@@ -197,7 +195,7 @@ function SearchPackageComponent() {
           });
         }}
       />
-      <CardContent>
+      <SheetSection title='Matching runs'>
         {isRunsPending && identifier ? (
           <LoadingIndicator />
         ) : (
@@ -226,8 +224,8 @@ function SearchPackageComponent() {
             }}
           />
         )}
-      </CardContent>
-    </Card>
+      </SheetSection>
+    </div>
   );
 }
 

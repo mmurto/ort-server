@@ -89,9 +89,9 @@ const SortableEntry = ({ id, index, children }: SortableEntryProps) => {
           ref={handleRef}
           type='button'
           aria-label={`Reorder ${id}`}
-          className='text-muted-foreground flex h-4 w-4 cursor-grab items-center justify-center rounded-sm hover:text-black focus-visible:ring-2 focus-visible:outline-none active:cursor-grabbing'
+          className='text-muted-foreground hover:text-foreground focus-visible:ring-ring flex size-4 cursor-grab items-center justify-center rounded-xs focus-visible:ring-2 focus-visible:outline-none active:cursor-grabbing'
         >
-          <GripVerticalIcon className='h-4 w-4' />
+          <GripVerticalIcon className='size-3.5' />
         </button>
       )}
     </div>

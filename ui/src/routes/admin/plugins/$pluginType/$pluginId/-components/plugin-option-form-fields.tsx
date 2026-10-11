@@ -76,13 +76,13 @@ export function PluginOptionFormFields({ options, form }: Props) {
         name={option.name}
         render={({ field }) => (
           <FormItem>
-            <FormLabel>
+            <FormLabel className='font-mono text-xs'>
               {option.name}
-              <Badge className='ml-2 bg-blue-200 text-black'>
+              <Badge variant='outline' className='ml-2 font-sans'>
                 {option.type}
               </Badge>
             </FormLabel>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className='flex flex-wrap items-center gap-x-4 gap-y-2'>
               <FormControl>
                 {option.type === 'BOOLEAN' ? (
                   <Switch
@@ -173,19 +173,13 @@ export function PluginOptionFormFields({ options, form }: Props) {
                 control={form.control}
                 name={`${option.name}_isFinal`}
                 render={({ field }) => (
-                  <label
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 4,
-                    }}
-                  >
+                  <label className='flex items-center gap-1.5 text-[0.8125rem]'>
                     <Checkbox
                       checked={field.value as CheckedState}
                       onCheckedChange={field.onChange}
                       disabled={Boolean(isNotSet)}
                     />
-                    <p className='text-sm'>Final</p>
+                    <span>Final</span>
                   </label>
                 )}
               />
@@ -193,13 +187,7 @@ export function PluginOptionFormFields({ options, form }: Props) {
                 control={form.control}
                 name={`${option.name}_isNotSet`}
                 render={({ field }) => (
-                  <label
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 4,
-                    }}
-                  >
+                  <label className='flex items-center gap-1.5 text-[0.8125rem]'>
                     <Checkbox
                       checked={field.value as CheckedState}
                       onCheckedChange={(checked) => {
@@ -219,7 +207,7 @@ export function PluginOptionFormFields({ options, form }: Props) {
                         }
                       }}
                     />
-                    <p className='text-sm'>Undefined</p>
+                    <span>Undefined</span>
                   </label>
                 )}
               />
@@ -229,7 +217,7 @@ export function PluginOptionFormFields({ options, form }: Props) {
               {option.type === 'SECRET' && (
                 <>
                   <br />
-                  <span className='text-red-500'>
+                  <span className='text-warn'>
                     This must be the name of a secret available in the config
                     secret provider, not a secret configured on the
                     organization, product, or repository levels.

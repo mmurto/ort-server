@@ -30,13 +30,9 @@ import {
 } from '@/api/@tanstack/react-query.gen';
 import { PasswordInput } from '@/components/form/password-input';
 import { LoadingIndicator } from '@/components/loading-indicator';
+import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -114,88 +110,95 @@ const EditRepositorySecretPage = () => {
   };
 
   return (
-    <Card>
-      <CardHeader>Edit Repository Secret</CardHeader>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
-          <CardContent className='space-y-4'>
-            <FormField
-              control={form.control}
-              name='name'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    The name of the secret (cannot be changed).
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-              disabled
-            />
-            <FormField
-              control={form.control}
-              name='value'
-              render={({ field }) => (
-                <FormItem className='mt-0'>
-                  <FormLabel>Value</FormLabel>
-                  <FormControl autoFocus>
-                    <PasswordInput {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='description'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder='(optional)' />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-          <CardFooter>
-            <Button
-              type='button'
-              className='m-1'
-              variant='outline'
-              onClick={() =>
-                navigate({
-                  to: '/organizations/$orgId/products/$productId/repositories/$repoId/secrets',
-                  params: {
-                    orgId: params.orgId,
-                    productId: params.productId,
-                    repoId: params.repoId,
-                  },
-                })
-              }
-              disabled={isPending}
-            >
-              Cancel
-            </Button>
-            <Button type='submit' disabled={isPending}>
-              {isPending ? (
-                <>
-                  <span className='sr-only'>Editing secret...</span>
-                  <Loader2 size={16} className='mx-3 animate-spin' />
-                </>
-              ) : (
-                'Submit'
-              )}
-            </Button>
-          </CardFooter>
-        </form>
-      </Form>
-    </Card>
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title='Edit Repository Secret'
+        description={'Replace the value or the description of the secret.'}
+      />
+      <Card className='max-w-2xl'>
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className='flex flex-col gap-6'
+          >
+            <CardContent className='flex flex-col gap-5'>
+              <FormField
+                control={form.control}
+                name='name'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      The name of the secret (cannot be changed).
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+                disabled
+              />
+              <FormField
+                control={form.control}
+                name='value'
+                render={({ field }) => (
+                  <FormItem className='mt-0'>
+                    <FormLabel>Value</FormLabel>
+                    <FormControl autoFocus>
+                      <PasswordInput {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='description'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder='(optional)' />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+            <CardFooter className='gap-2'>
+              <Button type='submit' disabled={isPending}>
+                {isPending ? (
+                  <>
+                    <span className='sr-only'>Editing secret...</span>
+                    <Loader2 size={16} className='mx-3 animate-spin' />
+                  </>
+                ) : (
+                  'Submit'
+                )}
+              </Button>
+              <Button
+                type='button'
+                variant='outline'
+                onClick={() =>
+                  navigate({
+                    to: '/organizations/$orgId/products/$productId/repositories/$repoId/secrets',
+                    params: {
+                      orgId: params.orgId,
+                      productId: params.productId,
+                      repoId: params.repoId,
+                    },
+                  })
+                }
+                disabled={isPending}
+              >
+                Cancel
+              </Button>
+            </CardFooter>
+          </form>
+        </Form>
+      </Card>
+    </div>
   );
 };
 

@@ -24,16 +24,8 @@ import { useEffect, useState } from 'react';
 
 import { getCliOidcConfigOptions } from '@/api/@tanstack/react-query.gen';
 import { CopyToClipboard } from '@/components/copy-to-clipboard';
+import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { config } from '@/config';
 import { TOKEN_FLOW_MARKER_KEY } from '@/helpers/token-flow';
@@ -142,42 +134,37 @@ const TokenCallbackPage = () => {
   }, [cliClientId, navigate, offlineToken]);
 
   return (
-    <div className='mx-auto flex w-full max-w-4xl flex-col gap-6'>
-      <Card>
-        <CardHeader>
-          <CardTitle className='text-3xl font-bold tracking-tight'>
-            Authentication Token
-          </CardTitle>
-          <CardDescription>
-            Copy the token now. It will not be shown again.
-          </CardDescription>
-        </CardHeader>
-        <Separator />
-        <CardContent className='space-y-4 pt-6'>
-          {isProcessingCallback && (
-            <p className='text-sm'>Finalizing token generation...</p>
-          )}
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title='Authentication Token'
+        description='Copy the token now. It will not be shown again.'
+      />
+      <div className='flex max-w-2xl flex-col gap-4 text-[0.8125rem]'>
+        {isProcessingCallback && (
+          <p className='text-muted-foreground'>
+            Finalizing token generation...
+          </p>
+        )}
 
-          {errorMessage && (
-            <div className='text-sm text-red-600 dark:text-red-400'>
-              {errorMessage}
-            </div>
-          )}
+        {errorMessage && <div className='text-err'>{errorMessage}</div>}
 
-          {offlineToken && (
-            <div className='space-y-2'>
-              <p className='text-sm font-semibold'>
-                Authentication token (copy now, it will not be shown again):
-              </p>
-              <div className='flex gap-2'>
-                <Textarea readOnly value={offlineToken} className='h-36' />
-                <CopyToClipboard copyText={offlineToken} />
-              </div>
+        {offlineToken && (
+          <div className='flex flex-col gap-2'>
+            <p className='font-semibold'>
+              Authentication token (copy now, it will not be shown again):
+            </p>
+            <div className='flex gap-2'>
+              <Textarea
+                readOnly
+                value={offlineToken}
+                className='h-36 font-mono text-xs'
+              />
+              <CopyToClipboard copyText={offlineToken} />
             </div>
-          )}
-        </CardContent>
-        <Separator />
-        <CardFooter className='flex flex-col items-stretch gap-3 sm:flex-row sm:justify-end'>
+          </div>
+        )}
+
+        <div>
           <Button
             variant='outline'
             onClick={() => {
@@ -186,8 +173,8 @@ const TokenCallbackPage = () => {
           >
             Back to token page
           </Button>
-        </CardFooter>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };

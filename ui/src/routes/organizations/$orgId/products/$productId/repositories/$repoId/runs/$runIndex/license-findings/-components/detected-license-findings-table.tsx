@@ -120,7 +120,10 @@ export const DetectedLicenseFindingsTable = ({
 
         return (
           <div className='flex items-start gap-2'>
-            <BreakableString text={row.original.path} />
+            <BreakableString
+              text={row.original.path}
+              className='font-mono text-xs'
+            />
             <CopyToClipboard
               copyText={curationTemplate}
               tooltipText='Copy license finding curation template to clipboard'
@@ -215,7 +218,7 @@ export const DetectedLicenseFindingsTable = ({
       aria-label={`License findings for ${identifier} under ${license}`}
       className='space-y-2 p-2'
     >
-      <div className='text-muted-foreground text-sm'>
+      <div className='text-muted-foreground text-[0.8125rem]'>
         License findings ({findings.pagination.totalCount} in total).
       </div>
       <DataTable

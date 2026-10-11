@@ -87,16 +87,17 @@ it('links to the organizations page', async () => {
     routes: [{ path: '/' }, { path: '/organizations' }],
   });
 
-  expect(await screen.findByText('Organizations')).toBeInTheDocument();
   expect(
-    screen.getByRole('link', { name: 'Browse organizations' })
+    await screen.findByRole('link', { name: 'Browse organizations' })
   ).toHaveAttribute('href', '/organizations');
 });
 
 it('renders the empty recent runs state', async () => {
   renderRecentRuns([]);
 
-  expect(await screen.findByText('Recently started runs')).toBeInTheDocument();
+  expect(
+    await screen.findByRole('heading', { name: /^Recently started runs/ })
+  ).toBeInTheDocument();
   expect(
     screen.getByText(
       'Runs you start from the UI in this browser will appear here.'

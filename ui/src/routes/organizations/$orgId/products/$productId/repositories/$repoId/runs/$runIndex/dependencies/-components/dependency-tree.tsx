@@ -279,7 +279,7 @@ export const DependencyTree = memo(function DependencyTree({
 
   if (graph.projectGroups.length === 0) {
     return (
-      <div className='text-muted-foreground text-sm'>
+      <div className='text-muted-foreground text-[0.8125rem]'>
         No scopes are available for this dependency graph.
       </div>
     );
@@ -296,14 +296,17 @@ export const DependencyTree = memo(function DependencyTree({
       />
 
       {status === 'running' && rows.length >= CHUNK_ROW_LIMIT && (
-        <div className='text-muted-foreground text-sm' role='status'>
+        <div className='text-muted-foreground text-[0.8125rem]' role='status'>
           Loading dependency paths… {rows.length.toLocaleString()} rows so far.
         </div>
       )}
 
       {status === 'paused' && (
         <div className='flex flex-wrap items-center gap-2'>
-          <span className='text-muted-foreground text-sm' role='status'>
+          <span
+            className='text-muted-foreground text-[0.8125rem]'
+            role='status'
+          >
             Showing {rows.length.toLocaleString()} rows. More dependency paths
             exist.
           </span>

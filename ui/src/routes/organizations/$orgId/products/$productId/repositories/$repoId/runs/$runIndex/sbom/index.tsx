@@ -20,15 +20,16 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { Download } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 import { getRepositoryRunOptions } from '@/api/@tanstack/react-query.gen';
 import CycloneDXDark from '@/assets/cyclonedx-logo-black.svg';
 import CycloneDXLight from '@/assets/cyclonedx-logo-white.svg';
 import SPDX from '@/assets/spdx-logo-color.svg';
 import { LoadingIndicator } from '@/components/loading-indicator';
+import { SheetSection } from '@/components/page-header';
 import { useTheme } from '@/components/theme-provider-context';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
   Tooltip,
   TooltipContent,
@@ -40,6 +41,83 @@ import { useUser } from '@/hooks/use-user.ts';
 import { toastError } from '@/lib/toast';
 
 const API_URL = config.API_URL;
+
+/** One SBOM format: its logo, a short description and the downloadable files. */
+const SbomFormat = ({
+  homepage,
+  logo,
+  description,
+  filenames,
+  sizes,
+  getFormat,
+  emptyText,
+  onDownload,
+}: {
+  homepage: string;
+  logo: ReactNode;
+  description: ReactNode;
+  filenames: string[] | undefined;
+  sizes: Record<string, number> | undefined;
+  getFormat: (filename: string) => string;
+  emptyText: string;
+  onDownload: (filename: string) => void;
+}) => (
+  <div className='flex flex-col gap-4 py-5 md:px-6 md:first:pl-0 md:last:pr-0'>
+    <a
+      href={homepage}
+      target='_blank'
+      rel='noopener noreferrer'
+      className='self-start'
+    >
+      <Tooltip>
+        <TooltipTrigger>{logo}</TooltipTrigger>
+        <TooltipContent>Click to visit the homepage</TooltipContent>
+      </Tooltip>
+    </a>
+    <p className='text-muted-foreground max-w-[60ch] text-[0.8125rem]'>
+      {description}
+    </p>
+    <div className='flex flex-wrap gap-2'>
+      {filenames && filenames.length > 0 ? (
+        filenames.map((filename) => {
+          const sizeBytes =
+            sizes && filename in sizes ? sizes[filename] : undefined;
+          const format = getFormat(filename);
+          const sizeLabel =
+            sizeBytes !== undefined
+              ? formatFileSize(sizeBytes)
+              : 'Unknown size';
+          return (
+            <Tooltip key={filename}>
+              <TooltipTrigger asChild>
+                <div>
+                  <Button
+                    variant='outline'
+                    className='h-auto whitespace-normal'
+                    onClick={() => onDownload(filename)}
+                  >
+                    <Download />
+                    {format}
+                    <span className='text-muted-foreground text-xs font-normal'>
+                      {sizeLabel}
+                    </span>
+                  </Button>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                Click to download in {format} format
+              </TooltipContent>
+            </Tooltip>
+          );
+        })
+      ) : (
+        <span className='text-muted-foreground text-[0.8125rem]'>
+          {emptyText}
+        </span>
+      )}
+    </div>
+  </div>
+);
 
 const SBOMComponent = () => {
   const params = Route.useParams();
@@ -119,150 +197,76 @@ const SBOMComponent = () => {
     ? 'dark'
     : 'light';
 
+  const reportCount =
+    (cycloneDxReports?.length ?? 0) + (spdxReports?.length ?? 0);
+
   return (
-    <div className='flex flex-col gap-4'>
-      <div className='grid grid-cols-2 gap-4'>
-        <Card>
-          <CardHeader className='text-center'>
-            <a
-              href='https://cyclonedx.org/'
-              target='_blank'
-              rel='noopener noreferrer'
-            >
-              <Tooltip>
-                <TooltipTrigger>
-                  <img
-                    alt='CycloneDX'
-                    src={
-                      mode === 'dark' ||
-                      (mode === 'system' && systemMode === 'dark')
-                        ? CycloneDXLight
-                        : CycloneDXDark
-                    }
-                    width={230}
-                  />
-                </TooltipTrigger>
-                <TooltipContent>Click to visit the homepage</TooltipContent>
-              </Tooltip>
-            </a>
-          </CardHeader>
-          <div className='flex justify-around gap-2 pb-6'>
-            {cycloneDxReports && cycloneDxReports.length > 0
-              ? cycloneDxReports.map((filename) => {
-                  const sizeBytes =
-                    sizesMap && filename in sizesMap
-                      ? sizesMap[filename]
-                      : undefined;
-                  const format = filename.includes('json') ? 'JSON' : 'XML';
-                  const sizeLabel =
-                    sizeBytes !== undefined
-                      ? formatFileSize(sizeBytes)
-                      : 'Unknown size';
-                  return (
-                    <Tooltip key={filename}>
-                      <TooltipTrigger asChild>
-                        <div>
-                          <Button
-                            variant='outline'
-                            className='link h-auto font-semibold whitespace-normal'
-                            onClick={() => handleDownload(ortRun.id, filename)}
-                          >
-                            <Download />
-                            {format}
-                            <span className='text-muted-foreground text-xs font-normal'>
-                              {sizeLabel}
-                            </span>
-                          </Button>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        Click to download in {format} format
-                      </TooltipContent>
-                    </Tooltip>
-                  );
-                })
-              : 'No CycloneDX reports available.'}
-          </div>
-
-          <CardContent className='text-muted-foreground text-sm'>
-            <a
-              href='https://cyclonedx.org/'
-              target='_blank'
-              rel='noopener noreferrer'
-            >
-              CycloneDX
-            </a>{' '}
-            is a standard format for creating software Bill of Materials (SBOMs)
-            to improve software supply chain transparency and security.
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className='text-center'>
-            <a
-              href='https://spdx.dev/'
-              target='_blank'
-              rel='noopener noreferrer'
-            >
-              <Tooltip>
-                <TooltipTrigger>
-                  <img alt='SPDX' src={SPDX} width={150} />
-                </TooltipTrigger>
-                <TooltipContent>Click to visit the homepage</TooltipContent>
-              </Tooltip>
-            </a>
-          </CardHeader>
-          <div className='flex justify-around gap-2 pb-6'>
-            {spdxReports && spdxReports.length > 0
-              ? spdxReports.map((filename) => {
-                  const sizeBytes =
-                    sizesMap && filename in sizesMap
-                      ? sizesMap[filename]
-                      : undefined;
-                  const format = filename.includes('json') ? 'JSON' : 'YAML';
-                  const sizeLabel =
-                    sizeBytes !== undefined
-                      ? formatFileSize(sizeBytes)
-                      : 'Unknown size';
-                  return (
-                    <Tooltip key={filename}>
-                      <TooltipTrigger asChild>
-                        <div>
-                          <Button
-                            variant='outline'
-                            className='link h-auto font-semibold whitespace-normal'
-                            onClick={() => handleDownload(ortRun.id, filename)}
-                          >
-                            <Download />
-                            {format}
-                            <span className='text-muted-foreground text-xs font-normal'>
-                              {sizeLabel}
-                            </span>
-                          </Button>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        Click to download in {format} format
-                      </TooltipContent>
-                    </Tooltip>
-                  );
-                })
-              : 'No SPDX reports available.'}
-          </div>
-
-          <CardContent className='text-muted-foreground text-sm'>
-            <a
-              href='https://spdx.dev/'
-              target='_blank'
-              rel='noopener noreferrer'
-            >
-              System Package Data Exchange (SPDX)
-            </a>{' '}
-            is an open standard capable of representing systems with software
-            components as SBOMs (Software Bill of Materials).
-          </CardContent>
-        </Card>
+    <SheetSection
+      title='SBOMs'
+      meta={`${reportCount} ${reportCount === 1 ? 'file' : 'files'}`}
+    >
+      <div className='grid divide-y border-y md:grid-cols-2 md:divide-x md:divide-y-0'>
+        <SbomFormat
+          homepage='https://cyclonedx.org/'
+          logo={
+            <img
+              alt='CycloneDX'
+              src={
+                mode === 'dark' || (mode === 'system' && systemMode === 'dark')
+                  ? CycloneDXLight
+                  : CycloneDXDark
+              }
+              width={160}
+            />
+          }
+          description={
+            <>
+              <a
+                className='link'
+                href='https://cyclonedx.org/'
+                target='_blank'
+                rel='noopener noreferrer'
+              >
+                CycloneDX
+              </a>{' '}
+              is a standard format for creating software Bill of Materials
+              (SBOMs) to improve software supply chain transparency and
+              security.
+            </>
+          }
+          filenames={cycloneDxReports}
+          sizes={sizesMap}
+          getFormat={(filename) => (filename.includes('json') ? 'JSON' : 'XML')}
+          emptyText='No CycloneDX reports available.'
+          onDownload={(filename) => handleDownload(ortRun.id, filename)}
+        />
+        <SbomFormat
+          homepage='https://spdx.dev/'
+          logo={<img alt='SPDX' src={SPDX} width={104} />}
+          description={
+            <>
+              <a
+                className='link'
+                href='https://spdx.dev/'
+                target='_blank'
+                rel='noopener noreferrer'
+              >
+                System Package Data Exchange (SPDX)
+              </a>{' '}
+              is an open standard capable of representing systems with software
+              components as SBOMs (Software Bill of Materials).
+            </>
+          }
+          filenames={spdxReports}
+          sizes={sizesMap}
+          getFormat={(filename) =>
+            filename.includes('json') ? 'JSON' : 'YAML'
+          }
+          emptyText='No SPDX reports available.'
+          onDownload={(filename) => handleDownload(ortRun.id, filename)}
+        />
       </div>
-    </div>
+    </SheetSection>
   );
 };
 

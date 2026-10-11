@@ -111,7 +111,10 @@ export const PluginOptionField = <TFieldValues extends FieldValues>({
       const label = (
         <FormLabel>
           {option.name}
-          <Badge variant='small' className='bg-blue-200 text-black'>
+          <Badge
+            variant='small'
+            className='bg-neutral-soft text-muted-foreground font-mono'
+          >
             {option.type}
           </Badge>
           {enabled &&
@@ -119,7 +122,7 @@ export const PluginOptionField = <TFieldValues extends FieldValues>({
             isOptionValueMissing(field.value) && (
               <Badge
                 variant='small'
-                className='bg-destructive dark:bg-destructive/60 text-white'
+                className='bg-err-soft text-err'
                 title='The option is required, but has no value.'
               >
                 REQUIRED
@@ -128,7 +131,7 @@ export const PluginOptionField = <TFieldValues extends FieldValues>({
           {enabled && optionDiffersFromDefault(option, field.value) && (
             <Badge
               variant='small'
-              className='bg-amber-200 text-black'
+              className='bg-warn-soft text-warn'
               title='The value differs from the default.'
             >
               MODIFIED
@@ -164,10 +167,7 @@ export const PluginOptionField = <TFieldValues extends FieldValues>({
           </FormDescription>
           {option.isFixed && (
             <FormDescription
-              className={cn(
-                'font-semibold text-yellow-700',
-                isBoolean && 'pl-6'
-              )}
+              className={cn('text-warn font-medium', isBoolean && 'pl-6')}
             >
               This option is set by an administrator and cannot be changed.
             </FormDescription>

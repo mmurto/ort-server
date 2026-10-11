@@ -235,9 +235,7 @@ describe('issues table', () => {
       severity: 'ERROR',
       resolved: true,
     });
-    expect(container).toHaveTextContent(
-      'Issues (25 in total, 3 matching filters)'
-    );
+    expect(container).toHaveTextContent('25 in total, 3 matching filters');
   });
 
   it('applies sorting and the page from the URL', async () => {

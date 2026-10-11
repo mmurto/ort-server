@@ -40,15 +40,9 @@ import { DataTable } from '@/components/data-table/data-table';
 import { DeleteDialog } from '@/components/delete-dialog';
 import { DeleteIconButton } from '@/components/delete-icon-button';
 import { LoadingIndicator } from '@/components/loading-indicator';
+import { PageHeader, SheetSection } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { buttonVariants } from '@/components/ui/button-variants';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   Tooltip,
   TooltipContent,
@@ -133,11 +127,17 @@ const baseColumns: AppColumnDef<Secret>[] = [
   {
     accessorKey: 'name',
     header: 'Name',
+    cell: ({ row }) => <span className='font-medium'>{row.original.name}</span>,
     enableColumnFilter: false,
   },
   {
     accessorKey: 'description',
     header: 'Description',
+    cell: ({ row }) => (
+      <span className='text-muted-foreground text-[0.8125rem]'>
+        {row.original.description}
+      </span>
+    ),
     enableColumnFilter: false,
   },
 ];
@@ -261,101 +261,97 @@ const ProductSecrets = () => {
   }
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Product Secrets</CardTitle>
-          <CardDescription>Manage secrets for {product.name}.</CardDescription>
-          <div className='py-2'>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button asChild size='sm' className='ml-auto gap-1'>
-                  <Link
-                    to='/organizations/$orgId/products/$productId/secrets/create-secret'
-                    params={{
-                      orgId: params.orgId,
-                      productId: params.productId,
-                    }}
-                  >
-                    Add secret
-                    <PlusIcon className='h-4 w-4' />
-                  </Link>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                Create a new secret for this product
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <DataTable
-            table={table}
-            setCurrentPageOptions={(currentPage) => {
-              return {
-                to: Route.to,
-                search: { ...search, page: currentPage },
-              };
-            }}
-            setPageSizeOptions={(size) => {
-              return {
-                to: Route.to,
-                search: { ...search, page: 1, pageSize: size },
-              };
-            }}
-          />
-        </CardContent>
-      </Card>
-      <Card className='mt-4'>
-        <CardHeader>
-          <CardTitle>Organization Secrets</CardTitle>
-          <CardDescription>
-            Inherited secrets from {organization.name}.
-          </CardDescription>
-          <div className='py-2'>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  asChild
-                  size='sm'
-                  className='ml-auto gap-1'
-                  disabled={canManageOrgSecrets === false}
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title='Secrets'
+        description={`Manage secrets for ${product.name}.`}
+        actions={
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button asChild>
+                <Link
+                  to='/organizations/$orgId/products/$productId/secrets/create-secret'
+                  params={{
+                    orgId: params.orgId,
+                    productId: params.productId,
+                  }}
                 >
-                  <Link
-                    to='/organizations/$orgId/secrets'
-                    params={{
-                      orgId: params.orgId,
-                    }}
-                  >
-                    Manage organization secrets
-                  </Link>
-                </Button>
-              </TooltipTrigger>
-              {canManageOrgSecrets === false && (
-                <TooltipContent>Insufficient permissions.</TooltipContent>
-              )}
-            </Tooltip>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <DataTable
-            table={orgTable}
-            setCurrentPageOptions={(currentPage) => {
-              return {
-                to: Route.to,
-                search: { ...search, orgPage: currentPage },
-              };
-            }}
-            setPageSizeOptions={(size) => {
-              return {
-                to: Route.to,
-                search: { ...search, orgPage: 1, orgPageSize: size },
-              };
-            }}
-          />
-        </CardContent>
-      </Card>
-    </>
+                  <PlusIcon />
+                  Add secret
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              Create a new secret for this product
+            </TooltipContent>
+          </Tooltip>
+        }
+      />
+      <SheetSection
+        title='Product Secrets'
+        meta={`${secrets.pagination.totalCount} in total`}
+      >
+        <DataTable
+          table={table}
+          setCurrentPageOptions={(currentPage) => {
+            return {
+              to: Route.to,
+              search: { ...search, page: currentPage },
+            };
+          }}
+          setPageSizeOptions={(size) => {
+            return {
+              to: Route.to,
+              search: { ...search, page: 1, pageSize: size },
+            };
+          }}
+        />
+      </SheetSection>
+      <SheetSection
+        title='Organization Secrets'
+        meta={`Inherited secrets from ${organization.name}.`}
+        actions={
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                asChild
+                variant='outline'
+                size='sm'
+                disabled={canManageOrgSecrets === false}
+              >
+                <Link
+                  to='/organizations/$orgId/secrets'
+                  params={{
+                    orgId: params.orgId,
+                  }}
+                >
+                  Manage organization secrets
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            {canManageOrgSecrets === false && (
+              <TooltipContent>Insufficient permissions.</TooltipContent>
+            )}
+          </Tooltip>
+        }
+      >
+        <DataTable
+          table={orgTable}
+          setCurrentPageOptions={(currentPage) => {
+            return {
+              to: Route.to,
+              search: { ...search, orgPage: currentPage },
+            };
+          }}
+          setPageSizeOptions={(size) => {
+            return {
+              to: Route.to,
+              search: { ...search, orgPage: 1, orgPageSize: size },
+            };
+          }}
+        />
+      </SheetSection>
+    </div>
   );
 };
 

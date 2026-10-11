@@ -25,13 +25,7 @@ import {
   RadarChart,
 } from 'recharts';
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { ChartDetailsLink, ChartPanel } from '@/components/charts/chart-panel';
 import {
   ChartConfig,
   ChartContainer,
@@ -95,79 +89,68 @@ export const Cvss23RadarChart = ({ cvssScore }: Cvss23RadarChartProps) => {
   } satisfies ChartConfig;
 
   return (
-    <Card>
-      <CardHeader className='items-center'>
-        <CardTitle>
-          CVSS {version} Severity Radar (
-          <a
-            className='link font-normal break-all hover:underline'
-            href={url}
-            target='_blank'
-          >
-            details
-          </a>
-          )
-        </CardTitle>
-        <CardDescription>
-          Severity scores from CVSS assessing impact and exploitability of the
-          vulnerability.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <ChartContainer
-          config={chartConfig}
-          className='mx-auto aspect-square max-h-[250px] w-full'
+    <ChartPanel
+      title={
+        <>
+          CVSS {version} Severity Radar (<ChartDetailsLink href={url} />)
+        </>
+      }
+      description='Severity scores from CVSS assessing impact and exploitability of the vulnerability.'
+    >
+      <ChartContainer
+        config={chartConfig}
+        className='mx-auto aspect-square max-h-[250px] w-full'
+      >
+        <RadarChart
+          data={chartData}
+          margin={{
+            top: 10,
+            right: 10,
+            bottom: 10,
+            left: 10,
+          }}
         >
-          <RadarChart
-            data={chartData}
-            margin={{
-              top: 10,
-              right: 10,
-              bottom: 10,
-              left: 10,
+          <ChartTooltip
+            cursor={false}
+            content={(props) => (
+              <ChartTooltipContent {...props} indicator='line' />
+            )}
+          />
+          <PolarAngleAxis
+            dataKey='component'
+            tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
+            tickFormatter={(value) => {
+              return value === 'Base'
+                ? 'Base'
+                : value === 'Temporal'
+                  ? 'Temp'
+                  : value.slice(0, 3);
             }}
-          >
-            <ChartTooltip
-              cursor={false}
-              content={(props) => (
-                <ChartTooltipContent {...props} indicator='line' />
-              )}
-            />
-            <PolarAngleAxis
-              dataKey='component'
-              tickFormatter={(value) => {
-                return value === 'Base'
-                  ? 'Base'
-                  : value === 'Temporal'
-                    ? 'Temp'
-                    : value.slice(0, 3);
-              }}
-            />
-            <PolarRadiusAxis
-              style={{ visibility: 'hidden' }}
-              angle={60}
-              tickCount={6}
-              domain={[0, 10]}
-            />
-            <PolarGrid radialLines={false} />
-            <Radar
-              dataKey='score'
-              fill='var(--chart-1)'
-              fillOpacity={0.2}
-              stroke='var(--chart-1)'
-              strokeWidth={2}
-              dot={(props) => {
-                const { cx, cy, payload } = props;
-                return payload?.dot ? (
-                  <circle cx={cx} cy={cy} r='6' fill='orange' />
-                ) : (
-                  <circle cx={cx} cy={cy} r='4' fill='var(--chart-1)' />
-                );
-              }}
-            />
-          </RadarChart>
-        </ChartContainer>
-      </CardContent>
-    </Card>
+          />
+          <PolarRadiusAxis
+            style={{ visibility: 'hidden' }}
+            angle={60}
+            tickCount={6}
+            domain={[0, 10]}
+          />
+          <PolarGrid radialLines={false} stroke='var(--border)' />
+          <Radar
+            dataKey='score'
+            fill='var(--chart-1)'
+            fillOpacity={0.2}
+            stroke='var(--chart-1)'
+            strokeWidth={2}
+            dot={(props) => {
+              const { cx, cy, payload } = props;
+              return payload?.dot ? (
+                <circle cx={cx} cy={cy} r='5' fill='var(--sev-high)' />
+              ) : (
+                <circle cx={cx} cy={cy} r='4' fill='var(--chart-1)' />
+              );
+            }}
+          />
+        </RadarChart>
+      </ChartContainer>
+    </ChartPanel>
   );
 };

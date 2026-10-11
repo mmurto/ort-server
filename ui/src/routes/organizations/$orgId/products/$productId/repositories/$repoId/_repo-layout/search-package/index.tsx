@@ -27,14 +27,8 @@ import { BreakableString } from '@/components/breakable-string';
 import { DataTable } from '@/components/data-table/data-table';
 import { RegexForm } from '@/components/form/regex-form';
 import { LoadingIndicator } from '@/components/loading-indicator';
+import { PageHeader, SheetSection } from '@/components/page-header';
 import { TimestampWithUTC } from '@/components/timestamp-with-utc';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   EMPTY_SORTING_STATE,
   updateColumnSorting,
@@ -71,7 +65,10 @@ function SearchPackageComponent() {
     columnHelper.accessor('createdAt', {
       header: 'Created At',
       cell: ({ row }) => (
-        <TimestampWithUTC timestamp={row.original.createdAt} />
+        <TimestampWithUTC
+          timestamp={row.original.createdAt}
+          className='text-muted-foreground text-[0.8125rem] whitespace-nowrap tabular-nums'
+        />
       ),
     }),
     columnHelper.accessor('revision', {
@@ -84,7 +81,7 @@ function SearchPackageComponent() {
         return (
           <div>
             <Link
-              className='link block hover:underline'
+              className='link block tabular-nums'
               to={
                 '/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex'
               }
@@ -110,7 +107,7 @@ function SearchPackageComponent() {
         const id = getPackageIdString(row.original, packageIdType);
         return (
           <Link
-            className='link hover:underline'
+            className='link font-mono text-xs'
             to='/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/packages'
             params={{
               orgId: row.original.organizationId.toString(),
@@ -173,15 +170,13 @@ function SearchPackageComponent() {
   }
 
   return (
-    <Card className='h-fit'>
-      <CardHeader>
-        <CardTitle>Search Package</CardTitle>
-        <CardDescription>
-          Search for ORT runs of this repository that contain matching packages.
-        </CardDescription>
-      </CardHeader>
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title='Search Package'
+        description='Search for ORT runs of this repository that contain matching packages.'
+      />
       <RegexForm
-        className='mx-12'
+        className='max-w-2xl'
         initialValue={identifier}
         onRegexChange={(regex) => {
           navigate({
@@ -191,7 +186,7 @@ function SearchPackageComponent() {
           });
         }}
       />
-      <CardContent>
+      <SheetSection title='Matching runs'>
         {isRunsPending && identifier ? (
           <LoadingIndicator />
         ) : (
@@ -220,8 +215,8 @@ function SearchPackageComponent() {
             }}
           />
         )}
-      </CardContent>
-    </Card>
+      </SheetSection>
+    </div>
   );
 }
 

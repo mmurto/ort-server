@@ -27,14 +27,9 @@ import { useForm } from 'react-hook-form';
 import { zRepositoryType } from '@/api/zod.gen';
 import { OptionalInput } from '@/components/form/optional-input.tsx';
 import { PasswordInput } from '@/components/form/password-input';
+import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -64,11 +59,13 @@ import {
 interface CreateRepositoryFormProps {
   isPending: boolean;
   onSubmit: (values: CreateRepositoryFormValues) => Promise<void> | void;
+  onCancel?: () => void;
 }
 
 export const CreateRepositoryForm = ({
   isPending,
   onSubmit,
+  onCancel,
 }: CreateRepositoryFormProps) => {
   const form = useForm<CreateRepositoryFormValues>({
     resolver: zodResolver(createRepositoryFormSchema),
@@ -84,13 +81,13 @@ export const CreateRepositoryForm = ({
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Add Repository</CardTitle>
-      </CardHeader>
+    <Card className='max-w-2xl'>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
-          <CardContent className='space-y-4'>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className='flex flex-col gap-6'
+        >
+          <CardContent className='flex flex-col gap-5'>
             <div className='grid gap-4 md:grid-cols-[minmax(0,1fr)_auto]'>
               <FormField
                 control={form.control}
@@ -204,7 +201,7 @@ export const CreateRepositoryForm = ({
               />
             </div>
           </CardContent>
-          <CardFooter>
+          <CardFooter className='gap-2'>
             <Button
               type='submit'
               disabled={isPending || !form.formState.isValid}
@@ -218,6 +215,16 @@ export const CreateRepositoryForm = ({
                 'Add'
               )}
             </Button>
+            {onCancel && (
+              <Button
+                type='button'
+                variant='outline'
+                onClick={onCancel}
+                disabled={isPending}
+              >
+                Cancel
+              </Button>
+            )}
           </CardFooter>
         </form>
       </Form>
@@ -269,7 +276,24 @@ export const CreateRepositoryPage = () => {
     await mutateAsync(values);
   }
 
-  return <CreateRepositoryForm isPending={isPending} onSubmit={onSubmit} />;
+  return (
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title='Add Repository'
+        description='Register a source repository of this product so it can be analyzed.'
+      />
+      <CreateRepositoryForm
+        isPending={isPending}
+        onSubmit={onSubmit}
+        onCancel={() =>
+          navigate({
+            to: '/organizations/$orgId/products/$productId',
+            params: { orgId: params.orgId, productId: params.productId },
+          })
+        }
+      />
+    </div>
+  );
 };
 
 export const Route = createFileRoute(

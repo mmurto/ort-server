@@ -38,6 +38,7 @@ import { MarkItems } from '@/components/data-table/mark-items';
 import { FormattedValue } from '@/components/formatted-value';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { MarkdownRenderer } from '@/components/markdown-renderer';
+import { SheetSection } from '@/components/page-header';
 import { Resolutions } from '@/components/resolutions';
 import {
   Accordion,
@@ -47,13 +48,6 @@ import {
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   Tooltip,
   TooltipContent,
@@ -131,7 +125,7 @@ const RuleViolationCard = ({
             <TooltipTrigger asChild>
               {ruleViolation.purl != null ? (
                 <Link
-                  className='link text-left hover:underline'
+                  className='link text-left font-mono text-xs'
                   to='/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/packages'
                   params={{
                     orgId: params.orgId,
@@ -145,7 +139,7 @@ const RuleViolationCard = ({
                 </Link>
               ) : (
                 <Link
-                  className='link text-left hover:underline'
+                  className='link text-left font-mono text-xs'
                   to='/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/projects'
                   params={{
                     orgId: params.orgId,
@@ -168,7 +162,7 @@ const RuleViolationCard = ({
           <CopyToClipboard copyText={id} className='h-5 px-2 align-middle' />
         </div>
         <Badge
-          className='bg-blue-300 whitespace-nowrap text-black'
+          className='bg-neutral-soft text-foreground font-mono whitespace-nowrap'
           variant='small'
         >
           {ruleViolation.rule}
@@ -193,7 +187,7 @@ const RuleViolationCard = ({
             {ruleViolation.severity}
           </Badge>
         </div>
-        <div className='text-muted-foreground flex gap-1 text-sm'>
+        <div className='text-muted-foreground flex gap-1 text-[0.8125rem]'>
           {ruleViolation.license && <div>{ruleViolation.license}</div>}
           {ruleViolation.licenseSources &&
             ruleViolation.licenseSources.length > 0 && (
@@ -531,58 +525,53 @@ const RuleViolationsComponent = () => {
   const matching = `, ${ruleViolations.pagination.totalCount} matching filters`;
   const evaluatorWasIncludedInRun = ortRun.jobs.evaluator != null;
   const noResultsContent = !evaluatorWasIncludedInRun ? (
-    <div className='text-muted-foreground text-sm'>
+    <div className='text-muted-foreground text-[0.8125rem]'>
       No rule violations are available because the evaluator job was not enabled
       for this run.
     </div>
   ) : undefined;
 
   return (
-    <Card className='h-fit'>
-      <CardHeader>
-        <CardTitle>
-          Rule Violations ({totalRuleViolations.pagination.totalCount} in total
-          {filtersInUse && matching})
-        </CardTitle>
-        <CardDescription>
-          This view shows all violations that go against the rules defined in
-          the configured policy.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <DataTableCards
-          table={table}
-          noResultsContent={noResultsContent}
-          renderSubComponent={renderSubComponent}
-          setCurrentPageOptions={(currentPage) => {
-            return {
-              to: Route.to,
-              search: { ...search, page: currentPage },
-            };
-          }}
-          setPageSizeOptions={(size) => {
-            return {
-              to: Route.to,
-              search: { ...search, page: 1, pageSize: size },
-            };
-          }}
-          setSortingOptions={(sortBy) => {
-            return {
-              to: Route.to,
-              search: {
-                ...search,
-                sortBy: updateColumnSorting(
-                  search.sortBy?.filter((sort) =>
-                    supportedSortColumns.has(sort.id)
-                  ),
-                  sortBy
+    <SheetSection
+      title='Rule violations'
+      meta={`${totalRuleViolations.pagination.totalCount} in total${filtersInUse ? matching : ''}`}
+    >
+      <p className='text-muted-foreground -mt-2 max-w-[75ch] text-[0.8125rem]'>
+        This view shows all violations that go against the rules defined in the
+        configured policy.
+      </p>
+      <DataTableCards
+        table={table}
+        noResultsContent={noResultsContent}
+        renderSubComponent={renderSubComponent}
+        setCurrentPageOptions={(currentPage) => {
+          return {
+            to: Route.to,
+            search: { ...search, page: currentPage },
+          };
+        }}
+        setPageSizeOptions={(size) => {
+          return {
+            to: Route.to,
+            search: { ...search, page: 1, pageSize: size },
+          };
+        }}
+        setSortingOptions={(sortBy) => {
+          return {
+            to: Route.to,
+            search: {
+              ...search,
+              sortBy: updateColumnSorting(
+                search.sortBy?.filter((sort) =>
+                  supportedSortColumns.has(sort.id)
                 ),
-              },
-            };
-          }}
-        />
-      </CardContent>
-    </Card>
+                sortBy
+              ),
+            },
+          };
+        }}
+      />
+    </SheetSection>
   );
 };
 

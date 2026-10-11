@@ -37,15 +37,9 @@ import { DataTableCards } from '@/components/data-table-cards/data-table-cards';
 import { MarkItems } from '@/components/data-table/mark-items';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { MarkdownRenderer } from '@/components/markdown-renderer';
+import { PageHeader, SheetSection } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -109,25 +103,25 @@ const VulnerabilityCard = ({
   return (
     <div className='flex flex-col gap-1'>
       <div className='flex items-center justify-between'>
-        <div className='min-w-0 flex-1 text-left font-semibold'>
+        <div className='min-w-0 flex-1 text-left font-mono text-xs font-medium'>
           <BreakableString text={id} />
           <CopyToClipboard copyText={id} className='h-5 px-2 align-middle' />
         </div>
         <Badge
-          className='bg-blue-300 whitespace-nowrap text-black'
+          className='bg-neutral-soft text-foreground font-mono whitespace-nowrap'
           variant='small'
         >
           {vulnerability.vulnerability.externalId}
         </Badge>
       </div>
       <div className='flex items-center justify-between'>
-        <div className='text-muted-foreground wrap-break-word italic'>
+        <div className='text-muted-foreground text-[0.8125rem] wrap-break-word'>
           {vulnerability.vulnerability.summary || 'No summary available'}
         </div>
         <Tooltip>
           <TooltipTrigger asChild>
             <Link
-              className='link flex gap-1 hover:underline'
+              className='link flex gap-1 text-[0.8125rem] whitespace-nowrap hover:underline'
               to='/organizations/$orgId/products/$productId/search-package'
               params={{
                 orgId: organizationId,
@@ -135,7 +129,7 @@ const VulnerabilityCard = ({
               }}
               search={{ pkgId: id }}
             >
-              <div className='font-semibold'>
+              <div className='tabular-nums'>
                 {vulnerability.repositoriesCount}
               </div>
               <div>
@@ -173,11 +167,11 @@ const renderSubComponent = ({
   return (
     <div className='flex flex-col gap-4'>
       <VulnerabilityMetrics vulnerability={vulnerability} />
-      <div className='text-lg font-semibold'>Description</div>
+      <div className='font-semibold'>Description</div>
       <MarkdownRenderer
         markdown={vulnerability.description || 'No description.'}
       />
-      <div className='mt-2 text-lg font-semibold'>
+      <div className='mt-2 font-semibold'>
         Links to vulnerability references
       </div>
       <Table>
@@ -198,11 +192,13 @@ const renderSubComponent = ({
                 <TableCell>{reference.severity || '-'}</TableCell>
                 <TableCell>{reference.scoringSystem || '-'}</TableCell>
                 <TableCell>{reference.score || '-'}</TableCell>
-                <TableCell>{reference.vector || '-'}</TableCell>
+                <TableCell className='font-mono text-xs break-all whitespace-normal'>
+                  {reference.vector || '-'}
+                </TableCell>
                 <TableCell>
                   {
                     <Link
-                      className='link font-semibold break-all hover:underline'
+                      className='link break-all hover:underline'
                       to={reference.url}
                       target='_blank'
                     >
@@ -503,24 +499,24 @@ const ProductVulnerabilitiesComponent = () => {
   const matching = `, ${vulnerabilities.pagination.totalCount} matching filters`;
 
   return (
-    <Card className='h-fit'>
-      <CardHeader>
-        <CardTitle>
-          Vulnerabilities ({totalVulnerabilities.pagination.totalCount} in total
-          {filtersInUse && matching})
-        </CardTitle>
-        <CardDescription>
-          This is an overview of the vulnerabilities found within this product.
-          It only takes into account the latest runs per repository that have
-          successful advisor results.
-        </CardDescription>
-        <CardDescription>
-          Please note that new vulnerabilities may get discovered over time.
-          Therefore, your product's repositories should be scanned for
-          vulnerabilities regularly, even if no code changes occurred.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title='Vulnerabilities'
+        description={
+          <>
+            This is an overview of the vulnerabilities found within this
+            product. It only takes into account the latest runs per repository
+            that have successful advisor results. Please note that new
+            vulnerabilities may get discovered over time. Therefore, your
+            product's repositories should be scanned for vulnerabilities
+            regularly, even if no code changes occurred.
+          </>
+        }
+      />
+      <SheetSection
+        title='All vulnerabilities'
+        meta={`${totalVulnerabilities.pagination.totalCount} in total${filtersInUse ? matching : ''}`}
+      >
         <DataTableCards
           table={table}
           renderSubComponent={renderSubComponent}
@@ -543,8 +539,8 @@ const ProductVulnerabilitiesComponent = () => {
             };
           }}
         />
-      </CardContent>
-    </Card>
+      </SheetSection>
+    </div>
   );
 };
 

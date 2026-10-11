@@ -37,15 +37,9 @@ import { DataTable } from '@/components/data-table/data-table';
 import { DeleteDialog } from '@/components/delete-dialog';
 import { DeleteIconButton } from '@/components/delete-icon-button';
 import { LoadingIndicator } from '@/components/loading-indicator';
+import { PageHeader, SheetSection } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { buttonVariants } from '@/components/ui/button-variants';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   Tooltip,
   TooltipContent,
@@ -122,11 +116,17 @@ const columns: AppColumnDef<Secret>[] = [
   {
     accessorKey: 'name',
     header: 'Name',
+    cell: ({ row }) => <span className='font-medium'>{row.original.name}</span>,
     enableColumnFilter: false,
   },
   {
     accessorKey: 'description',
     header: 'Description',
+    cell: ({ row }) => (
+      <span className='text-muted-foreground text-[0.8125rem]'>
+        {row.original.description}
+      </span>
+    ),
     enableColumnFilter: false,
   },
   {
@@ -191,22 +191,20 @@ const OrganizationSecrets = () => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Secrets</CardTitle>
-        <CardDescription>
-          Manage secrets for {organization.name}
-        </CardDescription>
-        <div className='py-2'>
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title='Secrets'
+        description={`Manage secrets for ${organization.name}`}
+        actions={
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button asChild size='sm' className='ml-auto gap-1'>
+              <Button asChild>
                 <Link
                   to='/organizations/$orgId/secrets/create-secret'
                   params={{ orgId: params.orgId }}
                 >
+                  <PlusIcon />
                   Add secret
-                  <PlusIcon className='h-4 w-4' />
                 </Link>
               </Button>
             </TooltipTrigger>
@@ -214,9 +212,12 @@ const OrganizationSecrets = () => {
               Create a new secret for this organization
             </TooltipContent>
           </Tooltip>
-        </div>
-      </CardHeader>
-      <CardContent>
+        }
+      />
+      <SheetSection
+        title='All secrets'
+        meta={`${secrets.pagination.totalCount} in total`}
+      >
         <DataTable
           table={table}
           setCurrentPageOptions={(currentPage) => {
@@ -232,8 +233,8 @@ const OrganizationSecrets = () => {
             };
           }}
         />
-      </CardContent>
-    </Card>
+      </SheetSection>
+    </div>
   );
 };
 

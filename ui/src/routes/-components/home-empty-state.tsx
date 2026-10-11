@@ -20,9 +20,5 @@
 import type { ReactNode } from 'react';
 
 export const HomeEmptyState = ({ children }: { children: ReactNode }) => {
-  return (
-    <div className='text-muted-foreground rounded-lg border border-dashed p-6 text-sm'>
-      {children}
-    </div>
-  );
+  return <p className='text-muted-foreground text-[0.8125rem]'>{children}</p>;
 };

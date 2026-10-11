@@ -32,15 +32,9 @@ import {
 } from '@/api/@tanstack/react-query.gen';
 import { OptionalInput } from '@/components/form/optional-input';
 import { PasswordInput } from '@/components/form/password-input';
+import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Form,
@@ -64,11 +58,13 @@ import { createUserFormSchema, type CreateUserFormValues } from '@/schemas';
 interface CreateUserFormProps {
   isPending: boolean;
   onSubmit: (values: CreateUserFormValues) => Promise<void> | void;
+  onCancel?: () => void;
 }
 
 export const CreateUserForm = ({
   isPending,
   onSubmit,
+  onCancel,
 }: CreateUserFormProps) => {
   // Nothing is loaded before the user has touched the field, so opening the form costs no request.
   const [isSelectorUsed, setIsSelectorUsed] = useState(false);
@@ -104,78 +100,107 @@ export const CreateUserForm = ({
   const isSubmitting = isPending || form.formState.isSubmitting;
 
   return (
-    <Card className='col-span-2 w-full'>
-      <CardHeader>
-        <CardTitle>Create User</CardTitle>
-        <CardDescription>Create a new user account.</CardDescription>
-      </CardHeader>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardContent className='space-y-4'>
-            <FormField
-              control={form.control}
-              name='username'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Username</FormLabel>
-                  <FormControl>
-                    <Input {...field} autoFocus />
-                  </FormControl>
-                  <FormDescription>
-                    The username needs to be globally unique. Usernames are
-                    case-insensitive and will be stored in lowercase.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className='grid items-center gap-4 md:grid-cols-[minmax(0,1fr)_auto]'>
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title='Create User'
+        description='Create a new user account.'
+      />
+      <Card className='max-w-2xl'>
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className='flex flex-col gap-6'
+          >
+            <CardContent className='flex flex-col gap-5'>
               <FormField
                 control={form.control}
-                name='password'
+                name='username'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>Username</FormLabel>
                     <FormControl>
-                      <PasswordInput {...field} />
+                      <Input {...field} autoFocus />
                     </FormControl>
                     <FormDescription>
-                      Share this initial password with the user over a secure
-                      channel.
+                      The username needs to be globally unique. Usernames are
+                      case-insensitive and will be stored in lowercase.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name='temporary'
-                render={({ field }) => (
-                  <FormItem className='mb-2 flex h-9 flex-row items-center space-y-0 space-x-3 rounded-md border px-3'>
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className='space-y-1 leading-none'>
-                      <FormLabel>
+              <div className='grid items-center gap-4 md:grid-cols-[minmax(0,1fr)_auto]'>
+                <FormField
+                  control={form.control}
+                  name='password'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <PasswordInput {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Share this initial password with the user over a secure
+                        channel.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name='temporary'
+                  render={({ field }) => (
+                    <FormItem className='flex h-8 flex-row items-center gap-2'>
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormLabel className='font-normal'>
                         Password change required on first login
                       </FormLabel>
-                    </div>
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className='grid gap-4 md:grid-cols-2'>
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className='grid gap-4 md:grid-cols-2'>
+                <FormField
+                  control={form.control}
+                  name='firstName'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First name</FormLabel>
+                      <FormControl>
+                        <OptionalInput {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name='lastName'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last name</FormLabel>
+                      <FormControl>
+                        <OptionalInput {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               <FormField
                 control={form.control}
-                name='firstName'
+                name='email'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>First name</FormLabel>
+                    <FormLabel>Email address</FormLabel>
                     <FormControl>
-                      <OptionalInput {...field} />
+                      <OptionalInput type='email' {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -183,95 +208,78 @@ export const CreateUserForm = ({
               />
               <FormField
                 control={form.control}
-                name='lastName'
+                name='organizations'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Last name</FormLabel>
+                    <FormLabel>Organizations</FormLabel>
                     <FormControl>
-                      <OptionalInput {...field} />
+                      <MultipleSelector
+                        {...field}
+                        placeholder='(optional) Start typing to find organizations...'
+                        emptyIndicator={
+                          <p className='text-muted-foreground py-2 text-center text-[0.8125rem]'>
+                            No results found.
+                          </p>
+                        }
+                        loadingIndicator={
+                          <p className='text-muted-foreground py-2 text-center text-[0.8125rem]'>
+                            Loading...
+                          </p>
+                        }
+                        options={organizationOptions}
+                        loading={organizations.isPending}
+                        hasMore={organizations.hasNextPage}
+                        isLoadingMore={organizations.isFetchingNextPage}
+                        onLoadMore={organizations.fetchNextPage}
+                        // The organizations are searched on the server, so the list must not be
+                        // filtered again by what has been typed.
+                        commandProps={{ shouldFilter: false }}
+                        inputProps={{
+                          onValueChange: setSearchTerm,
+                          onFocus: () => setIsSelectorUsed(true),
+                        }}
+                      />
                     </FormControl>
+                    <FormDescription>
+                      Optionally grant the user the READER role for
+                      organizations. To give access only to a product or
+                      repository, assign the appropriate role in its "Users"
+                      section.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </div>
-            <FormField
-              control={form.control}
-              name='email'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email address</FormLabel>
-                  <FormControl>
-                    <OptionalInput type='email' {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+            </CardContent>
+            <CardFooter className='gap-2'>
+              <Button
+                type='submit'
+                disabled={isSubmitting || !form.formState.isValid}
+              >
+                {isSubmitting ? (
+                  <>
+                    <span className='sr-only'>Creating user...</span>
+                    <Loader2 size={16} className='mx-3 animate-spin' />
+                  </>
+                ) : (
+                  'Create'
+                )}
+              </Button>
+              {onCancel && (
+                <Button
+                  type='button'
+                  variant='outline'
+                  onClick={onCancel}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
               )}
-            />
-            <FormField
-              control={form.control}
-              name='organizations'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Organizations</FormLabel>
-                  <FormControl>
-                    <MultipleSelector
-                      {...field}
-                      placeholder='(optional) Start typing to find organizations...'
-                      badgeClassName='bg-amber-200 text-black'
-                      emptyIndicator={
-                        <p className='text-center text-lg leading-10 text-gray-600 dark:text-gray-400'>
-                          No results found.
-                        </p>
-                      }
-                      loadingIndicator={
-                        <p className='text-center text-lg leading-10 text-gray-600 dark:text-gray-400'>
-                          Loading...
-                        </p>
-                      }
-                      options={organizationOptions}
-                      loading={organizations.isPending}
-                      hasMore={organizations.hasNextPage}
-                      isLoadingMore={organizations.isFetchingNextPage}
-                      onLoadMore={organizations.fetchNextPage}
-                      // The organizations are searched on the server, so the list must not be
-                      // filtered again by what has been typed.
-                      commandProps={{ shouldFilter: false }}
-                      inputProps={{
-                        onValueChange: setSearchTerm,
-                        onFocus: () => setIsSelectorUsed(true),
-                      }}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Optionally grant the user the READER role for organizations.
-                    To give access only to a product or repository, assign the
-                    appropriate role in its "Users" section.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </CardContent>
-          <CardFooter>
-            <Button
-              type='submit'
-              disabled={isSubmitting || !form.formState.isValid}
-              className='mt-4'
-            >
-              {isSubmitting ? (
-                <>
-                  <span className='sr-only'>Creating user...</span>
-                  <Loader2 size={16} className='mx-3 animate-spin' />
-                </>
-              ) : (
-                'Create'
-              )}
-            </Button>
-          </CardFooter>
-        </form>
-      </Form>
-    </Card>
+            </CardFooter>
+          </form>
+        </Form>
+      </Card>
+    </div>
   );
 };
 
@@ -370,6 +378,7 @@ export const CreateUserPage = () => {
     <CreateUserForm
       isPending={isCreateUserPending || isAddUserToReadersPending}
       onSubmit={onSubmit}
+      onCancel={() => navigate({ to: '/admin/users' })}
     />
   );
 };

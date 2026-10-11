@@ -33,16 +33,10 @@ import {
   createPluginTemplateMutation,
   getPluginTemplatesQueryKey,
 } from '@/api/@tanstack/react-query.gen';
+import { PageHeader } from '@/components/page-header';
 import { ToastError } from '@/components/toast-error';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -171,79 +165,88 @@ const CreateTemplate = () => {
   }
 
   return (
-    <Card className='col-span-2 w-full'>
-      <CardHeader>
-        <CardTitle>Create Template</CardTitle>
-        <CardDescription>
-          Create a new plugin template for the {plugin.displayName}{' '}
-          {getPluginTypeLabel(params.pluginType)} plugin.
-          <br />
-          Options that are set to final can not be overwritten by the user.
-          <br />
-          Options that are set to undefined will not be set in the template.
-        </CardDescription>
-      </CardHeader>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardContent className='space-y-4'>
-            <FormField
-              key={templateName}
-              control={form.control}
-              name={templateName}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Template Name</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      value={typeof field.value === 'string' ? field.value : ''}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    The name of the template to create.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            {plugin.options && (
-              <PluginOptionFormFields
-                options={plugin.options}
-                form={form as unknown as UseFormReturn<FieldValues>}
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title='Create Template'
+        description={
+          <>
+            Create a new plugin template for the {plugin.displayName}{' '}
+            {getPluginTypeLabel(params.pluginType)} plugin.
+            <br />
+            Options that are set to final can not be overwritten by the user.
+            <br />
+            Options that are set to undefined will not be set in the template.
+          </>
+        }
+      />
+      <Card className='max-w-2xl'>
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className='flex flex-col gap-6'
+          >
+            <CardContent className='flex flex-col gap-5'>
+              <FormField
+                key={templateName}
+                control={form.control}
+                name={templateName}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Template Name</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={
+                          typeof field.value === 'string' ? field.value : ''
+                        }
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      The name of the template to create.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            )}
-          </CardContent>
-          <CardFooter className='mt-6 gap-4'>
-            <Button type='submit' disabled={isCreateTemplatePending}>
-              {isCreateTemplatePending ? (
-                <>
-                  <span className='sr-only'>Creating Template...</span>
-                  <Loader2 size={16} className='mx-3 animate-spin' />
-                </>
-              ) : (
-                'Create Template'
+              {plugin.options && (
+                <PluginOptionFormFields
+                  options={plugin.options}
+                  form={form as unknown as UseFormReturn<FieldValues>}
+                />
               )}
-            </Button>
-            <Button
-              type='button'
-              variant='outline'
-              onClick={() =>
-                navigate({
-                  to: '/admin/plugins/$pluginType/$pluginId',
-                  params: {
-                    pluginType: params.pluginType,
-                    pluginId: params.pluginId,
-                  },
-                })
-              }
-              disabled={isCreateTemplatePending}
-            >
-              Cancel
-            </Button>
-          </CardFooter>
-        </form>
-      </Form>
-    </Card>
+            </CardContent>
+            <CardFooter className='gap-2'>
+              <Button type='submit' disabled={isCreateTemplatePending}>
+                {isCreateTemplatePending ? (
+                  <>
+                    <span className='sr-only'>Creating Template...</span>
+                    <Loader2 size={16} className='mx-3 animate-spin' />
+                  </>
+                ) : (
+                  'Create Template'
+                )}
+              </Button>
+              <Button
+                type='button'
+                variant='outline'
+                onClick={() =>
+                  navigate({
+                    to: '/admin/plugins/$pluginType/$pluginId',
+                    params: {
+                      pluginType: params.pluginType,
+                      pluginId: params.pluginId,
+                    },
+                  })
+                }
+                disabled={isCreateTemplatePending}
+              >
+                Cancel
+              </Button>
+            </CardFooter>
+          </form>
+        </Form>
+      </Card>
+    </div>
   );
 };
 

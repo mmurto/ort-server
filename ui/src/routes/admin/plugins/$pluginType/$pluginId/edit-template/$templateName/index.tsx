@@ -35,16 +35,10 @@ import {
   getPluginTemplatesQueryKey,
   updatePluginTemplateOptionsMutation,
 } from '@/api/@tanstack/react-query.gen';
+import { PageHeader } from '@/components/page-header';
 import { ToastError } from '@/components/toast-error.tsx';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Form } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -176,66 +170,77 @@ const EditTemplate = () => {
   }
 
   return (
-    <Card className='col-span-2 w-full'>
-      <CardHeader>
-        <CardTitle>Edit Template</CardTitle>
-        <CardDescription>
-          Edit the plugin template for the {plugin.displayName}{' '}
-          {getPluginTypeLabel(params.pluginType)} plugin.
-          <br />
-          Options that are set to final can not be overwritten by the user.
-          <br />
-          Options that are set to undefined will not be set in the template.
-        </CardDescription>
-      </CardHeader>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardContent className='space-y-4'>
-            <div className='grid gap-2'>
-              <Label htmlFor='template-name'>Template Name</Label>
-              <Input id='template-name' value={params.templateName} disabled />
-              <p className='text-muted-foreground text-sm'>
-                The name of the template.
-              </p>
-            </div>
-            {plugin.options && (
-              <PluginOptionFormFields
-                options={plugin.options}
-                form={form as unknown as UseFormReturn<FieldValues>}
-              />
-            )}
-          </CardContent>
-          <CardFooter className='mt-6 gap-4'>
-            <Button type='submit' disabled={isUpdateTemplatePending}>
-              {isUpdateTemplatePending ? (
-                <>
-                  <span className='sr-only'>Updating Template...</span>
-                  <Loader2 size={16} className='mx-3 animate-spin' />
-                </>
-              ) : (
-                'Update Template'
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title='Edit Template'
+        description={
+          <>
+            Edit the plugin template for the {plugin.displayName}{' '}
+            {getPluginTypeLabel(params.pluginType)} plugin.
+            <br />
+            Options that are set to final can not be overwritten by the user.
+            <br />
+            Options that are set to undefined will not be set in the template.
+          </>
+        }
+      />
+      <Card className='max-w-2xl'>
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className='flex flex-col gap-6'
+          >
+            <CardContent className='flex flex-col gap-5'>
+              <div className='grid gap-2'>
+                <Label htmlFor='template-name'>Template Name</Label>
+                <Input
+                  id='template-name'
+                  value={params.templateName}
+                  disabled
+                />
+                <p className='text-muted-foreground text-[0.8125rem]'>
+                  The name of the template.
+                </p>
+              </div>
+              {plugin.options && (
+                <PluginOptionFormFields
+                  options={plugin.options}
+                  form={form as unknown as UseFormReturn<FieldValues>}
+                />
               )}
-            </Button>
-            <Button
-              type='button'
-              variant='outline'
-              onClick={() =>
-                navigate({
-                  to: '/admin/plugins/$pluginType/$pluginId',
-                  params: {
-                    pluginType: params.pluginType,
-                    pluginId: params.pluginId,
-                  },
-                })
-              }
-              disabled={isUpdateTemplatePending}
-            >
-              Cancel
-            </Button>
-          </CardFooter>
-        </form>
-      </Form>
-    </Card>
+            </CardContent>
+            <CardFooter className='gap-2'>
+              <Button type='submit' disabled={isUpdateTemplatePending}>
+                {isUpdateTemplatePending ? (
+                  <>
+                    <span className='sr-only'>Updating Template...</span>
+                    <Loader2 size={16} className='mx-3 animate-spin' />
+                  </>
+                ) : (
+                  'Update Template'
+                )}
+              </Button>
+              <Button
+                type='button'
+                variant='outline'
+                onClick={() =>
+                  navigate({
+                    to: '/admin/plugins/$pluginType/$pluginId',
+                    params: {
+                      pluginType: params.pluginType,
+                      pluginId: params.pluginId,
+                    },
+                  })
+                }
+                disabled={isUpdateTemplatePending}
+              >
+                Cancel
+              </Button>
+            </CardFooter>
+          </form>
+        </Form>
+      </Card>
+    </div>
   );
 };
 

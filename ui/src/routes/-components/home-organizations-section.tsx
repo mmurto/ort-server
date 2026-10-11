@@ -20,29 +20,12 @@
 import { Link } from '@tanstack/react-router';
 
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 
+/** The way from the home page into all organizations the user can access. */
 export const HomeOrganizationsSection = () => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Organizations</CardTitle>
-        <CardDescription>
-          Browse all organizations you can access, including their products,
-          repositories, and runs.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Button asChild>
-          <Link to='/organizations'>Browse organizations</Link>
-        </Button>
-      </CardContent>
-    </Card>
+    <Button asChild variant='outline'>
+      <Link to='/organizations'>Browse organizations</Link>
+    </Button>
   );
 };

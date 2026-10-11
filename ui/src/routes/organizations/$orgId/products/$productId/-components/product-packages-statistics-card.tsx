@@ -45,8 +45,8 @@ export const ProductPackagesStatisticsCard = ({
   return (
     <StatisticsCard
       title='Packages'
-      icon={() => <Boxes className='h-4 w-4 text-green-500' />}
-      value={total || '-'}
+      icon={() => <Boxes className='size-3.5' />}
+      value={total ?? '-'}
       counts={counts?.map(({ name, count }) => ({
         key: name,
         count: count,

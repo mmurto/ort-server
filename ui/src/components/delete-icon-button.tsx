@@ -35,11 +35,11 @@ const DeleteIconButton = forwardRef<HTMLButtonElement, DeleteIconButtonProps>(
         size='sm'
         variant='outline'
         {...props}
-        className='h-8 px-2 text-red-500'
+        className='text-err hover:text-err h-8 px-2'
         ref={ref}
       >
         <span className='sr-only'>{props.srDescription || 'Delete'}</span>
-        {props.icon || <TrashIcon size={16} />}
+        {props.icon || <TrashIcon />}
       </Button>
     );
   }

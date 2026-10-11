@@ -223,9 +223,7 @@ describe('vulnerabilities table', () => {
     expect(
       screen.queryByRole('link', { name: idOf('library') })
     ).not.toBeInTheDocument();
-    expect(container).toHaveTextContent(
-      'Vulnerabilities (5 in total, 1 matching filters)'
-    );
+    expect(container).toHaveTextContent('5 in total, 1 matching filters');
     // The table collapses expanded rows when it receives new data.
     expect(
       screen.queryByRole('button', { name: 'Resolve vulnerability' })

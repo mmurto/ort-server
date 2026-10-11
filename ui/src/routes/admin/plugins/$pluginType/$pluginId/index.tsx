@@ -19,7 +19,7 @@
 
 import { useMutation, useQueries, useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, useLoaderData } from '@tanstack/react-router';
-import { Pencil } from 'lucide-react';
+import { Pencil, PlusIcon } from 'lucide-react';
 import { useState } from 'react';
 
 import { PluginDescriptor, PluginTemplate } from '@/api';
@@ -37,15 +37,9 @@ import {
 import { DeleteDialog } from '@/components/delete-dialog.tsx';
 import { DeleteIconButton } from '@/components/delete-icon-button.tsx';
 import { LoadingIndicator } from '@/components/loading-indicator.tsx';
+import { PageHeader, SheetSection } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge.tsx';
 import { Button } from '@/components/ui/button.tsx';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card.tsx';
 import MultipleSelector, {
   Option,
 } from '@/components/ui/multiple-selector.tsx';
@@ -256,9 +250,9 @@ const PluginTemplateCard = ({ plugin, template }: PluginTemplateCardProps) => {
   });
 
   return (
-    <Card className='mb-2'>
-      <CardHeader className='flex flex-row items-center justify-between'>
-        <CardTitle>{template.name}</CardTitle>
+    <article className='flex flex-col gap-4 border-t py-5'>
+      <div className='flex items-center justify-between gap-4'>
+        <h3 className='text-[0.9375rem] font-semibold'>{template.name}</h3>
         <div className='flex items-center gap-1'>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -272,7 +266,7 @@ const PluginTemplateCard = ({ plugin, template }: PluginTemplateCardProps) => {
                   }}
                 >
                   <span className='sr-only'>Edit Template</span>
-                  <Pencil size={16} />
+                  <Pencil />
                 </Link>
               </Button>
             </TooltipTrigger>
@@ -285,26 +279,24 @@ const PluginTemplateCard = ({ plugin, template }: PluginTemplateCardProps) => {
             tooltip='Delete Template'
           />
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className='flex items-center gap-2'>
-          <span className='text-sm'>Global Template</span>
+      </div>
+      <div className='flex flex-col gap-1'>
+        <label className='flex items-center gap-2 text-[0.8125rem] font-medium'>
           <Switch
-            className='data-[state=checked]:bg-green-500'
             checked={template.isGlobal}
             onCheckedChange={() => toggleIsGlobal()}
           />
-        </div>
-
-        <p className='text-muted-foreground mb-1 text-sm'>
+          Global Template
+        </label>
+        <p className='text-muted-foreground text-[0.8125rem]'>
           {template.isGlobal
             ? 'This template is global, it is active for all organizations that do not have another template assigned.'
             : 'This template is not global, it is only active for organizations that it is assigned to.'}
         </p>
+      </div>
 
-        <div className='my-4 border-t' />
-
-        <p className='text-muted-foreground mb-1 text-sm'>
+      <div className='flex max-w-2xl flex-col gap-1.5'>
+        <p className='text-muted-foreground text-[0.8125rem]'>
           {template.organizationIds && template.organizationIds.length > 0
             ? 'This template is assigned to the following organizations:'
             : 'This template is not assigned to any organizations.'}
@@ -324,17 +316,16 @@ const PluginTemplateCard = ({ plugin, template }: PluginTemplateCardProps) => {
             onFocus: () => setIsSelectorUsed(true),
           }}
           emptyIndicator={
-            <p className='text-center text-lg leading-10 text-gray-600 dark:text-gray-400'>
+            <p className='text-muted-foreground py-2 text-center text-[0.8125rem]'>
               No results found.
             </p>
           }
           loadingIndicator={
-            <p className='text-center text-lg leading-10 text-gray-600 dark:text-gray-400'>
+            <p className='text-muted-foreground py-2 text-center text-[0.8125rem]'>
               Loading...
             </p>
           }
           placeholder='Assign organizations...'
-          badgeClassName='bg-amber-200 text-black'
           onChange={(newSelected) => {
             const oldIds = template.organizationIds ?? [];
             const newIds = newSelected.map((o) => Number(o.value));
@@ -364,44 +355,47 @@ const PluginTemplateCard = ({ plugin, template }: PluginTemplateCardProps) => {
             }
           }}
         />
+      </div>
 
-        <div className='my-4 border-t' />
-
-        {plugin.options?.map((pluginOption) => {
-          const templateOption = template.options.find(
-            (opt) => opt.option === pluginOption.name
-          );
-          return (
-            <div
-              key={pluginOption.name}
-              className='mb-2 flex items-center gap-2'
-            >
-              <span className='text-sm font-semibold'>
-                {pluginOption.name}:
-              </span>
-              {templateOption ? (
-                <>
-                  <span className='text-sm'>{templateOption.value}</span>
-                  <Badge className='bg-blue-200 text-black'>
-                    {pluginOption.type}
-                  </Badge>
-                  {templateOption.isFinal && (
-                    <Badge className='bg-green-200 text-black'>Final</Badge>
+      {plugin.options && plugin.options.length > 0 && (
+        <dl className='grid grid-cols-[minmax(0,max-content)_minmax(0,1fr)] gap-x-6 gap-y-1.5 text-[0.8125rem]'>
+          {plugin.options.map((pluginOption) => {
+            const templateOption = template.options.find(
+              (opt) => opt.option === pluginOption.name
+            );
+            return (
+              <div key={pluginOption.name} className='contents'>
+                <dt className='font-mono text-xs leading-5'>
+                  {pluginOption.name}
+                </dt>
+                <dd className='flex min-w-0 flex-wrap items-center gap-2'>
+                  {templateOption ? (
+                    <>
+                      <span className='font-mono text-xs break-all'>
+                        {templateOption.value}
+                      </span>
+                      <Badge variant='outline'>{pluginOption.type}</Badge>
+                      {templateOption.isFinal && (
+                        <Badge className='bg-ok-soft text-ok border-transparent'>
+                          Final
+                        </Badge>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <Badge className='bg-neutral-soft text-muted-foreground border-transparent'>
+                        Not set
+                      </Badge>
+                      <Badge variant='outline'>{pluginOption.type}</Badge>
+                    </>
                   )}
-                </>
-              ) : (
-                <>
-                  <Badge className='bg-gray-200 text-black'>Not set</Badge>
-                  <Badge className='bg-blue-200 text-black'>
-                    {pluginOption.type}
-                  </Badge>
-                </>
-              )}
-            </div>
-          );
-        })}
-      </CardContent>
-    </Card>
+                </dd>
+              </div>
+            );
+          })}
+        </dl>
+      )}
+    </article>
   );
 };
 
@@ -453,19 +447,14 @@ const PluginTemplatesComponent = () => {
   }
 
   return (
-    <Card className='mb-4 h-fit'>
-      <CardHeader>
-        <CardTitle>
-          {plugin.displayName} Templates ({pluginTemplates.length})
-        </CardTitle>
-        <CardDescription>
-          Manage plugin templates for the {plugin.displayName}{' '}
-          {getPluginTypeLabel(pluginType)} plugin.
-        </CardDescription>
-        <div className='py-2'>
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title={`${plugin.displayName} Templates`}
+        description={`Manage plugin templates for the ${plugin.displayName} ${getPluginTypeLabel(pluginType)} plugin.`}
+        actions={
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button asChild size='sm' className='ml-auto gap-1'>
+              <Button asChild>
                 <Link
                   to={'/admin/plugins/$pluginType/$pluginId/create-template'}
                   params={{
@@ -473,6 +462,7 @@ const PluginTemplatesComponent = () => {
                     pluginId: pluginId,
                   }}
                 >
+                  <PlusIcon />
                   Create Template
                 </Link>
               </Button>
@@ -481,22 +471,29 @@ const PluginTemplatesComponent = () => {
               Create a new plugin configuration template.
             </TooltipContent>
           </Tooltip>
-        </div>
-      </CardHeader>
-      <CardContent>
+        }
+      />
+      <SheetSection
+        title='Templates'
+        meta={`${pluginTemplates.length} in total`}
+      >
         {pluginTemplates.length > 0 ? (
-          pluginTemplates.map((template) => (
-            <PluginTemplateCard
-              key={template.name}
-              plugin={plugin}
-              template={template}
-            />
-          ))
+          <div className='border-b'>
+            {pluginTemplates.map((template) => (
+              <PluginTemplateCard
+                key={template.name}
+                plugin={plugin}
+                template={template}
+              />
+            ))}
+          </div>
         ) : (
-          <p>No templates found for this plugin.</p>
+          <p className='text-muted-foreground text-[0.8125rem]'>
+            No templates found for this plugin.
+          </p>
         )}
-      </CardContent>
-    </Card>
+      </SheetSection>
+    </div>
   );
 };
 

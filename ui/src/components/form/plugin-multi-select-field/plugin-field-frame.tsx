@@ -48,7 +48,7 @@ export const PluginFieldFrame = ({
 }: PluginFieldFrameProps) => (
   <FormItem
     className={cn(
-      'flex flex-col justify-between rounded-lg border p-4',
+      'flex flex-col justify-between rounded-xs border p-4',
       className
     )}
   >

@@ -36,6 +36,7 @@ import { DataTableCards } from '@/components/data-table-cards/data-table-cards';
 import { MarkItems } from '@/components/data-table/mark-items';
 import { FormattedValue } from '@/components/formatted-value';
 import { LoadingIndicator } from '@/components/loading-indicator';
+import { SheetSection } from '@/components/page-header';
 import { Resolutions } from '@/components/resolutions';
 import { TimestampWithUTC } from '@/components/timestamp-with-utc';
 import {
@@ -46,13 +47,6 @@ import {
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   Tooltip,
   TooltipContent,
@@ -127,7 +121,7 @@ const IssueCard = ({ issue }: { issue: Issue }) => {
             <TooltipTrigger asChild>
               {issue.purl != null ? (
                 <Link
-                  className='link text-left hover:underline'
+                  className='link text-left font-mono text-xs'
                   to='/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/packages'
                   params={{
                     orgId: params.orgId,
@@ -141,7 +135,7 @@ const IssueCard = ({ issue }: { issue: Issue }) => {
                 </Link>
               ) : (
                 <Link
-                  className='link text-left hover:underline'
+                  className='link text-left font-mono text-xs'
                   to='/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/projects'
                   params={{
                     orgId: params.orgId,
@@ -164,20 +158,20 @@ const IssueCard = ({ issue }: { issue: Issue }) => {
           <CopyToClipboard copyText={id} className='h-5 px-2 align-middle' />
         </div>
         <Badge
-          className='bg-blue-300 whitespace-nowrap text-black'
+          className='bg-neutral-soft text-foreground whitespace-nowrap'
           variant='small'
         >
           {getIssueCategory(issue.message)}
         </Badge>
       </div>
-      <div className='flex gap-1 text-sm'>
+      <div className='flex gap-1 text-[0.8125rem]'>
         <div className='text-muted-foreground'>Created at</div>
         <TimestampWithUTC timestamp={issue.timestamp} className='' />
         <div className='text-muted-foreground'>by</div>
         <div className=''>{issue.worker}</div>
       </div>
       {issue.affectedPath && (
-        <div className='flex gap-1 text-sm'>
+        <div className='flex gap-1 text-[0.8125rem]'>
           <div className='font-semibold'>Affected path:</div>
           <FormattedValue value={issue.affectedPath} />
         </div>
@@ -478,47 +472,42 @@ const IssuesComponent = () => {
   const matching = `, ${issues.pagination.totalCount} matching filters`;
 
   return (
-    <Card className='h-fit'>
-      <CardHeader>
-        <CardTitle>
-          Issues ({totalIssues.pagination.totalCount} in total
-          {filtersInUse && matching})
-        </CardTitle>
-        <CardDescription>
-          This view shows any technical issues that were discovered by the
-          respective source. As technical issues might have an impact on the
-          completeness of metadata, it is highly recommended to resolve any
-          technical issues before acting on any compliance related findings.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <DataTableCards
-          table={table}
-          renderSubComponent={renderSubComponent}
-          setCurrentPageOptions={(currentPage) => {
-            return {
-              to: Route.to,
-              search: { ...search, page: currentPage },
-            };
-          }}
-          setPageSizeOptions={(size) => {
-            return {
-              to: Route.to,
-              search: { ...search, page: 1, pageSize: size },
-            };
-          }}
-          setSortingOptions={(sortBy) => {
-            return {
-              to: Route.to,
-              search: {
-                ...search,
-                sortBy: updateColumnSorting(search.sortBy, sortBy),
-              },
-            };
-          }}
-        />
-      </CardContent>
-    </Card>
+    <SheetSection
+      title='Issues'
+      meta={`${totalIssues.pagination.totalCount} in total${filtersInUse ? matching : ''}`}
+    >
+      <p className='text-muted-foreground -mt-2 max-w-[75ch] text-[0.8125rem]'>
+        This view shows any technical issues that were discovered by the
+        respective source. As technical issues might have an impact on the
+        completeness of metadata, it is highly recommended to resolve any
+        technical issues before acting on any compliance related findings.
+      </p>
+      <DataTableCards
+        table={table}
+        renderSubComponent={renderSubComponent}
+        setCurrentPageOptions={(currentPage) => {
+          return {
+            to: Route.to,
+            search: { ...search, page: currentPage },
+          };
+        }}
+        setPageSizeOptions={(size) => {
+          return {
+            to: Route.to,
+            search: { ...search, page: 1, pageSize: size },
+          };
+        }}
+        setSortingOptions={(sortBy) => {
+          return {
+            to: Route.to,
+            search: {
+              ...search,
+              sortBy: updateColumnSorting(search.sortBy, sortBy),
+            },
+          };
+        }}
+      />
+    </SheetSection>
   );
 };
 

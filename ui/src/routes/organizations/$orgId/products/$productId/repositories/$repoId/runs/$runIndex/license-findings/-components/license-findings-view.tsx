@@ -34,14 +34,8 @@ import {
 } from '@/components/data-table/data-table';
 import { SpdxExpressionBadgeGroup } from '@/components/licenses';
 import { LoadingIndicator } from '@/components/loading-indicator';
+import { SheetSection } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   convertToBackendSorting,
   EMPTY_SORTING_STATE,
@@ -288,65 +282,59 @@ export const LicenseFindingsView = () => {
   const matching = `, ${detectedLicenseFindings.pagination.totalCount} matching filters`;
   const scannerWasIncludedInRun = ortRun.jobs.scanner != null;
   const noResultsContent = !scannerWasIncludedInRun ? (
-    <div className='text-muted-foreground text-sm'>
+    <div className='text-muted-foreground text-[0.8125rem]'>
       No detected licenses are available because the scanner job was not enabled
       for this run.
     </div>
   ) : undefined;
 
   return (
-    <Card className='h-fit'>
-      <CardHeader>
-        <CardTitle>
-          Detected Licenses ({totalDetectedLicenses.pagination.totalCount} in
-          total
-          {filtersInUse && matching})
-        </CardTitle>
-        <CardDescription>
-          Licenses as detected in projects and packages by the configured
-          scanners.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <DataTable
-          table={table}
-          noResultsContent={noResultsContent}
-          renderSubComponent={({ row }) =>
-            renderSubComponent({ row, runId: ortRun.id })
-          }
-          setCurrentPageOptions={(currentPage) => {
-            return {
-              to: '.',
-              search: (previous) =>
-                clearDetectedLicenseMarkers({
-                  ...previous,
-                  page: currentPage,
-                }),
-            };
-          }}
-          setPageSizeOptions={(size) => {
-            return {
-              to: '.',
-              search: (previous) =>
-                clearDetectedLicenseMarkers({
-                  ...previous,
-                  page: 1,
-                  pageSize: size,
-                }),
-            };
-          }}
-          setSortingOptions={(sortBy) => {
-            return {
-              to: '.',
-              search: (previous) => ({
+    <SheetSection
+      title='Detected licenses'
+      meta={`${totalDetectedLicenses.pagination.totalCount} in total${filtersInUse ? matching : ''}`}
+    >
+      <p className='text-muted-foreground -mt-2 text-[0.8125rem]'>
+        Licenses as detected in projects and packages by the configured
+        scanners.
+      </p>
+      <DataTable
+        table={table}
+        noResultsContent={noResultsContent}
+        renderSubComponent={({ row }) =>
+          renderSubComponent({ row, runId: ortRun.id })
+        }
+        setCurrentPageOptions={(currentPage) => {
+          return {
+            to: '.',
+            search: (previous) =>
+              clearDetectedLicenseMarkers({
+                ...previous,
+                page: currentPage,
+              }),
+          };
+        }}
+        setPageSizeOptions={(size) => {
+          return {
+            to: '.',
+            search: (previous) =>
+              clearDetectedLicenseMarkers({
                 ...previous,
                 page: 1,
-                sortBy: updateColumnSorting(previous.sortBy, sortBy),
+                pageSize: size,
               }),
-            };
-          }}
-        />
-      </CardContent>
-    </Card>
+          };
+        }}
+        setSortingOptions={(sortBy) => {
+          return {
+            to: '.',
+            search: (previous) => ({
+              ...previous,
+              page: 1,
+              sortBy: updateColumnSorting(previous.sortBy, sortBy),
+            }),
+          };
+        }}
+      />
+    </SheetSection>
   );
 };

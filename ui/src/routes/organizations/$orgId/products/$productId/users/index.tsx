@@ -33,15 +33,9 @@ import {
   getProductUsersQueryKey,
   putProductRoleToUserMutation,
 } from '@/api/@tanstack/react-query.gen';
+import { PageHeader, SheetSection } from '@/components/page-header';
 import { RoleSelect } from '@/components/role-select';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -117,18 +111,21 @@ const ManageUsers = () => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Manage Users</CardTitle>
-        <CardDescription>
-          Assign or remove roles to users in the{' '}
-          <span className='font-semibold'>{product.name}</span> product.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className='space-y-4'>
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title='Manage Users'
+        description={
+          <>
+            Assign or remove roles to users in the{' '}
+            <span className='text-foreground font-medium'>{product.name}</span>{' '}
+            product.
+          </>
+        }
+      />
+      <SheetSection title='Assign role'>
         <Form {...form}>
-          <form className='space-y-8'>
-            <div className='grid items-start gap-4 md:grid-cols-[minmax(0,1fr)_auto]'>
+          <form className='flex max-w-2xl flex-col items-start gap-4'>
+            <div className='grid w-full items-start gap-4 md:grid-cols-[minmax(0,1fr)_auto]'>
               <FormField
                 control={form.control}
                 name='username'
@@ -162,8 +159,6 @@ const ManageUsers = () => {
               />
             </div>
             <Button
-              size='sm'
-              className='ml-auto gap-1'
               type='submit'
               disabled={isAddUserPending}
               onClick={form.handleSubmit(onAddUser)}
@@ -179,9 +174,11 @@ const ManageUsers = () => {
             </Button>
           </form>
         </Form>
+      </SheetSection>
+      <SheetSection title='Users'>
         <ProductUsersTable />
-      </CardContent>
-    </Card>
+      </SheetSection>
+    </div>
   );
 };
 

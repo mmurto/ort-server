@@ -18,12 +18,10 @@
  */
 
 import { createFileRoute, redirect } from '@tanstack/react-router';
-import { AlertCircle } from 'lucide-react';
 
 import { getRun } from '@/api';
 import { NotFoundError } from '@/components/not-found-error';
-import { Card, CardContent, CardHeader } from '@/components/ui/card.tsx';
-import { Separator } from '@/components/ui/separator.tsx';
+import { PageHeader } from '@/components/page-header';
 
 export const Route = createFileRoute('/runs/$runId/')({
   beforeLoad: async ({ params }) => {
@@ -52,20 +50,10 @@ export const Route = createFileRoute('/runs/$runId/')({
   errorComponent: ({ error }) => {
     if (error instanceof NotFoundError) {
       return (
-        <Card className='mx-auto w-full max-w-4xl'>
-          <CardHeader className='flex flex-row justify-items-center p-4'>
-            <div className='flex gap-2'>
-              <AlertCircle className='size-12' />
-              <h2 className='place-content-center text-3xl font-bold'>
-                Resource not found
-              </h2>
-            </div>
-          </CardHeader>
-          <Separator />
-          <CardContent className='p-4'>
-            <p>There is no run with ID {error.message}.</p>
-          </CardContent>
-        </Card>
+        <PageHeader
+          title='Resource not found'
+          description={`There is no run with ID ${error.message}.`}
+        />
       );
     }
 

@@ -38,14 +38,9 @@ import {
   patchProductMutation,
 } from '@/api/@tanstack/react-query.gen';
 import { DeleteDialog } from '@/components/delete-dialog';
+import { PageHeader, SheetSection } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -147,42 +142,56 @@ const ProductSettingsPage = () => {
 
   return (
     <div className='flex flex-col gap-8'>
-      <Card>
-        <CardHeader>
-          <CardTitle>Edit Product</CardTitle>
-        </CardHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-8'>
-            <CardContent className='space-y-4'>
-              <FormField
-                control={form.control}
-                name='name'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl autoFocus>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name='description'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-            <CardFooter>
-              <div className='flex w-full items-center justify-between'>
+      <PageHeader
+        title='Settings'
+        description={`Edit the details of ${product.name} or delete it.`}
+      />
+      <SheetSection title='Edit Product'>
+        <Card className='max-w-2xl'>
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className='flex flex-col gap-6'
+            >
+              <CardContent className='flex flex-col gap-5'>
+                <FormField
+                  control={form.control}
+                  name='name'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl autoFocus>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name='description'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+              <CardFooter className='gap-2'>
+                <Button type='submit' disabled={isPending}>
+                  {isPending ? (
+                    <>
+                      <span className='sr-only'>Editing product...</span>
+                      <Loader2 size={16} className='mx-3 animate-spin' />
+                    </>
+                  ) : (
+                    'Submit'
+                  )}
+                </Button>
                 <Button
                   type='button'
                   variant='outline'
@@ -195,39 +204,27 @@ const ProductSettingsPage = () => {
                 >
                   Cancel
                 </Button>
-                <Button type='submit' disabled={isPending}>
-                  {isPending ? (
-                    <>
-                      <span className='sr-only'>Editing product...</span>
-                      <Loader2 size={16} className='mx-3 animate-spin' />
-                    </>
-                  ) : (
-                    'Submit'
-                  )}
-                </Button>
-              </div>
-            </CardFooter>
-          </form>
-        </Form>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Danger Zone</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className='flex justify-between'>
-            <div>Delete this product</div>
-            <DeleteDialog
-              thingName={'product'}
-              thingId={product.name}
-              uiComponent={
-                <Button variant='destructive'>Delete product</Button>
-              }
-              onDelete={handleDelete}
-            />
+              </CardFooter>
+            </form>
+          </Form>
+        </Card>
+      </SheetSection>
+      <SheetSection title='Danger Zone'>
+        <div className='border-err/40 flex max-w-2xl items-center justify-between gap-4 rounded-sm border px-5 py-4'>
+          <div className='flex flex-col gap-0.5'>
+            <div className='font-medium'>Delete this product</div>
+            <div className='text-muted-foreground text-[0.8125rem]'>
+              This cannot be undone.
+            </div>
           </div>
-        </CardContent>
-      </Card>
+          <DeleteDialog
+            thingName={'product'}
+            thingId={product.name}
+            uiComponent={<Button variant='destructive'>Delete product</Button>}
+            onDelete={handleDelete}
+          />
+        </div>
+      </SheetSection>
     </div>
   );
 };

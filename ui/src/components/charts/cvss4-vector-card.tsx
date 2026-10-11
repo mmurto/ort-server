@@ -18,14 +18,8 @@
  */
 
 import { VulnerabilityRating } from '@/api';
+import { ChartDetailsLink, ChartPanel } from '@/components/charts/chart-panel';
 import { Badge } from '@/components/ui/badge';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   Tooltip,
   TooltipContent,
@@ -48,100 +42,90 @@ export const Cvss4VectorCard = ({ macroVector }: Cvss4VectorCardProps) => {
   } = macroVector;
 
   return (
-    <Card>
-      <CardHeader className='items-center'>
-        <CardTitle className='flex items-center justify-between'>
-          <div>
-            CVSS 4.0 Macro Vector (
-            <a
-              className='link font-normal hover:underline'
-              href='https://www.first.org/cvss/v4-0/specification-document'
-              target='_blank'
-            >
-              details
-            </a>
-            )
-          </div>
-          <Tooltip>
-            <TooltipTrigger>
-              <div className='cursor-pointer'>{name}</div>
-            </TooltipTrigger>
-            <TooltipContent>
-              The Macro Vector is a representation of a CVSS 4.0 vector with a
-              reduced amount of dimensions, used as an intermediate step in the
-              calculation of a CVSS 4.0 score.
-            </TooltipContent>
-          </Tooltip>
-        </CardTitle>
-        <CardDescription>
-          Summary of the vulnerability’s base characteristics in CVSS 4.0
-          format.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className='flex flex-col gap-1'>
-          <div className='flex items-center justify-between'>
-            <div>Exploitability</div>
-            <Badge
-              className={getVulnerabilityRatingBackgroundColor(
-                exploitability as VulnerabilityRating
-              )}
-            >
-              {exploitability}
-            </Badge>
-          </div>
-          <div className='flex items-center justify-between'>
-            <div>Complexity</div>
-            <Badge
-              className={getVulnerabilityRatingBackgroundColor(
-                complexity as VulnerabilityRating
-              )}
-            >
-              {complexity}
-            </Badge>
-          </div>
-          <div className='flex items-center justify-between'>
-            <div>Vulnerable System</div>
-            <Badge
-              className={getVulnerabilityRatingBackgroundColor(
-                vulnerableSystem as VulnerabilityRating
-              )}
-            >
-              {vulnerableSystem}
-            </Badge>
-          </div>
-          <div className='flex items-center justify-between'>
-            <div>Subsequent System</div>
-            <Badge
-              className={getVulnerabilityRatingBackgroundColor(
-                subsequentSystem as VulnerabilityRating
-              )}
-            >
-              {subsequentSystem}
-            </Badge>
-          </div>
-          <div className='flex items-center justify-between'>
-            <div>Exploitation</div>
-            <Badge
-              className={getVulnerabilityRatingBackgroundColor(
-                exploitation as VulnerabilityRating
-              )}
-            >
-              {exploitation}
-            </Badge>
-          </div>
-          <div className='flex items-center justify-between'>
-            <div>Security Requirements</div>
-            <Badge
-              className={getVulnerabilityRatingBackgroundColor(
-                sequrityRequirements as VulnerabilityRating
-              )}
-            >
-              {sequrityRequirements}
-            </Badge>
-          </div>
+    <ChartPanel
+      title={
+        <>
+          CVSS 4.0 Macro Vector (
+          <ChartDetailsLink href='https://www.first.org/cvss/v4-0/specification-document' />
+          )
+        </>
+      }
+      description='Summary of the vulnerability’s base characteristics in CVSS 4.0 format.'
+      actions={
+        <Tooltip>
+          <TooltipTrigger>
+            <span className='cursor-default font-mono text-xs'>{name}</span>
+          </TooltipTrigger>
+          <TooltipContent>
+            The Macro Vector is a representation of a CVSS 4.0 vector with a
+            reduced amount of dimensions, used as an intermediate step in the
+            calculation of a CVSS 4.0 score.
+          </TooltipContent>
+        </Tooltip>
+      }
+    >
+      <div className='flex flex-col divide-y border-y text-[0.8125rem]'>
+        <div className='flex items-center justify-between py-1.5'>
+          <div>Exploitability</div>
+          <Badge
+            className={getVulnerabilityRatingBackgroundColor(
+              exploitability as VulnerabilityRating
+            )}
+          >
+            {exploitability}
+          </Badge>
         </div>
-      </CardContent>
-    </Card>
+        <div className='flex items-center justify-between py-1.5'>
+          <div>Complexity</div>
+          <Badge
+            className={getVulnerabilityRatingBackgroundColor(
+              complexity as VulnerabilityRating
+            )}
+          >
+            {complexity}
+          </Badge>
+        </div>
+        <div className='flex items-center justify-between py-1.5'>
+          <div>Vulnerable System</div>
+          <Badge
+            className={getVulnerabilityRatingBackgroundColor(
+              vulnerableSystem as VulnerabilityRating
+            )}
+          >
+            {vulnerableSystem}
+          </Badge>
+        </div>
+        <div className='flex items-center justify-between py-1.5'>
+          <div>Subsequent System</div>
+          <Badge
+            className={getVulnerabilityRatingBackgroundColor(
+              subsequentSystem as VulnerabilityRating
+            )}
+          >
+            {subsequentSystem}
+          </Badge>
+        </div>
+        <div className='flex items-center justify-between py-1.5'>
+          <div>Exploitation</div>
+          <Badge
+            className={getVulnerabilityRatingBackgroundColor(
+              exploitation as VulnerabilityRating
+            )}
+          >
+            {exploitation}
+          </Badge>
+        </div>
+        <div className='flex items-center justify-between py-1.5'>
+          <div>Security Requirements</div>
+          <Badge
+            className={getVulnerabilityRatingBackgroundColor(
+              sequrityRequirements as VulnerabilityRating
+            )}
+          >
+            {sequrityRequirements}
+          </Badge>
+        </div>
+      </div>
+    </ChartPanel>
   );
 };

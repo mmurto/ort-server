@@ -19,17 +19,12 @@
 
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
+import { Download } from 'lucide-react';
 
 import { getRepositoryRunOptions } from '@/api/@tanstack/react-query.gen';
 import { LoadingIndicator } from '@/components/loading-indicator';
+import { SheetSection } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { config } from '@/config';
 import { formatFileSize } from '@/helpers/format-file-size';
 import { useUser } from '@/hooks/use-user.ts';
@@ -96,49 +91,56 @@ const ReportComponent = () => {
     });
   }
 
+  const reports =
+    ortRun.jobs.reporter?.reportFilenames?.filter(
+      (filename) =>
+        !filename.toLowerCase().includes('spdx') &&
+        !filename.toLowerCase().includes('cyclonedx')
+    ) ?? [];
+  const sizesMap = ortRun.jobs.reporter?.reportSizesInBytes;
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Other Report Formats</CardTitle>
-        <CardDescription>Click the file to download.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {ortRun.jobs.reporter?.reportFilenames &&
-        ortRun.jobs.reporter.reportFilenames.length > 0
-          ? ortRun.jobs.reporter.reportFilenames
-              .filter(
-                (filename) =>
-                  !filename.toLowerCase().includes('spdx') &&
-                  !filename.toLowerCase().includes('cyclonedx')
-              )
-              .map((filename) => {
-                const sizesMap = ortRun.jobs.reporter?.reportSizesInBytes;
-                const sizeBytes =
-                  sizesMap && filename in sizesMap
-                    ? sizesMap[filename]
-                    : undefined;
-                return (
-                  <div key={filename} className='flex flex-col pb-2'>
-                    <Button
-                      variant='outline'
-                      className='link h-auto font-semibold whitespace-normal'
-                      onClick={() => handleDownload(ortRun.id, filename)}
-                    >
-                      <div className='break-all'>
-                        {filename}
-                        <span className='text-muted-foreground ml-2 text-xs font-normal'>
-                          {sizeBytes !== undefined
-                            ? formatFileSize(sizeBytes)
-                            : 'Unknown size'}
-                        </span>
-                      </div>
-                    </Button>
-                  </div>
-                );
-              })
-          : 'No reports available.'}
-      </CardContent>
-    </Card>
+    <SheetSection
+      title='Other report formats'
+      meta={`${reports.length} ${reports.length === 1 ? 'file' : 'files'}`}
+    >
+      <p className='text-muted-foreground -mt-2 text-[0.8125rem]'>
+        Click the file to download.
+      </p>
+      {reports.length > 0 ? (
+        <ul className='divide-y border-y'>
+          {reports.map((filename) => {
+            const sizeBytes =
+              sizesMap && filename in sizesMap ? sizesMap[filename] : undefined;
+            return (
+              <li key={filename}>
+                <Button
+                  variant='ghost'
+                  className='h-auto w-full justify-between gap-4 rounded-none px-2 py-2 font-normal whitespace-normal'
+                  onClick={() => handleDownload(ortRun.id, filename)}
+                >
+                  <span className='flex min-w-0 items-center gap-2'>
+                    <Download className='text-muted-foreground size-3.5' />
+                    <span className='font-mono text-xs break-all'>
+                      {filename}
+                    </span>
+                  </span>
+                  <span className='text-muted-foreground shrink-0 text-xs'>
+                    {sizeBytes !== undefined
+                      ? formatFileSize(sizeBytes)
+                      : 'Unknown size'}
+                  </span>
+                </Button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p className='text-muted-foreground text-[0.8125rem]'>
+          No reports available.
+        </p>
+      )}
+    </SheetSection>
   );
 };
 

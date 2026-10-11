@@ -31,7 +31,7 @@ export const AnalyzerJobDetails = ({ run }: AnalyzerJobDetailsProps) => {
   if (!jobConfigs) return null;
 
   return (
-    <div className='ml-4 flex flex-col gap-4 text-sm'>
+    <div className='flex flex-col gap-4 text-[0.8125rem]'>
       <RenderProperty
         label='Repository configuration path'
         value={jobConfigs.repositoryConfigPath}
@@ -57,7 +57,7 @@ export const AnalyzerJobDetails = ({ run }: AnalyzerJobDetailsProps) => {
           <Label className='font-semibold'>Environment variables</Label>
           {jobConfigs.environmentConfig.environmentVariables.map((env) => (
             <div
-              className='text-muted-foreground ml-2 flex gap-1'
+              className='text-muted-foreground ml-2 flex gap-1 font-mono text-xs'
               key={env.name}
             >
               <div>{env.name}</div>

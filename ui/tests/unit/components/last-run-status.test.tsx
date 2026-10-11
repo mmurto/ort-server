@@ -51,8 +51,8 @@ describe('LastRunStatus', () => {
 
     const markup = renderLastRunStatus();
 
-    expect(markup).toContain('data-slot="badge"');
-    expect(markup).toContain('FINISHED');
+    expect(markup).toContain('bg-ok-soft text-ok');
+    expect(markup).toContain('Finished');
   });
 
   it('renders a skeleton while the latest run is loading', () => {
@@ -61,16 +61,16 @@ describe('LastRunStatus', () => {
     const markup = renderLastRunStatus();
 
     expect(markup).toContain('data-slot="skeleton"');
-    expect(markup).toContain('h-5 w-16 rounded-md');
+    expect(markup).toContain('h-5 w-16');
     expect(markup).toContain('Loading data...');
-    expect(markup).not.toContain('data-slot="badge"');
+    expect(markup).not.toContain('Finished');
   });
 
   it('reserves space when the repository has no runs', () => {
     const markup = renderLastRunStatus();
 
     expect(markup).toContain('class="min-h-5"');
-    expect(markup).not.toContain('data-slot="badge"');
+    expect(markup).not.toContain('Finished');
     expect(markup).not.toContain('data-slot="skeleton"');
   });
 });

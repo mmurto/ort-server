@@ -88,7 +88,7 @@ export function FilterText({
           >
             <XCircle
               className={cn(
-                'h-fit text-gray-400',
+                'text-muted-foreground h-fit',
                 value.length === 0 ? 'opacity-40' : 'opacity-100'
               )}
             />

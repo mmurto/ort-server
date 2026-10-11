@@ -96,7 +96,7 @@ export const AnalyzerFields = ({
   });
 
   return (
-    <div className='flex flex-row align-middle'>
+    <div className='flex flex-row items-start gap-4 border-t'>
       <FormField
         control={form.control}
         name='jobConfigs.analyzer.enabled'
@@ -104,7 +104,7 @@ export const AnalyzerFields = ({
           <FormItem>
             <FormControl>
               <Switch
-                className='my-4 mr-4 data-[state=checked]:bg-green-500'
+                className='mt-3.5'
                 checked={field.value}
                 disabled
                 onCheckedChange={field.onChange}
@@ -113,8 +113,16 @@ export const AnalyzerFields = ({
           </FormItem>
         )}
       />
-      <AccordionItem value={value} className='flex-1'>
-        <AccordionTrigger onClick={onToggle}>Analyzer</AccordionTrigger>
+      <AccordionItem value={value} className='min-w-0 flex-1 border-b-0'>
+        <AccordionTrigger
+          onClick={onToggle}
+          className='items-center py-3 text-[0.9375rem] font-semibold hover:no-underline'
+        >
+          <span className='flex items-center gap-2'>
+            <span aria-hidden className='bg-analyzer size-2 shrink-0' />
+            Analyzer
+          </span>
+        </AccordionTrigger>
         <AccordionContent className='flex flex-col gap-6'>
           <FormField
             control={form.control}
@@ -177,8 +185,8 @@ export const AnalyzerFields = ({
             )}
           />
           <div className='flex flex-col gap-2'>
-            <h3>Environment variables</h3>
-            <div className='text-sm text-gray-500'>
+            <h3 className='text-sm font-medium'>Environment variables</h3>
+            <div className='text-muted-foreground text-[0.8125rem]'>
               A list of environment variable names and their values, either
               literal ones, or retrieved from named secrets. Use this to specify
               environment variables that are required by the build process. In
@@ -286,7 +294,7 @@ export const AnalyzerFields = ({
                           environmentVariablesRemove(index);
                         }}
                       >
-                        <TrashIcon className='h-4 w-4' />
+                        <TrashIcon />
                       </Button>
                     </div>
                   </div>
@@ -303,8 +311,8 @@ export const AnalyzerFields = ({
                   environmentVariablesAppend({ name: '', value: '' });
                 }}
               >
+                <PlusIcon />
                 Add environment variable
-                <PlusIcon className='ml-1 h-4 w-4' />
               </Button>
               <Button
                 size='sm'
@@ -315,8 +323,8 @@ export const AnalyzerFields = ({
                   environmentVariablesAppend({ name: '', secretName: '' });
                 }}
               >
+                <PlusIcon />
                 Add environment secret
-                <PlusIcon className='ml-1 h-4 w-4' />
               </Button>
             </div>
           </div>

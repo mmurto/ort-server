@@ -122,19 +122,19 @@ export const MoveRepository = ({ repoUrl }: MoveRepositoryProps) => {
   }
 
   return (
-    <div className='flex items-center gap-2'>
+    <div className='flex flex-wrap items-center gap-2'>
       <SearchableInfiniteList
         trigger={
           <Button
             variant='outline'
             role='combobox'
             aria-expanded={orgOpen}
-            className='w-[240px] justify-between gap-2'
+            className='w-[220px] justify-between gap-2'
           >
             <span className='min-w-0 truncate text-left'>
               {selectedOrg ? selectedOrg.name : 'Select organization'}
             </span>
-            <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
+            <ChevronsUpDown className='text-muted-foreground shrink-0' />
           </Button>
         }
         open={orgOpen}
@@ -173,13 +173,13 @@ export const MoveRepository = ({ repoUrl }: MoveRepositoryProps) => {
             variant='outline'
             role='combobox'
             aria-expanded={productOpen}
-            className='w-[240px] justify-between gap-2'
+            className='w-[220px] justify-between gap-2'
             disabled={selectedOrg === null}
           >
             <span className='min-w-0 truncate text-left'>
               {selectedProduct ? selectedProduct.name : 'Select product'}
             </span>
-            <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
+            <ChevronsUpDown className='text-muted-foreground shrink-0' />
           </Button>
         }
         open={productOpen}
@@ -211,7 +211,6 @@ export const MoveRepository = ({ repoUrl }: MoveRepositoryProps) => {
         emptyMessage='No product found.'
         errorMessage='Failed to load products'
       />
-      <div className='flex-1' />
       <MoveDialog
         thingName='repository'
         thingId={repoUrl}

@@ -312,8 +312,8 @@ export const EnvironmentDefinitionsFields = ({
   return (
     <div className='flex flex-col gap-2'>
       <div>
-        <h3>Environment configuration</h3>
-        <p className='mt-1 text-sm text-gray-500'>
+        <h3 className='text-sm font-medium'>Environment configuration</h3>
+        <p className='text-muted-foreground mt-1 text-[0.8125rem]'>
           Configure the credentials for different package managers to access
           private artifact repositories.
         </p>
@@ -333,7 +333,7 @@ export const EnvironmentDefinitionsFields = ({
                   removeEnvironmentDefinition(card.schema.key, card.index);
                 }}
               >
-                <TrashIcon className='h-4 w-4' />
+                <TrashIcon />
               </Button>
             </CardHeader>
             <CardContent className='flex flex-col gap-4'>
@@ -383,8 +383,8 @@ export const EnvironmentDefinitionsFields = ({
           type='button'
           onClick={addEnvironmentDefinition}
         >
+          <PlusIcon />
           Add environment configuration
-          <PlusIcon className='ml-1 h-4 w-4' />
         </Button>
       </div>
     </div>

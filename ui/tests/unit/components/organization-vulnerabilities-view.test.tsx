@@ -197,7 +197,7 @@ describe('organization vulnerabilities table', () => {
 
     expect(await findVulnerability('vuln-1')).toBeVisible();
     expect(screen.getByText('Summary of vuln-3')).toBeVisible();
-    expect(container).toHaveTextContent('Vulnerabilities (25 in total)');
+    expect(container).toHaveTextContent('25 in total');
   });
 
   it('applies filters from the URL', async () => {
@@ -226,9 +226,7 @@ describe('organization vulnerabilities table', () => {
       purl: 'library',
     });
     expect(lastPageQuery()).not.toHaveProperty('identifier');
-    expect(container).toHaveTextContent(
-      'Vulnerabilities (25 in total, 13 matching filters)'
-    );
+    expect(container).toHaveTextContent('25 in total, 13 matching filters');
   });
 
   it('applies sorting and the page from the URL', async () => {

@@ -47,6 +47,7 @@ import { useInfiniteList } from '@/hooks/use-infinite-list';
 import { DROPDOWN_PAGE_SIZE } from '@/lib/constants';
 import { PagedResponse } from '@/lib/infinite-list';
 import { toSearchFilter } from '@/lib/regex';
+import { cn } from '@/lib/utils';
 
 type SiblingsProps = {
   entity: 'organization' | 'product' | 'repository' | 'run';
@@ -207,6 +208,16 @@ export const Siblings = ({ entity, pathName }: SiblingsProps) => {
           ? breadcrumbs.repo
           : breadcrumbs.run;
 
+  // The deepest entity of the path is where the user is, and its name is set in ink.
+  const isCurrent =
+    entity === 'organization'
+      ? !params.productId
+      : entity === 'product'
+        ? !params.repoId
+        : entity === 'repository'
+          ? !params.runIndex
+          : true;
+
   // The query above is cached under the same key for the run breadcrumb, which also knows the
   // repository, so the link is shown for the repository breadcrumb only.
   const currentRepoUrl = entity === 'repository' ? currentRepo?.url : undefined;
@@ -215,7 +226,9 @@ export const Siblings = ({ entity, pathName }: SiblingsProps) => {
     <BreadcrumbItem>
       {entity === 'organization' && organizationCount > 1 && (
         <SearchableInfiniteList
-          trigger={<ChevronDown className='ml-1 size-4 cursor-pointer' />}
+          trigger={
+            <ChevronDown className='text-muted-foreground hover:text-foreground ml-1 size-3.5 cursor-pointer' />
+          }
           open={isOpen}
           onOpenChange={handleOpenChange}
           list={organizations}
@@ -230,7 +243,7 @@ export const Siblings = ({ entity, pathName }: SiblingsProps) => {
                 <div className='grid w-full grid-cols-6 items-center gap-2'>
                   <div className='col-span-5'>{org.name}</div>
                   {org.id === Number(params.orgId) && (
-                    <Check className='ml-auto h-4 w-4' />
+                    <Check className='ml-auto size-3.5' />
                   )}
                 </div>
               </Link>
@@ -245,7 +258,9 @@ export const Siblings = ({ entity, pathName }: SiblingsProps) => {
       )}
       {entity === 'product' && productCount > 1 && (
         <SearchableInfiniteList
-          trigger={<ChevronDown className='ml-1 size-4 cursor-pointer' />}
+          trigger={
+            <ChevronDown className='text-muted-foreground hover:text-foreground ml-1 size-3.5 cursor-pointer' />
+          }
           open={isOpen}
           onOpenChange={handleOpenChange}
           list={products}
@@ -263,7 +278,7 @@ export const Siblings = ({ entity, pathName }: SiblingsProps) => {
                 <div className='grid w-full grid-cols-6 items-center gap-2'>
                   <div className='col-span-5'>{prod.name}</div>
                   {prod.id === Number(params.productId) && (
-                    <Check className='ml-auto h-4 w-4' />
+                    <Check className='ml-auto size-3.5' />
                   )}
                 </div>
               </Link>
@@ -278,7 +293,9 @@ export const Siblings = ({ entity, pathName }: SiblingsProps) => {
       )}
       {entity === 'repository' && repositoryCount > 1 && (
         <SearchableInfiniteList
-          trigger={<ChevronDown className='ml-1 size-4 cursor-pointer' />}
+          trigger={
+            <ChevronDown className='text-muted-foreground hover:text-foreground ml-1 size-3.5 cursor-pointer' />
+          }
           open={isOpen}
           onOpenChange={handleOpenChange}
           list={repositories}
@@ -301,7 +318,7 @@ export const Siblings = ({ entity, pathName }: SiblingsProps) => {
                 <div className='grid w-full grid-cols-6 items-center gap-2'>
                   <div className='col-span-5'>{repo.name || repo.url}</div>
                   {repo.id === Number(params.repoId) && (
-                    <Check className='ml-auto h-4 w-4' />
+                    <Check className='ml-auto size-3.5' />
                   )}
                 </div>
               </Link>
@@ -317,7 +334,9 @@ export const Siblings = ({ entity, pathName }: SiblingsProps) => {
       {/* The runs of a repository cannot be filtered on the server, so this list has no search. */}
       {entity === 'run' && runCount > 1 && (
         <SearchableInfiniteList
-          trigger={<ChevronDown className='ml-1 size-4 cursor-pointer' />}
+          trigger={
+            <ChevronDown className='text-muted-foreground hover:text-foreground ml-1 size-3.5 cursor-pointer' />
+          }
           open={isOpen}
           onOpenChange={handleOpenChange}
           list={runs}
@@ -341,7 +360,7 @@ export const Siblings = ({ entity, pathName }: SiblingsProps) => {
                 <div className='grid w-full grid-cols-6 items-center gap-2'>
                   <div className='col-span-5'>{run.index}</div>
                   {run.index === Number(params.runIndex) && (
-                    <Check className='ml-auto h-4 w-4' />
+                    <Check className='ml-auto size-3.5' />
                   )}
                 </div>
               </Link>
@@ -353,12 +372,22 @@ export const Siblings = ({ entity, pathName }: SiblingsProps) => {
         />
       )}
       <BreadcrumbLink asChild>
-        <Link to={pathName}>{name}</Link>
+        <Link
+          to={pathName}
+          className={cn(isCurrent && 'text-foreground font-medium')}
+        >
+          {name}
+        </Link>
       </BreadcrumbLink>
       {currentRepoUrl && (
-        <Button variant='ghost' size='icon' className='h-4 w-4' asChild>
+        <Button
+          variant='ghost'
+          size='icon'
+          className='text-muted-foreground hover:text-foreground size-5'
+          asChild
+        >
           <Link to={currentRepoUrl} target='_blank' rel='noopener noreferrer'>
-            <ExternalLink className='link h-3 w-3' />
+            <ExternalLink className='size-3' />
           </Link>
         </Button>
       )}

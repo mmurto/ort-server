@@ -25,16 +25,8 @@ import { useState } from 'react';
 
 import { getCliOidcConfigOptions } from '@/api/@tanstack/react-query.gen';
 import { CopyToClipboard } from '@/components/copy-to-clipboard';
+import { PageHeader, SheetSection } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import {
   Tooltip,
   TooltipContent,
@@ -106,31 +98,26 @@ const TokenPage = () => {
   };
 
   return (
-    <div className='mx-auto flex w-full max-w-4xl flex-col gap-6'>
-      <Card>
-        <CardHeader>
-          <CardTitle className='text-3xl font-bold tracking-tight'>
-            Authentication Token
-          </CardTitle>
-          <CardDescription>
-            Generate a token for automation usage.
-          </CardDescription>
-        </CardHeader>
-        <Separator />
-        <CardContent className='space-y-4 pt-6'>
-          <p className='text-sm'>
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title='Authentication Token'
+        description='Generate a token for automation usage.'
+      />
+      <SheetSection title='How it works'>
+        <div className='flex max-w-[75ch] flex-col gap-4 text-[0.8125rem]'>
+          <p>
             Generate a token for automation, so scripts and tools can
             authenticate without manual login and 2FA.
           </p>
 
-          <div className='space-y-2 text-sm'>
-            <p>
+          <ol className='flex flex-col gap-2'>
+            <li>
               1. Use it to sign in with{' '}
               <a
                 href='https://eclipse-apoapsis.github.io/ort-server/docs/user-guide/cli/getting-started'
                 target='_blank'
                 rel='noopener noreferrer'
-                className='underline'
+                className='link underline'
               >
                 ORT Server CLI
                 <ExternalLink
@@ -141,7 +128,7 @@ const TokenPage = () => {
               </a>{' '}
               using{' '}
               <span className='inline-flex items-center'>
-                <code className='bg-muted rounded px-1 py-0.5 font-mono text-xs'>
+                <code className='bg-muted rounded-xs px-1 py-0.5 font-mono text-xs'>
                   {cliLoginCommand}
                 </code>
                 <CopyToClipboard
@@ -150,33 +137,33 @@ const TokenPage = () => {
                 />
               </span>
               {'.'}
-            </p>
-            <p>
+            </li>
+            <li>
               2. Use it as a refresh token to request a short-lived access token
               when calling the API manually.
-            </p>
-          </div>
+            </li>
+          </ol>
 
-          {errorMessage && (
-            <div className='text-sm text-red-600 dark:text-red-400'>
-              {errorMessage}
-            </div>
-          )}
+          {errorMessage && <div className='text-err'>{errorMessage}</div>}
 
-          <p className='text-sm'>
+          <p>
             Store this token in a secure place. It gives long-lived access and
             should be treated like a password.
           </p>
 
-          <p className='text-sm'>
+          <p className='text-muted-foreground'>
             After authorization, you will see the token on the next page exactly
             once.
           </p>
-        </CardContent>
-        <Separator />
-        <CardFooter className='flex flex-col items-stretch gap-3 sm:flex-row sm:justify-end'>
-          <Button asChild variant='outline'>
-            <Link to='/profile'>Back to profile</Link>
+        </div>
+        <div className='flex flex-wrap items-center gap-2 pt-2'>
+          <Button
+            onClick={() => {
+              void startTokenGeneration();
+            }}
+            disabled={isCliOidcConfigPending || isRedirecting || !cliClientId}
+          >
+            {isRedirecting ? 'Redirecting...' : 'Generate authentication token'}
           </Button>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -197,16 +184,11 @@ const TokenPage = () => {
               all offline tokens.
             </TooltipContent>
           </Tooltip>
-          <Button
-            onClick={() => {
-              void startTokenGeneration();
-            }}
-            disabled={isCliOidcConfigPending || isRedirecting || !cliClientId}
-          >
-            {isRedirecting ? 'Redirecting...' : 'Generate authentication token'}
+          <Button asChild variant='outline'>
+            <Link to='/profile'>Back to profile</Link>
           </Button>
-        </CardFooter>
-      </Card>
+        </div>
+      </SheetSection>
     </div>
   );
 };

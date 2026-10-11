@@ -22,13 +22,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
+import { PageHeader, SheetSection } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-} from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -38,7 +33,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Separator } from '@/components/ui/separator';
 import { toast } from '@/lib/toast';
 import { packageIdTypeSchema } from '@/schemas';
 import { useUserSettingsStore } from '@/store/user-settings.store';
@@ -68,35 +62,30 @@ const SettingsPage = () => {
   }
 
   return (
-    <Card className='mx-auto w-full max-w-4xl'>
-      <CardHeader>
-        <h2 className='text-3xl font-bold tracking-tight'>Preferences</h2>
-        <CardDescription>
-          These user-specific choices are saved as cookies in the browser.
-          Clearing browser cookies will result in preferences to be reset to
-          their defaults.
-        </CardDescription>
-      </CardHeader>
-      <Separator />
-      <CardContent>
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title='Preferences'
+        description='These user-specific choices are saved as cookies in the browser. Clearing browser cookies will result in preferences to be reset to their defaults.'
+      />
+      <SheetSection title='Packages'>
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
-            className='mt-4 space-y-8'
+            className='flex max-w-2xl flex-col gap-6'
           >
             <FormField
               control={form.control}
               name='packageIdType'
               render={({ field }) => (
-                <FormItem className='space-y-3'>
+                <FormItem>
                   <FormLabel>Package ID type</FormLabel>
-                  <FormControl className='mt-2'>
+                  <FormControl>
                     <RadioGroup
                       onValueChange={field.onChange}
                       defaultValue={field.value}
-                      className='ml-4 flex flex-col space-y-0'
+                      className='flex flex-col gap-2'
                     >
-                      <FormItem className='flex items-center space-y-0 space-x-3'>
+                      <FormItem className='flex flex-row items-center gap-2'>
                         <FormControl>
                           <RadioGroupItem
                             value={packageIdTypeSchema.enum.ORT_ID}
@@ -104,7 +93,7 @@ const SettingsPage = () => {
                         </FormControl>
                         <FormLabel className='font-normal'>ORT ID</FormLabel>
                       </FormItem>
-                      <FormItem className='flex items-center space-y-0 space-x-3'>
+                      <FormItem className='flex flex-row items-center gap-2'>
                         <FormControl>
                           <RadioGroupItem
                             value={packageIdTypeSchema.enum.PURL}
@@ -120,11 +109,13 @@ const SettingsPage = () => {
                 </FormItem>
               )}
             />
-            <Button type='submit'>Save</Button>
+            <div>
+              <Button type='submit'>Save</Button>
+            </div>
           </form>
         </Form>
-      </CardContent>
-    </Card>
+      </SheetSection>
+    </div>
   );
 };
 

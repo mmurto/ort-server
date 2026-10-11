@@ -47,8 +47,8 @@ export const OrganizationVulnerabilitiesStatisticsCard = ({
   return (
     <StatisticsCard
       title='Vulnerabilities'
-      icon={() => <ShieldQuestion className='h-4 w-4 text-green-500' />}
-      value={unresolved || '-'}
+      icon={() => <ShieldQuestion className='size-3.5' />}
+      value={unresolved ?? '-'}
       total={total || undefined}
       counts={
         counts

@@ -35,8 +35,8 @@ import {
   patchRepositoryMutation,
 } from '@/api/@tanstack/react-query.gen';
 import { DeleteDialog } from '@/components/delete-dialog';
+import { PageHeader, SheetSection } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ApiError } from '@/lib/api-error';
 import { repositoryDeleted, repositoryUpdated } from '@/lib/entity-cache';
 import {
@@ -163,48 +163,64 @@ export const RepositorySettingsPage = () => {
 
   return (
     <div className='flex flex-col gap-8'>
-      <EditRepositoryForm
-        defaultValues={{
-          description: repository.description || '',
-          name: repository.name || '',
-          url: repository.url,
-          type: repository.type,
-        }}
-        isPending={isPending}
-        onCancel={() =>
-          navigate({
-            to:
-              '/organizations/' +
-              params.orgId +
-              '/products/' +
-              params.productId,
-          })
-        }
-        onSubmit={onSubmit}
+      <PageHeader
+        title='Settings'
+        description={`Edit, move or delete the repository ${repository.url}.`}
       />
-      <Card>
-        <CardHeader>
-          <CardTitle>Danger Zone</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className='flex flex-col gap-4'>
-            <div className='flex justify-between'>
-              <div>Delete this repository</div>
-              <DeleteDialog
-                thingName={'repository'}
-                thingId={repository.url}
-                description='This deletes the repository together with all its ORT runs and their results, its secrets and its infrastructure services. Deletion is irreversible.'
-                uiComponent={
-                  <Button variant='destructive'>Delete repository</Button>
-                }
-                onDelete={handleDelete}
-              />
+      <SheetSection title='Edit repository'>
+        <EditRepositoryForm
+          defaultValues={{
+            description: repository.description || '',
+            name: repository.name || '',
+            url: repository.url,
+            type: repository.type,
+          }}
+          isPending={isPending}
+          onCancel={() =>
+            navigate({
+              to:
+                '/organizations/' +
+                params.orgId +
+                '/products/' +
+                params.productId,
+            })
+          }
+          onSubmit={onSubmit}
+        />
+      </SheetSection>
+      <SheetSection title='Danger zone'>
+        <div className='border-err/30 flex max-w-2xl flex-col divide-y border'>
+          <div className='flex flex-col gap-3 p-4'>
+            <div className='flex flex-col gap-0.5'>
+              <div className='font-medium'>
+                Move this repository to another product
+              </div>
+              <p className='text-muted-foreground text-[0.8125rem]'>
+                Select the organization and the product to move the repository
+                to.
+              </p>
             </div>
-            <div>Move this repository to another product</div>
             <MoveRepository repoUrl={repository.url} />
           </div>
-        </CardContent>
-      </Card>
+          <div className='flex flex-wrap items-center justify-between gap-4 p-4'>
+            <div className='flex flex-col gap-0.5'>
+              <div className='font-medium'>Delete this repository</div>
+              <p className='text-muted-foreground text-[0.8125rem]'>
+                Deletes all its runs, secrets and infrastructure services.
+              </p>
+            </div>
+            <DeleteDialog
+              thingName={'repository'}
+              thingId={repository.url}
+              description='This deletes the repository together with all its ORT runs and their results, its secrets and its infrastructure services. Deletion is irreversible.'
+              uiComponent={
+                <Button variant='destructive'>Delete repository</Button>
+              }
+              onDelete={handleDelete}
+            />
+          </div>
+        </div>
+      </SheetSection>
     </div>
   );
 };

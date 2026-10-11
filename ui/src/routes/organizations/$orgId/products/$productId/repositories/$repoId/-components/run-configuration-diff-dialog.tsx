@@ -65,7 +65,7 @@ const RunConfigurationDiffEntryRow = ({
   if (entry.status === 'added') {
     return (
       <div className='leading-5 break-words whitespace-pre-wrap'>
-        <span className='text-green-400'>+ </span>
+        <span className='text-ok'>+ </span>
         <code className='font-semibold'>{entry.path}</code>
         <span className='text-muted-foreground'>: </span>
         <span className='text-muted-foreground'>
@@ -78,7 +78,7 @@ const RunConfigurationDiffEntryRow = ({
   if (entry.status === 'removed') {
     return (
       <div className='leading-5 break-words whitespace-pre-wrap'>
-        <span className='text-red-400'>- </span>
+        <span className='text-err'>- </span>
         <code className='font-semibold'>{entry.path}</code>
         <span className='text-muted-foreground'>: </span>
         <span className='text-muted-foreground'>
@@ -91,17 +91,17 @@ const RunConfigurationDiffEntryRow = ({
   return (
     <div className='space-y-0 leading-5 break-words whitespace-pre-wrap'>
       <div>
-        <span className='text-yellow-400'>~ </span>
+        <span className='text-warn'>~ </span>
         <code className='font-semibold'>{entry.path}</code>
       </div>
       <div className='pl-5'>
-        <span className='text-red-400'>- </span>
+        <span className='text-err'>- </span>
         <span className='text-muted-foreground'>
           {formatRunConfigurationDiffValue(entry.oldValue)}
         </span>
       </div>
       <div className='pl-5'>
-        <span className='text-green-400'>+ </span>
+        <span className='text-ok'>+ </span>
         <span className='text-muted-foreground'>
           {formatRunConfigurationDiffValue(entry.newValue)}
         </span>
@@ -123,20 +123,20 @@ const RunConfigurationDiffSection = ({
     <section className='space-y-1'>
       <h3
         className={cn(
-          'text-sm font-semibold',
-          status === 'added' && 'text-green-400',
-          status === 'removed' && 'text-red-400',
-          status === 'modified' && 'text-yellow-400'
+          'text-[0.8125rem] font-semibold',
+          status === 'added' && 'text-ok',
+          status === 'removed' && 'text-err',
+          status === 'modified' && 'text-warn'
         )}
       >
         {title}
       </h3>
       <div
         className={cn(
-          'space-y-2 rounded-md border p-3 font-mono text-xs',
-          status === 'added' && 'border-green-700/70 bg-green-950/30',
-          status === 'removed' && 'border-red-700/70 bg-red-950/30',
-          status === 'modified' && 'border-yellow-700/70 bg-yellow-950/30'
+          'space-y-2 border p-3 font-mono text-xs',
+          status === 'added' && 'border-ok/25 bg-ok-soft',
+          status === 'removed' && 'border-err/25 bg-err-soft',
+          status === 'modified' && 'border-warn/25 bg-warn-soft'
         )}
       >
         {entries.map((entry) => (

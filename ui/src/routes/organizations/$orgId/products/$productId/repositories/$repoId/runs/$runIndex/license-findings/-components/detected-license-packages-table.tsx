@@ -101,7 +101,7 @@ const PackageIdCell = ({
       <Tooltip>
         <TooltipTrigger asChild>
           <Link
-            className='link text-left hover:underline'
+            className='link text-left font-mono text-xs'
             to='/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/packages'
             params={params}
             search={{ pkgId: id, pkgIdType: idType, marked: '0' }}
@@ -270,13 +270,13 @@ export const DetectedLicensePackagesTable = ({
       aria-label={`Packages for ${license}`}
       className='space-y-4 p-2'
     >
-      <div className='text-muted-foreground text-sm'>
+      <div className='text-muted-foreground text-[0.8125rem]'>
         Packages with this detected license ({row.original.packageCount} in
         total
         {filtersInUse && matching}).
       </div>
       {packageIdFilter && tableState.packageIdType !== packageIdType && (
-        <div className='text-muted-foreground text-sm'>
+        <div className='text-muted-foreground text-[0.8125rem]'>
           Filtering by{' '}
           {tableState.packageIdType === packageIdTypeSchema.enum.PURL
             ? 'PURL'

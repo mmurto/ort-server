@@ -247,7 +247,7 @@ describe('RepositoryRunsTable', () => {
     const { user } = renderTable();
 
     await user.click(await findToggle(2));
-    expect(await screen.findByText('ACTIVE')).toBeVisible();
+    expect(await screen.findByText('In flight')).toBeVisible();
 
     mocks.runs.mockResolvedValue(
       runs(
@@ -257,8 +257,8 @@ describe('RepositoryRunsTable', () => {
       )
     );
 
-    expect(await screen.findByText('FAILED')).toBeVisible();
-    expect(screen.queryByText('ACTIVE')).not.toBeInTheDocument();
+    expect(await screen.findByText('Failed')).toBeVisible();
+    expect(screen.queryByText('In flight')).not.toBeInTheDocument();
     expect(await findToggle(2)).toHaveAccessibleName(selectedLabel);
     expect(await findToggle(2)).toHaveAttribute('aria-pressed', 'true');
     expect(await findToggle(3)).toHaveAccessibleName(selectComparedLabel);

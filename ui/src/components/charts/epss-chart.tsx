@@ -19,13 +19,7 @@
 
 import { Bar, BarChart, XAxis, YAxis } from 'recharts';
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { ChartDetailsLink, ChartPanel } from '@/components/charts/chart-panel';
 import {
   ChartConfig,
   ChartContainer,
@@ -55,174 +49,160 @@ export const EpssChart = ({ epssData }: EpssChartProps) => {
   } satisfies ChartConfig;
 
   return (
-    <div className='flex h-full flex-col gap-2'>
-      <Card className='h-full'>
-        <CardHeader>
-          <CardTitle>
+    <div className='flex h-full flex-col gap-6'>
+      <ChartPanel
+        title={
+          <>
             EPSS Score (
-            <a
-              className='link font-normal hover:underline'
-              href='https://www.first.org/epss/articles/prob_percentile_bins'
-              target='_blank'
-            >
-              details
-            </a>
+            <ChartDetailsLink href='https://www.first.org/epss/articles/prob_percentile_bins' />
             )
-          </CardTitle>
-          <CardDescription>
-            Probability of observing exploitation activity in the wild in the
-            next 30 days.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ChartContainer
-            config={chartConfig}
-            className='mx-auto max-h-[50px] w-full'
+          </>
+        }
+        description='Probability of observing exploitation activity in the wild in the next 30 days.'
+      >
+        <ChartContainer
+          config={chartConfig}
+          className='mx-auto max-h-[50px] w-full'
+        >
+          <BarChart
+            accessibilityLayer
+            data={epssScoreData}
+            layout='vertical'
+            margin={{
+              left: 10,
+              right: 10,
+            }}
+            maxBarSize={100}
           >
-            <BarChart
-              accessibilityLayer
-              data={epssScoreData}
-              layout='vertical'
-              margin={{
-                left: 10,
-                right: 10,
-              }}
-              maxBarSize={100}
-            >
-              <XAxis
-                type='number'
-                dataKey='score'
-                domain={[0, 100]}
-                tickFormatter={(value) => `${value}%`}
-              />
-              <YAxis
-                dataKey='component'
-                type='category'
-                tickLine={false}
-                tickMargin={10}
-                axisLine={false}
-                hide
-              />
-              <ChartTooltip
-                cursor={false}
-                content={(props) => (
-                  <ChartTooltipContent
-                    {...props}
-                    hideLabel
-                    formatter={(value, name) => (
-                      <div className='flex w-full items-baseline justify-between gap-4'>
-                        <div className='flex items-baseline gap-2'>
-                          <div
-                            className='size-2.5 shrink-0 rounded-[2px]'
-                            style={{
-                              backgroundColor: `var(--color-${name})`,
-                            }}
-                          />
-                          <div className='text-muted-foreground'>
-                            {chartConfig[name as keyof typeof chartConfig]
-                              .label || name}
-                          </div>
-                        </div>
-                        <div className='flex items-baseline gap-0.5'>
-                          <div className='font-mono text-xs'>{value}</div>
-                          <span>%</span>
+            <XAxis
+              type='number'
+              dataKey='score'
+              domain={[0, 100]}
+              tickFormatter={(value) => `${value}%`}
+              tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
+              tickLine={{ stroke: 'var(--border)' }}
+              axisLine={{ stroke: 'var(--border)' }}
+            />
+            <YAxis
+              dataKey='component'
+              type='category'
+              tickLine={false}
+              tickMargin={10}
+              axisLine={false}
+              hide
+            />
+            <ChartTooltip
+              cursor={false}
+              content={(props) => (
+                <ChartTooltipContent
+                  {...props}
+                  hideLabel
+                  formatter={(value, name) => (
+                    <div className='flex w-full items-baseline justify-between gap-4'>
+                      <div className='flex items-baseline gap-2'>
+                        <div
+                          className='size-2.5 shrink-0 rounded-xs'
+                          style={{
+                            backgroundColor: `var(--color-${name})`,
+                          }}
+                        />
+                        <div className='text-muted-foreground'>
+                          {chartConfig[name as keyof typeof chartConfig]
+                            .label || name}
                         </div>
                       </div>
-                    )}
-                  />
-                )}
-              />
-              <Bar
-                dataKey='score'
-                minPointSize={5}
-                fill='var(--color-score)'
-                radius={5}
-              />
-            </BarChart>
-          </ChartContainer>
-        </CardContent>
-      </Card>
-      <Card className='h-full'>
-        <CardHeader>
-          <CardTitle>
+                      <div className='flex items-baseline gap-0.5'>
+                        <div className='font-mono text-xs'>{value}</div>
+                        <span>%</span>
+                      </div>
+                    </div>
+                  )}
+                />
+              )}
+            />
+            <Bar
+              dataKey='score'
+              minPointSize={5}
+              fill='var(--color-score)'
+              radius={1}
+            />
+          </BarChart>
+        </ChartContainer>
+      </ChartPanel>
+      <ChartPanel
+        title={
+          <>
             EPSS Percentile (
-            <a
-              className='link font-normal hover:underline'
-              href='https://www.first.org/epss/articles/prob_percentile_bins'
-              target='_blank'
-            >
-              details
-            </a>
+            <ChartDetailsLink href='https://www.first.org/epss/articles/prob_percentile_bins' />
             )
-          </CardTitle>
-          <CardDescription>
-            Relative ranking of exploit probability compared to all scored
-            vulnerabilities.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ChartContainer
-            config={chartConfig}
-            className='mx-auto max-h-[50px] w-full'
+          </>
+        }
+        description='Relative ranking of exploit probability compared to all scored vulnerabilities.'
+      >
+        <ChartContainer
+          config={chartConfig}
+          className='mx-auto max-h-[50px] w-full'
+        >
+          <BarChart
+            accessibilityLayer
+            data={epssPercentileData}
+            layout='vertical'
+            margin={{
+              left: 10,
+              right: 10,
+            }}
           >
-            <BarChart
-              accessibilityLayer
-              data={epssPercentileData}
-              layout='vertical'
-              margin={{
-                left: 10,
-                right: 10,
-              }}
-            >
-              <XAxis
-                type='number'
-                dataKey='percentile'
-                domain={[0, 100]}
-                tickFormatter={(value) => `${value}%`}
-              />
-              <YAxis
-                dataKey='component'
-                type='category'
-                tickLine={false}
-                tickMargin={10}
-                axisLine={false}
-                hide
-              />
-              <ChartTooltip
-                cursor={false}
-                content={(props) => (
-                  <ChartTooltipContent
-                    {...props}
-                    className='w-[170px]'
-                    hideLabel
-                    formatter={(value, name) => (
-                      <div className='flex w-full items-baseline justify-between gap-4'>
-                        <div className='flex items-baseline gap-2'>
-                          <div
-                            className='size-2.5 shrink-0 rounded-[2px]'
-                            style={{
-                              backgroundColor: `var(--color-${name})`,
-                            }}
-                          />
-                          <div className='text-muted-foreground'>
-                            {chartConfig[name as keyof typeof chartConfig]
-                              .label || name}
-                          </div>
-                        </div>
-                        <div className='flex items-baseline gap-0.5'>
-                          <div className='font-mono text-xs'>{value}</div>
-                          <span>%</span>
+            <XAxis
+              type='number'
+              dataKey='percentile'
+              domain={[0, 100]}
+              tickFormatter={(value) => `${value}%`}
+              tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
+              tickLine={{ stroke: 'var(--border)' }}
+              axisLine={{ stroke: 'var(--border)' }}
+            />
+            <YAxis
+              dataKey='component'
+              type='category'
+              tickLine={false}
+              tickMargin={10}
+              axisLine={false}
+              hide
+            />
+            <ChartTooltip
+              cursor={false}
+              content={(props) => (
+                <ChartTooltipContent
+                  {...props}
+                  className='w-[170px]'
+                  hideLabel
+                  formatter={(value, name) => (
+                    <div className='flex w-full items-baseline justify-between gap-4'>
+                      <div className='flex items-baseline gap-2'>
+                        <div
+                          className='size-2.5 shrink-0 rounded-xs'
+                          style={{
+                            backgroundColor: `var(--color-${name})`,
+                          }}
+                        />
+                        <div className='text-muted-foreground'>
+                          {chartConfig[name as keyof typeof chartConfig]
+                            .label || name}
                         </div>
                       </div>
-                    )}
-                  />
-                )}
-              />
-              <Bar dataKey='percentile' fill='var(--color-score)' radius={5} />
-            </BarChart>
-          </ChartContainer>
-        </CardContent>
-      </Card>
+                      <div className='flex items-baseline gap-0.5'>
+                        <div className='font-mono text-xs'>{value}</div>
+                        <span>%</span>
+                      </div>
+                    </div>
+                  )}
+                />
+              )}
+            />
+            <Bar dataKey='percentile' fill='var(--color-score)' radius={1} />
+          </BarChart>
+        </ChartContainer>
+      </ChartPanel>
     </div>
   );
 };

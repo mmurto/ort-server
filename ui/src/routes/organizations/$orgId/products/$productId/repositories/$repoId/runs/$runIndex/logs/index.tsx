@@ -24,14 +24,8 @@ import { useState } from 'react';
 
 import { getRepositoryRunOptions } from '@/api/@tanstack/react-query.gen';
 import { LoadingIndicator } from '@/components/loading-indicator';
+import { SheetSection } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -108,77 +102,72 @@ const ReportComponent = () => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Logs</CardTitle>
-        <CardDescription>
-          Click the button to download. You can select different log levels for
-          downloading from the dropdown. Note that the log levels are additive,
-          eg. DEBUG logs include all the log levels, while WARN logs include
-          only errors and warnings.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className='flex align-middle'>
-          <Button
-            disabled={isPending}
-            onClick={() => handleLevelChoice(level)}
-            variant='outline'
-            className={'link rounded-r-none'}
-          >
-            {isPending ? (
-              <>
-                <span>Downloading logs...</span>
-                <Loader2 size={16} className='mx-3 animate-spin' />
-              </>
-            ) : (
-              `Download ${level} level archive`
-            )}
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                disabled={isPending}
-                variant='outline'
-                className={'rounded-l-none border-l-0 px-2 pt-1'}
-              >
-                <ChevronDownIcon />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem
-                onClick={() => {
-                  setLevel('ERROR');
-                }}
-              >
-                Download ERROR level archive
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  setLevel('WARN');
-                }}
-              >
-                Download WARN level archive
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  setLevel('INFO');
-                }}
-              >
-                Download INFO level archive
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  setLevel('DEBUG');
-                }}
-              >
-                Download DEBUG level archive
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </CardContent>
-    </Card>
+    <SheetSection title='Logs'>
+      <p className='text-muted-foreground -mt-2 max-w-[75ch] text-[0.8125rem]'>
+        Click the button to download. You can select different log levels for
+        downloading from the dropdown. Note that the log levels are additive,
+        eg. DEBUG logs include all the log levels, while WARN logs include only
+        errors and warnings.
+      </p>
+      <div className='flex align-middle'>
+        <Button
+          disabled={isPending}
+          onClick={() => handleLevelChoice(level)}
+          variant='outline'
+          className='rounded-r-none'
+        >
+          {isPending ? (
+            <>
+              <span>Downloading logs...</span>
+              <Loader2 className='animate-spin' />
+            </>
+          ) : (
+            `Download ${level} level archive`
+          )}
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              disabled={isPending}
+              variant='outline'
+              className={'rounded-l-none border-l-0 px-2 pt-1'}
+            >
+              <ChevronDownIcon />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem
+              onClick={() => {
+                setLevel('ERROR');
+              }}
+            >
+              Download ERROR level archive
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setLevel('WARN');
+              }}
+            >
+              Download WARN level archive
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setLevel('INFO');
+              }}
+            >
+              Download INFO level archive
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setLevel('DEBUG');
+              }}
+            >
+              Download DEBUG level archive
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </SheetSection>
   );
 };
 

@@ -46,19 +46,19 @@ export function PluginAvailabilityToggle({
     >
       <ToggleGroupItem
         value='ENABLED'
-        className='rounded-r-none data-[state=on]:bg-green-500 data-[state=on]:text-white'
+        className='data-[state=on]:bg-ok-soft data-[state=on]:text-ok rounded-r-none'
       >
         Enabled
       </ToggleGroupItem>
       <ToggleGroupItem
         value='RESTRICTED'
-        className='-ml-px rounded-none data-[state=on]:bg-amber-500 data-[state=on]:text-white'
+        className='data-[state=on]:bg-warn-soft data-[state=on]:text-warn -ml-px rounded-none'
       >
         Restricted
       </ToggleGroupItem>
       <ToggleGroupItem
         value='DISABLED'
-        className='-ml-px rounded-l-none data-[state=on]:bg-red-500 data-[state=on]:text-white'
+        className='data-[state=on]:bg-err-soft data-[state=on]:text-err -ml-px rounded-l-none'
       >
         Disabled
       </ToggleGroupItem>

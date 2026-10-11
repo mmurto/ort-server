@@ -26,8 +26,7 @@ import {
   ScannerJob,
 } from '@/api';
 import { RunDuration } from '@/components/run-duration';
-import { Badge } from '@/components/ui/badge';
-import { getStatusBackgroundColor } from '@/helpers/get-status-class';
+import { StatusMark } from '@/components/status-mark';
 
 type JobTitleProps = {
   title: string;
@@ -45,11 +44,15 @@ type JobTitleProps = {
 export const JobTitle = ({ title, job }: JobTitleProps) => {
   return (
     <div className='grid grid-cols-[6rem_auto_1fr] items-center gap-2'>
-      <span>{title}</span>
-      <Badge className={`border ${getStatusBackgroundColor(job?.status)}`}>
-        {job?.status || 'NOT RUN'}
-      </Badge>
-      <span className='text-muted-foreground'>
+      <span className='font-semibold'>{title}</span>
+      {job?.status ? (
+        <StatusMark status={job.status} />
+      ) : (
+        <span className='bg-neutral-soft text-muted-foreground inline-flex h-5 items-center rounded-xs px-1.5 text-[0.6875rem] leading-4 font-semibold tracking-[0.06em] whitespace-nowrap uppercase'>
+          Not run
+        </span>
+      )}
+      <span className='text-muted-foreground text-[0.8125rem] font-normal'>
         {job?.startedAt &&
           (job.finishedAt ? (
             <span className='flex items-center gap-1'>

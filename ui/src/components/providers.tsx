@@ -58,12 +58,16 @@ export const Providers = ({ children }: { children: ReactNode }) => {
       </QueryClientProvider>
       <Toaster
         toastOptions={{
+          // Sonner injects its own unlayered styles, which win over utilities unless marked
+          // important.
           classNames: {
+            toast: 'rounded-xs! shadow-none! text-[0.8125rem]!',
             title: 'font-semibold',
-            error: 'bg-red-500 text-white',
-            success: 'text-green-400',
-            warning: 'text-yellow-400',
-            info: 'bg-white text-black',
+            description: 'text-muted-foreground!',
+            error: 'bg-err-soft! text-err!',
+            success: 'text-ok!',
+            warning: 'text-warn!',
+            info: 'text-foreground!',
           },
         }}
       />

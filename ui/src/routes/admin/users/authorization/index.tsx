@@ -19,27 +19,28 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageHeader, SheetSection } from '@/components/page-header';
 
 const Authorization = () => {
   return (
-    <Card>
-      <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-        <CardTitle className='text-sm'>Authorization</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div>
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title='Authorization'
+        description='How access to organizations, products and repositories is granted'
+      />
+      <SheetSection title='Roles'>
+        <div className='flex max-w-[75ch] flex-col gap-2 text-[0.8125rem]'>
           <p>
             Organizations, products, and repositories have reader, writer, and
             admin roles.
           </p>
-          <p className='mt-2'>
+          <p>
             To give a user access to an organization, product, or repository,
             browse to it and assign the appropriate role in its "Users" section.
           </p>
         </div>
-      </CardContent>
-    </Card>
+      </SheetSection>
+    </div>
   );
 };
 

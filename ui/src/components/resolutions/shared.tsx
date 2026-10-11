@@ -532,7 +532,7 @@ export function ResolutionCard({
             {pendingLabel && (
               <Tooltip>
                 <TooltipTrigger>
-                  <Badge variant='small' className='bg-yellow-200 text-black'>
+                  <Badge variant='small' className='bg-warn-soft text-warn'>
                     {pendingLabel}
                   </Badge>
                 </TooltipTrigger>

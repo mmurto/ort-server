@@ -208,8 +208,6 @@ describe('rule violations table', () => {
       severity: 'ERROR',
       rule: 'RuleA,RuleB',
     });
-    expect(container).toHaveTextContent(
-      'Rule Violations (5 in total, 1 matching filters)'
-    );
+    expect(container).toHaveTextContent('5 in total, 1 matching filters');
   });
 });

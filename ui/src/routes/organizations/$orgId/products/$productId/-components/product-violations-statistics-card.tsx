@@ -47,8 +47,8 @@ export const ProductViolationsStatisticsCard = ({
   return (
     <StatisticsCard
       title='Rule Violations'
-      icon={() => <Scale className='h-4 w-4 text-green-500' />}
-      value={unresolved || '-'}
+      icon={() => <Scale className='size-3.5' />}
+      value={unresolved ?? '-'}
       total={total || undefined}
       counts={
         counts

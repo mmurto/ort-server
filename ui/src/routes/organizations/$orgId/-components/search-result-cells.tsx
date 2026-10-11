@@ -68,7 +68,7 @@ export const SearchResultRepositoryCell = ({
   return (
     <div>
       <Link
-        className='link block hover:underline'
+        className='link block font-mono text-xs break-all hover:underline'
         to={
           '/organizations/$orgId/products/$productId/repositories/$repoId/runs'
         }

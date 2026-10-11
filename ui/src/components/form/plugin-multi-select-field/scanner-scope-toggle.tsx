@@ -51,19 +51,19 @@ export const ScannerScopeToggle = <TFieldValues extends FieldValues>({
           >
             <ToggleGroupItem
               value='both'
-              className='rounded-r-none text-xs data-[state=on]:bg-blue-500 data-[state=on]:text-white'
+              className='data-[state=on]:bg-primary data-[state=on]:text-primary-foreground rounded-r-none text-xs'
             >
               Both
             </ToggleGroupItem>
             <ToggleGroupItem
               value='packages'
-              className='-ml-px rounded-none text-xs data-[state=on]:bg-blue-500 data-[state=on]:text-white'
+              className='data-[state=on]:bg-primary data-[state=on]:text-primary-foreground -ml-px rounded-none text-xs'
             >
               Packages only
             </ToggleGroupItem>
             <ToggleGroupItem
               value='projects'
-              className='-ml-px rounded-l-none text-xs data-[state=on]:bg-blue-500 data-[state=on]:text-white'
+              className='data-[state=on]:bg-primary data-[state=on]:text-primary-foreground -ml-px rounded-l-none text-xs'
             >
               Projects only
             </ToggleGroupItem>

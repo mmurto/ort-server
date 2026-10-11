@@ -42,24 +42,17 @@ import { DeleteDialog } from '@/components/delete-dialog';
 import { DeleteIconButton } from '@/components/delete-icon-button';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { OrtRunJobStatus } from '@/components/ort-run-job-status';
+import { PageHeader, SheetSection } from '@/components/page-header';
 import { RunDuration } from '@/components/run-duration';
+import { StatusMark } from '@/components/status-mark';
 import { TimestampWithUTC } from '@/components/timestamp-with-utc';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { config } from '@/config';
-import { getStatusBackgroundColor } from '@/helpers/get-status-class';
 import {
   createAppColumnHelper,
   selectNoTableState,
@@ -112,7 +105,7 @@ const RunsComponent = () => {
         return (
           <div>
             <Link
-              className='link block font-semibold wrap-anywhere hover:underline'
+              className='link block wrap-anywhere'
               to={
                 '/organizations/$orgId/products/$productId/repositories/$repoId'
               }
@@ -124,10 +117,10 @@ const RunsComponent = () => {
             >
               {repo?.url}
             </Link>
-            <div className='text-xs wrap-anywhere text-slate-500 italic'>
+            <div className='text-muted-foreground text-[0.8125rem] wrap-anywhere'>
               in{' '}
               <Link
-                className='hover:underline'
+                className='hover:text-foreground hover:underline'
                 to={'/organizations/$orgId'}
                 params={{ orgId: row.original.organizationId.toString() }}
               >
@@ -135,7 +128,7 @@ const RunsComponent = () => {
               </Link>
               /
               <Link
-                className='hover:underline'
+                className='hover:text-foreground hover:underline'
                 to={'/organizations/$orgId/products/$productId'}
                 params={{
                   orgId: row.original.organizationId.toString(),
@@ -164,20 +157,14 @@ const RunsComponent = () => {
         row.original.finishedAt ? (
           <TimestampWithUTC timestamp={row.original.finishedAt} />
         ) : (
-          <span className='italic'>Not finished yet</span>
+          <span className='text-muted-foreground'>Not finished yet</span>
         ),
       size: 95,
       enableColumnFilter: false,
     }),
     columnHelper.accessor('status', {
       header: 'Status',
-      cell: ({ row }) => (
-        <Badge
-          className={`border ${getStatusBackgroundColor(row.original.status)}`}
-        >
-          {row.original.status}
-        </Badge>
-      ),
+      cell: ({ row }) => <StatusMark status={row.original.status} />,
       meta: {
         filter: {
           filterVariant: 'select',
@@ -226,7 +213,7 @@ const RunsComponent = () => {
     }),
     columnHelper.display({
       id: 'actions',
-      header: () => <div className='w-full text-center'>Actions</div>,
+      header: () => <div className='w-full text-right'>Actions</div>,
       cell: function ActionsCell({ row }) {
         const queryClient = useQueryClient();
 
@@ -263,10 +250,15 @@ const RunsComponent = () => {
         }
 
         return (
-          <div className='flex flex-col items-center gap-2'>
+          <div className='flex items-center justify-end gap-1'>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant='outline' asChild size='sm' className='w-10'>
+                <Button
+                  variant='outline'
+                  asChild
+                  size='sm'
+                  className='h-8 px-2'
+                >
                   <Link
                     to={
                       '/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex'
@@ -278,7 +270,7 @@ const RunsComponent = () => {
                       runIndex: row.original.index.toString(),
                     }}
                   >
-                    <View className='h-4 w-4' />
+                    <View />
                   </Link>
                 </Button>
               </TooltipTrigger>
@@ -286,7 +278,12 @@ const RunsComponent = () => {
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant='outline' asChild size='sm' className='w-10'>
+                <Button
+                  variant='outline'
+                  asChild
+                  size='sm'
+                  className='h-8 px-2'
+                >
                   <Link
                     to='/organizations/$orgId/products/$productId/repositories/$repoId/create-run'
                     params={{
@@ -298,7 +295,7 @@ const RunsComponent = () => {
                       rerunIndex: row.original.index,
                     }}
                   >
-                    <Repeat className='h-4 w-4' />
+                    <Repeat />
                   </Link>
                 </Button>
               </TooltipTrigger>
@@ -321,7 +318,7 @@ const RunsComponent = () => {
           </div>
         );
       },
-      size: 70,
+      size: 120,
       enableColumnFilter: false,
     }),
   ]);
@@ -372,16 +369,15 @@ const RunsComponent = () => {
   const matching = `, ${filteredRuns} matching filters`;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          Runs ({totalRuns} in total{filtersInUse && matching})
-        </CardTitle>
-        <CardDescription className='sr-only'>
-          A list of all runs.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title='Runs'
+        description='All ORT runs on this server, across organizations'
+      />
+      <SheetSection
+        title='All runs'
+        meta={`${totalRuns ?? 0} in total${filtersInUse ? matching : ''}`}
+      >
         <DataTable
           table={table}
           setCurrentPageOptions={(currentPage) => {
@@ -397,8 +393,8 @@ const RunsComponent = () => {
             };
           }}
         />
-      </CardContent>
-    </Card>
+      </SheetSection>
+    </div>
   );
 };
 

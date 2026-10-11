@@ -19,7 +19,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { PlusIcon } from 'lucide-react';
+import { ExternalLink, PlusIcon, Settings } from 'lucide-react';
 
 import {
   getRepositoryOptions,
@@ -28,14 +28,8 @@ import {
 import { JobDurations } from '@/components/charts/job-durations';
 import { RepositoryFavoriteButton } from '@/components/favorite-button';
 import { LoadingIndicator } from '@/components/loading-indicator';
+import { PageHeader, SheetSection } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   Tooltip,
   TooltipContent,
@@ -57,6 +51,10 @@ const RepositoryRunsComponent = () => {
   const { isAllowed: canTriggerRun } = useRepositoryPermission(
     Number.parseInt(params.repoId),
     'TRIGGER_ORT_RUN'
+  );
+  const { isAllowed: canWrite } = useRepositoryPermission(
+    Number.parseInt(params.repoId),
+    'WRITE'
   );
   const pageIndex = search.page ? search.page - 1 : 0;
   const pageSize = search.pageSize ? search.pageSize : runPageSize;
@@ -82,63 +80,64 @@ const RepositoryRunsComponent = () => {
   }
 
   return (
-    <div className='flex flex-col gap-4'>
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            <div className='flex justify-between gap-2'>
-              <div className='flex items-center gap-2'>
-                <span>{repo.name}</span>
-                <RepositoryFavoriteButton
-                  organizationId={params.orgId}
-                  productId={params.productId}
-                  repository={repo}
-                  size='xs'
-                  variant='ghost'
-                  className='size-6 p-0'
-                />
-              </div>
-              <div>
-                <span className='text-sm font-normal'>
-                  {getRepositoryTypeLabel(repo.type)} repository
-                </span>{' '}
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title={
+          <Link
+            className='link inline-flex max-w-full min-w-0 items-center gap-2 font-semibold'
+            to={repo.url}
+            target='_blank'
+            title={repo.url}
+          >
+            <span className='truncate'>{repo.url}</span>
+            <ExternalLink className='text-muted-foreground size-4 shrink-0' />
+          </Link>
+        }
+        adornment={
+          <RepositoryFavoriteButton
+            organizationId={params.orgId}
+            productId={params.productId}
+            repository={repo}
+            size='xs'
+            variant='ghost'
+            className='size-6 p-0'
+          />
+        }
+        description={
+          <span className='flex flex-col gap-1'>
+            <span className='flex flex-wrap items-baseline gap-x-3 gap-y-1'>
+              <span className='text-foreground font-medium'>
+                {getRepositoryTypeLabel(repo.type)} repository
+              </span>
+              {repo.name && <span>{repo.name}</span>}
+              <span className='tabular-nums'>
+                Repository ID{' '}
+                <span className='text-foreground font-medium'>{repo.id}</span>
+              </span>
+            </span>
+            {repo.description && <span>{repo.description}</span>}
+          </span>
+        }
+        actions={
+          <>
+            {canWrite && (
+              <Button asChild variant='outline'>
                 <Link
-                  className='hover:link text-sm font-semibold break-all hover:underline'
-                  to={repo.url}
-                  target='_blank'
+                  to='/organizations/$orgId/products/$productId/repositories/$repoId/settings'
+                  params={{
+                    orgId: params.orgId,
+                    productId: params.productId,
+                    repoId: params.repoId,
+                  }}
                 >
-                  {repo.url}
+                  <Settings />
+                  Settings
                 </Link>
-              </div>
-            </div>
-          </CardTitle>
-          <CardDescription>
-            <div className='flex justify-between'>
-              {repo.description}
-              <div>
-                Repository ID: <span className='font-bold'>{repo.id}</span>
-              </div>
-            </div>
-          </CardDescription>
-        </CardHeader>
-      </Card>
-      <JobDurations
-        repoId={params.repoId}
-        pageIndex={pageIndex}
-        pageSize={pageSize}
-      />
-      <Card>
-        <CardHeader>
-          <CardTitle>Runs</CardTitle>
-          <div className='py-2'>
+              </Button>
+            )}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  asChild
-                  size='sm'
-                  className='ml-auto gap-1'
-                  disabled={canTriggerRun === false}
-                >
+                <Button asChild disabled={canTriggerRun === false}>
                   <Link
                     to='/organizations/$orgId/products/$productId/repositories/$repoId/create-run'
                     params={{
@@ -147,8 +146,8 @@ const RepositoryRunsComponent = () => {
                       repoId: params.repoId,
                     }}
                   >
+                    <PlusIcon />
                     New run
-                    <PlusIcon className='h-4 w-4' />
                   </Link>
                 </Button>
               </TooltipTrigger>
@@ -156,19 +155,24 @@ const RepositoryRunsComponent = () => {
                 <TooltipContent>Insufficient permissions.</TooltipContent>
               )}
             </Tooltip>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <RepositoryRunsTable
-            orgId={params.orgId}
-            productId={params.productId}
-            repoId={params.repoId}
-            pageIndex={pageIndex}
-            pageSize={pageSize}
-            search={search}
-          />
-        </CardContent>
-      </Card>
+          </>
+        }
+      />
+      <JobDurations
+        repoId={params.repoId}
+        pageIndex={pageIndex}
+        pageSize={pageSize}
+      />
+      <SheetSection title='Runs'>
+        <RepositoryRunsTable
+          orgId={params.orgId}
+          productId={params.productId}
+          repoId={params.repoId}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          search={search}
+        />
+      </SheetSection>
     </div>
   );
 };

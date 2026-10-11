@@ -33,15 +33,10 @@ import {
   getRepositoryUsersQueryKey,
   putRepositoryRoleToUserMutation,
 } from '@/api/@tanstack/react-query.gen';
+import { PageHeader, SheetSection } from '@/components/page-header';
 import { RoleSelect } from '@/components/role-select';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -117,74 +112,82 @@ const ManageUsers = () => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Manage Users</CardTitle>
-        <CardDescription>
-          Assign or remove roles to users in the{' '}
-          <span className='font-semibold'>
-            {repository.name ?? repository.url}
-          </span>{' '}
-          repository.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className='space-y-4'>
-        <Form {...form}>
-          <form className='space-y-8'>
-            <div className='grid items-start gap-4 md:grid-cols-[minmax(0,1fr)_auto]'>
-              <FormField
-                control={form.control}
-                name='username'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Username</FormLabel>
-                    <FormControl autoFocus>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Enter the exact username of an existing user account.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name='role'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Role</FormLabel>
-                    <RoleSelect
-                      value={field.value}
-                      onChange={field.onChange}
-                      level='repository'
-                    />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <Button
-              size='sm'
-              className='ml-auto gap-1'
-              type='submit'
-              disabled={isAddUserPending}
-              onClick={form.handleSubmit(onAddUser)}
-            >
-              {isAddUserPending ? (
-                <>
-                  <span className='sr-only'>Adding user...</span>
-                  <Loader2 size={16} className='mx-3 animate-spin' />
-                </>
-              ) : (
-                'Assign role'
-              )}
-            </Button>
-          </form>
-        </Form>
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title='Manage Users'
+        description={
+          <>
+            Assign or remove roles to users in the{' '}
+            <span className='text-foreground font-medium'>
+              {repository.name ?? repository.url}
+            </span>{' '}
+            repository.
+          </>
+        }
+      />
+      <SheetSection title='Assign a role'>
+        <Card className='max-w-2xl'>
+          <CardContent>
+            <Form {...form}>
+              <form className='flex flex-col gap-5'>
+                <div className='grid items-start gap-5 sm:grid-cols-[minmax(0,1fr)_12rem]'>
+                  <FormField
+                    control={form.control}
+                    name='username'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Username</FormLabel>
+                        <FormControl autoFocus>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          Enter the exact username of an existing user account.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name='role'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Role</FormLabel>
+                        <RoleSelect
+                          value={field.value}
+                          onChange={field.onChange}
+                          level='repository'
+                        />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div>
+                  <Button
+                    type='submit'
+                    disabled={isAddUserPending}
+                    onClick={form.handleSubmit(onAddUser)}
+                  >
+                    {isAddUserPending ? (
+                      <>
+                        <span className='sr-only'>Adding user...</span>
+                        <Loader2 size={16} className='mx-3 animate-spin' />
+                      </>
+                    ) : (
+                      'Assign role'
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </SheetSection>
+      <SheetSection title='Users'>
         <RepositoryUsersTable />
-      </CardContent>
-    </Card>
+      </SheetSection>
+    </div>
   );
 };
 

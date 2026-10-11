@@ -69,7 +69,7 @@ export const MultiSelectField = <
       render={({ field }) => (
         <FormItem
           className={cn(
-            'mb-4 flex flex-col justify-between rounded-lg border p-4',
+            'mb-4 flex flex-col justify-between rounded-xs border p-4',
             className
           )}
         >

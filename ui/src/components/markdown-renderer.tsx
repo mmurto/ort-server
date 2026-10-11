@@ -78,7 +78,7 @@ export const MarkdownRenderer = ({
           ),
           pre: ({ children }) => {
             return (
-              <pre className='dark:bg-muted/100 rounded bg-gray-800 p-1'>
+              <pre className='not-prose bg-muted text-foreground my-3 overflow-x-auto rounded-xs border p-2 font-mono text-xs'>
                 {children}
               </pre>
             );

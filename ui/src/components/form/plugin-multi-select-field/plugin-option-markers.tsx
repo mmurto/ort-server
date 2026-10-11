@@ -85,7 +85,7 @@ export const PluginOptionMarkers = <TFieldValues extends FieldValues>({
       )}
       {modifiedOptionCount > 0 && (
         <Badge
-          className='bg-amber-200 text-black'
+          className='bg-warn-soft text-warn'
           title='Options whose values differ from their defaults.'
         >
           {modifiedOptionCount} modified

@@ -54,7 +54,7 @@ export const ScannerFields = ({
   isSuperuser,
 }: ScannerFieldsProps) => {
   return (
-    <div className='flex flex-row align-middle'>
+    <div className='flex flex-row items-start gap-4 border-t'>
       <FormField
         control={form.control}
         name='jobConfigs.scanner.enabled'
@@ -62,7 +62,7 @@ export const ScannerFields = ({
           <FormItem>
             <FormControl>
               <Switch
-                className='my-4 mr-4 data-[state=checked]:bg-green-500'
+                className='mt-3.5'
                 checked={field.value}
                 onCheckedChange={field.onChange}
               />
@@ -70,8 +70,16 @@ export const ScannerFields = ({
           </FormItem>
         )}
       />
-      <AccordionItem value={value} className='flex-1'>
-        <AccordionTrigger onClick={onToggle}>Scanner</AccordionTrigger>
+      <AccordionItem value={value} className='min-w-0 flex-1 border-b-0'>
+        <AccordionTrigger
+          onClick={onToggle}
+          className='items-center py-3 text-[0.9375rem] font-semibold hover:no-underline'
+        >
+          <span className='flex items-center gap-2'>
+            <span aria-hidden className='bg-scanner size-2 shrink-0' />
+            Scanner
+          </span>
+        </AccordionTrigger>
         <AccordionContent className='flex flex-col gap-6'>
           <FormField
             control={form.control}

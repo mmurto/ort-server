@@ -23,8 +23,7 @@ import { ExternalLink } from 'lucide-react';
 import { Fragment } from 'react';
 
 import { getVersionsOptions } from '@/api/@tanstack/react-query.gen';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
+import { PageHeader, SheetSection } from '@/components/page-header';
 import { ORT_SERVER_GITHUB_RELEASES_BASE_URL } from '@/lib/constants';
 
 export const About = () => {
@@ -57,90 +56,84 @@ export const About = () => {
     homepageUrl: 'https://oss-review-toolkit.org/',
   };
 
+  const downloads = [
+    {
+      label: 'Linux',
+      file: 'osc-cli-linux-x64.tar.gz',
+      name: 'osc-cli-linux-x64',
+    },
+    {
+      label: 'macOS (ARM64)',
+      file: 'osc-cli-macos-arm64.tar.gz',
+      name: 'osc-cli-macos-arm64',
+    },
+    {
+      label: 'macOS (x64)',
+      file: 'osc-cli-macos-x64.tar.gz',
+      name: 'osc-cli-macos-x64',
+    },
+    {
+      label: 'Windows',
+      file: 'osc-cli-windows-x64.zip',
+      name: 'osc-cli-windows-x64',
+    },
+  ];
+
   return (
-    <Card className='mx-auto w-full max-w-4xl'>
-      <CardHeader>
-        <h2 className='text-3xl font-bold tracking-tight'>About</h2>
-      </CardHeader>
-      <Separator />
-      <CardContent className='pt-6'>
-        <div>
-          <h3 className='mb-4 font-semibold'>Version Information</h3>
-          <div className='grid grid-cols-[7.5rem_1fr] gap-x-8 gap-y-1'>
-            {[ortServerVersionInfo, ortCoreVersionInfo].map((info) => (
-              <Fragment key={info.label}>
-                <div className='text-muted-foreground font-semibold'>
-                  <div className='flex items-center'>
-                    {info.label}
-                    <Link
-                      to={info.homepageUrl}
-                      target='_blank'
-                      rel='noopener noreferrer'
-                      className='ml-1 inline-block'
-                    >
-                      <ExternalLink className='link h-4 w-4' />
-                    </Link>
-                  </div>
-                </div>
+    <div className='flex flex-col gap-8'>
+      <PageHeader title='About' />
+      <SheetSection title='Version Information'>
+        <dl className='grid max-w-2xl grid-cols-[10rem_1fr] border-t text-[0.8125rem]'>
+          {[ortServerVersionInfo, ortCoreVersionInfo].map((info) => (
+            <Fragment key={info.label}>
+              <dt className='text-muted-foreground flex items-center gap-1 border-b py-2.5'>
+                {info.label}
+                <Link
+                  to={info.homepageUrl}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='hover:text-foreground inline-block'
+                >
+                  <ExternalLink className='size-3.5' />
+                  <span className='sr-only'>{info.label} homepage</span>
+                </Link>
+              </dt>
+              <dd className='border-b py-2.5'>
                 <Link
                   to={info.releaseUrl}
-                  className='link hover:underline'
+                  className='link font-mono text-xs'
                   target='_blank'
                   rel='noopener noreferrer'
                 >
                   {info.version}
                 </Link>
-              </Fragment>
-            ))}
-          </div>
-          <h3 className='mt-8 mb-4 font-semibold'>
-            ORT Server Client (osc) Download
-          </h3>
-          <div className='grid grid-cols-[7.5rem_1fr] gap-x-8 gap-y-1'>
-            <div className='text-muted-foreground font-semibold'>Linux</div>
-            <a
-              href={`${baseUrl}/osc-cli-linux-x64.tar.gz`}
-              className='link hover:underline'
-              target='_blank'
-              rel='noopener noreferrer'
-            >
-              osc-cli-linux-x64
-            </a>
-            <div className='text-muted-foreground font-semibold'>
-              macOS (ARM64)
-            </div>
-            <a
-              href={`${baseUrl}/osc-cli-macos-arm64.tar.gz`}
-              className='link hover:underline'
-              target='_blank'
-              rel='noopener noreferrer'
-            >
-              osc-cli-macos-arm64
-            </a>
-            <div className='text-muted-foreground font-semibold'>
-              macOS (x64)
-            </div>
-            <a
-              href={`${baseUrl}/osc-cli-macos-x64.tar.gz`}
-              className='link hover:underline'
-              target='_blank'
-              rel='noopener noreferrer'
-            >
-              osc-cli-macos-x64
-            </a>
-            <div className='text-muted-foreground font-semibold'>Windows</div>
-            <a
-              href={`${baseUrl}/osc-cli-windows-x64.zip`}
-              className='link hover:underline'
-              target='_blank'
-              rel='noopener noreferrer'
-            >
-              osc-cli-windows-x64
-            </a>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+              </dd>
+            </Fragment>
+          ))}
+        </dl>
+      </SheetSection>
+      <SheetSection title='ORT Server Client (osc) Download'>
+        <dl className='grid max-w-2xl grid-cols-[10rem_1fr] border-t text-[0.8125rem]'>
+          {downloads.map((download) => (
+            <Fragment key={download.file}>
+              <dt className='text-muted-foreground border-b py-2.5'>
+                {download.label}
+              </dt>
+              <dd className='border-b py-2.5'>
+                <a
+                  href={`${baseUrl}/${download.file}`}
+                  className='link font-mono text-xs'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                >
+                  {download.name}
+                </a>
+              </dd>
+            </Fragment>
+          ))}
+        </dl>
+      </SheetSection>
+    </div>
   );
 };
 

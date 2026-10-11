@@ -20,12 +20,6 @@
 import { ErrorComponentProps } from '@tanstack/react-router';
 import { TriangleAlert } from 'lucide-react';
 
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 type Props = ErrorComponentProps & {
@@ -44,21 +38,24 @@ export const ErrorComponent = ({
   const stack = error instanceof Error ? error.stack : undefined;
 
   return (
-    <Card className={cn('flex h-full', className)}>
-      <CardHeader>
-        <CardTitle className='flex gap-2 align-baseline'>
-          <TriangleAlert className='text-traffic-light-red size-5' />
-          <div>{title}</div>
-        </CardTitle>
-        <CardDescription>{`Error: ${message}`}</CardDescription>
-        {showStackTrace && (
-          <CardDescription className='text-xs'>
-            {stack?.split('\n').map((line, index) => (
-              <div key={index}>{line}</div>
-            ))}
-          </CardDescription>
-        )}
-      </CardHeader>
-    </Card>
+    <div
+      className={cn(
+        'border-err/40 flex h-full flex-col gap-1.5 rounded-xs border p-5',
+        className
+      )}
+    >
+      <div className='flex items-center gap-2 text-[0.9375rem] font-semibold'>
+        <TriangleAlert className='text-err size-4 shrink-0' />
+        <div>{title}</div>
+      </div>
+      <p className='text-muted-foreground text-[0.8125rem] break-words'>{`Error: ${message}`}</p>
+      {showStackTrace && (
+        <div className='text-muted-foreground font-mono text-xs break-words'>
+          {stack?.split('\n').map((line, index) => (
+            <div key={index}>{line}</div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 };

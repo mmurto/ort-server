@@ -21,16 +21,8 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { ExternalLink } from 'lucide-react';
 import { Fragment } from 'react';
 
+import { PageHeader, SheetSection } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { config } from '@/config';
 import { useUser } from '@/hooks/use-user';
 
@@ -58,64 +50,60 @@ const ProfilePage = () => {
   const profile = user.user?.profile;
 
   return (
-    <div className='mx-auto flex w-full max-w-4xl flex-col gap-6'>
-      <Card>
-        <CardHeader>
-          <CardTitle className='text-3xl font-bold tracking-tight'>
-            Profile
-          </CardTitle>
-          <CardDescription>Your account details.</CardDescription>
-        </CardHeader>
-        <Separator />
-        <CardContent className='pt-6'>
-          <div className='grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-[auto_1fr]'>
-            {profileFields.map(({ label, key }) => {
-              const value = profile?.[key];
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title='Profile'
+        description='Your account details.'
+        actions={
+          <>
+            <Button asChild variant='outline'>
+              <Link to='/profile/token'>Generate token</Link>
+            </Button>
+            <Button asChild variant='outline'>
+              <a
+                href={config.accountProfileUrl}
+                target='_blank'
+                rel='noopener noreferrer'
+              >
+                Edit profile
+                <ExternalLink aria-hidden='true' />
+                <span className='sr-only'>(opens in a new tab)</span>
+              </a>
+            </Button>
+            <Button asChild variant='outline'>
+              <a
+                href={config.accountPasswordUrl}
+                target='_blank'
+                rel='noopener noreferrer'
+              >
+                Manage password
+                <ExternalLink aria-hidden='true' />
+                <span className='sr-only'>(opens in a new tab)</span>
+              </a>
+            </Button>
+          </>
+        }
+      />
+      <SheetSection title='Account'>
+        <dl className='grid max-w-2xl grid-cols-1 border-t text-[0.8125rem] sm:grid-cols-[12rem_1fr]'>
+          {profileFields.map(({ label, key }) => {
+            const value = profile?.[key];
 
-              return (
-                <Fragment key={key}>
-                  <div className='text-muted-foreground font-semibold'>
-                    {label}
-                  </div>
-                  <div>
-                    {value === null || value === undefined || value === ''
-                      ? '-'
-                      : String(value)}
-                  </div>
-                </Fragment>
-              );
-            })}
-          </div>
-        </CardContent>
-        <Separator />
-        <CardFooter className='flex flex-col items-stretch gap-3 sm:flex-row sm:justify-end'>
-          <Button asChild variant='outline'>
-            <Link to='/profile/token'>Generate token</Link>
-          </Button>
-          <Button asChild variant='outline'>
-            <a
-              href={config.accountProfileUrl}
-              target='_blank'
-              rel='noopener noreferrer'
-            >
-              Edit profile
-              <ExternalLink aria-hidden='true' />
-              <span className='sr-only'>(opens in a new tab)</span>
-            </a>
-          </Button>
-          <Button asChild variant='outline'>
-            <a
-              href={config.accountPasswordUrl}
-              target='_blank'
-              rel='noopener noreferrer'
-            >
-              Manage password
-              <ExternalLink aria-hidden='true' />
-              <span className='sr-only'>(opens in a new tab)</span>
-            </a>
-          </Button>
-        </CardFooter>
-      </Card>
+            return (
+              <Fragment key={key}>
+                <dt className='label-caps pt-2.5 sm:border-b sm:py-2.5'>
+                  {label}
+                </dt>
+                <dd className='border-b pb-2.5 sm:py-2.5'>
+                  {value === null || value === undefined || value === ''
+                    ? '-'
+                    : String(value)}
+                </dd>
+              </Fragment>
+            );
+          })}
+        </dl>
+      </SheetSection>
     </div>
   );
 };

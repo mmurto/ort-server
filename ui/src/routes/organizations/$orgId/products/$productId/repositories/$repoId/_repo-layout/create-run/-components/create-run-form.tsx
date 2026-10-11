@@ -30,16 +30,10 @@ import type {
   Secret,
 } from '@/api';
 import { CopyToClipboard } from '@/components/copy-to-clipboard';
+import { PageHeader } from '@/components/page-header';
 import { InlineCode } from '@/components/typography.tsx';
 import { Accordion } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -59,6 +53,7 @@ import type {
   ProductPermissions,
   RepositoryPermissions,
 } from '@/lib/permissions';
+import { cn } from '@/lib/utils';
 import {
   AdvisorFields,
   AnalyzerFields,
@@ -75,6 +70,9 @@ import {
   flattenErrors,
   type CreateRunFormValues,
 } from './run-schema';
+
+const sectionHeadingClass = 'text-[0.9375rem] font-semibold';
+const sectionDescriptionClass = 'text-muted-foreground text-[0.8125rem]';
 
 type AccordionSection =
   'analyzer' | 'advisor' | 'scanner' | 'evaluator' | 'reporter' | 'notifier';
@@ -365,16 +363,22 @@ export const CreateRunForm = ({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Create a Run</CardTitle>
-      </CardHeader>
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title='Create a Run'
+        description={
+          rerun
+            ? `The form is prefilled with the configuration of run ${rerun.index}.`
+            : 'Choose the revision to analyze and configure the jobs of the run.'
+        }
+      />
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(submitForm, onValidationFailed)}
-          className='space-y-8'
+          className='flex max-w-3xl flex-col gap-10'
         >
-          <CardContent>
+          <section className='flex flex-col gap-5'>
+            <h2 className={sectionHeadingClass}>Source and configuration</h2>
             <FormField
               control={form.control}
               name='revision'
@@ -396,7 +400,7 @@ export const CreateRunForm = ({
               control={form.control}
               name='path'
               render={({ field }) => (
-                <FormItem className='pt-4'>
+                <FormItem>
                   <FormLabel>Path</FormLabel>
                   <FormControl>
                     <Input {...field} placeholder='(optional)' />
@@ -414,7 +418,7 @@ export const CreateRunForm = ({
               control={form.control}
               name='jobConfigContext'
               render={({ field }) => (
-                <FormItem className='pt-4'>
+                <FormItem>
                   <FormLabel>Configuration context</FormLabel>
                   <FormControl>
                     <Input {...field} placeholder='(optional)' />
@@ -436,7 +440,7 @@ export const CreateRunForm = ({
               control={form.control}
               name='environmentConfigPath'
               render={({ field }) => (
-                <FormItem className='pt-4'>
+                <FormItem>
                   <FormLabel>Environment configuration path</FormLabel>
                   <FormControl>
                     <Input {...field} placeholder='(optional)' />
@@ -455,7 +459,7 @@ export const CreateRunForm = ({
               control={form.control}
               name='jobConfigs.ruleSet'
               render={({ field }) => (
-                <FormItem className='pt-4'>
+                <FormItem>
                   <FormLabel>Rule set</FormLabel>
                   <FormControl>
                     <Input {...field} placeholder='(optional)' />
@@ -470,27 +474,26 @@ export const CreateRunForm = ({
                 </FormItem>
               )}
             />
+          </section>
 
-            <h3 className='mt-4'>Configuration parameters</h3>
-            <div className='text-sm text-gray-500'>
-              A map of key-value pairs that serve as input parameters for the
-              configuration's validation script. The script can use these
-              parameters to alter specific job configurations.
+          <section className='flex flex-col gap-3 border-t pt-6'>
+            <div className='flex flex-col gap-1'>
+              <h2 className={sectionHeadingClass}>Configuration parameters</h2>
+              <p className={sectionDescriptionClass}>
+                A map of key-value pairs that serve as input parameters for the
+                configuration's validation script. The script can use these
+                parameters to alter specific job configurations.
+              </p>
             </div>
             {parametersFields.map((field, index) => (
-              <div
-                key={field.id}
-                className='my-2 flex flex-row items-end space-x-2'
-              >
+              <div key={field.id} className='flex flex-row items-end gap-2'>
                 <div className='flex-auto'>
                   <FormField
                     control={form.control}
                     name={`jobConfigs.parameters.${index}.key`}
                     render={({ field }) => (
                       <FormItem>
-                        {index === 0 && (
-                          <FormLabel className='mb-2'>Key</FormLabel>
-                        )}
+                        {index === 0 && <FormLabel>Key</FormLabel>}
                         <FormControl>
                           <Input {...field} />
                         </FormControl>
@@ -505,9 +508,7 @@ export const CreateRunForm = ({
                     name={`jobConfigs.parameters.${index}.value`}
                     render={({ field }) => (
                       <FormItem>
-                        {index === 0 && (
-                          <FormLabel className='mb-2'>Value</FormLabel>
-                        )}
+                        {index === 0 && <FormLabel>Value</FormLabel>}
                         <FormControl>
                           <Input {...field} />
                         </FormControl>
@@ -519,48 +520,46 @@ export const CreateRunForm = ({
                 <Button
                   type='button'
                   variant='outline'
-                  size='sm'
+                  size='icon'
                   onClick={() => {
                     parametersRemove(index);
                   }}
                 >
-                  <TrashIcon className='h-4 w-4' />
+                  <TrashIcon />
                 </Button>
               </div>
             ))}
             <Button
-              size='sm'
-              className='mt-2'
+              className='w-fit'
               variant='outline'
               type='button'
               onClick={() => {
                 parametersAppend({ key: '', value: '' });
               }}
             >
+              <PlusIcon />
               Add parameter
-              <PlusIcon className='ml-1 h-4 w-4' />
             </Button>
+          </section>
 
-            <h3 className='mt-4'>ORT labels</h3>
-            <div className='text-sm text-gray-500'>
-              A map of key-value pairs to store as labels in ORT results. ORT
-              does not interpret labels by itself, but leaves interpretation to
-              custom configuration, like evaluator rules.
+          <section className='flex flex-col gap-3 border-t pt-6'>
+            <div className='flex flex-col gap-1'>
+              <h2 className={sectionHeadingClass}>ORT labels</h2>
+              <p className={sectionDescriptionClass}>
+                A map of key-value pairs to store as labels in ORT results. ORT
+                does not interpret labels by itself, but leaves interpretation
+                to custom configuration, like evaluator rules.
+              </p>
             </div>
             {labelsFields.map((field, index) => (
-              <div
-                key={field.id}
-                className='my-2 flex flex-row items-end space-x-2'
-              >
+              <div key={field.id} className='flex flex-row items-end gap-2'>
                 <div className='flex-auto'>
                   <FormField
                     control={form.control}
                     name={`labels.${index}.key`}
                     render={({ field }) => (
                       <FormItem>
-                        {index === 0 && (
-                          <FormLabel className='mb-2'>Key</FormLabel>
-                        )}
+                        {index === 0 && <FormLabel>Key</FormLabel>}
                         <FormControl>
                           <Input {...field} />
                         </FormControl>
@@ -575,9 +574,7 @@ export const CreateRunForm = ({
                     name={`labels.${index}.value`}
                     render={({ field }) => (
                       <FormItem>
-                        {index === 0 && (
-                          <FormLabel className='mb-2'>Value</FormLabel>
-                        )}
+                        {index === 0 && <FormLabel>Value</FormLabel>}
                         <FormControl>
                           <Input {...field} />
                         </FormControl>
@@ -589,31 +586,34 @@ export const CreateRunForm = ({
                 <Button
                   type='button'
                   variant='outline'
-                  size='sm'
+                  size='icon'
                   onClick={() => {
                     labelsRemove(index);
                   }}
                 >
-                  <TrashIcon className='h-4 w-4' />
+                  <TrashIcon />
                 </Button>
               </div>
             ))}
             <Button
-              size='sm'
-              className='mt-2'
+              className='w-fit'
               variant='outline'
               type='button'
               onClick={() => {
                 labelsAppend({ key: '', value: '' });
               }}
             >
+              <PlusIcon />
               Add label
-              <PlusIcon className='ml-1 h-4 w-4' />
             </Button>
+          </section>
 
-            <h3 className='mt-4'>Enable and configure jobs</h3>
-            <div className='text-sm text-gray-500'>
-              Configure the jobs to be included in the run.
+          <section className='flex flex-col gap-3 border-t pt-6'>
+            <div className='flex flex-col gap-1'>
+              <h2 className={sectionHeadingClass}>Enable and configure jobs</h2>
+              <p className={sectionDescriptionClass}>
+                Configure the jobs to be included in the run.
+              </p>
             </div>
             {pluginsLoading ? (
               <div className='text-muted-foreground flex items-center gap-2 text-sm'>
@@ -627,6 +627,7 @@ export const CreateRunForm = ({
             ) : (
               <Accordion
                 type='multiple'
+                className='border-b'
                 value={openAccordions}
                 onValueChange={(value) =>
                   setOpenAccordions(value as AccordionSection[])
@@ -692,10 +693,11 @@ export const CreateRunForm = ({
                 />
               </Accordion>
             )}
-          </CardContent>
-          <CardFooter className='flex flex-col items-start gap-4'>
+          </section>
+
+          <div className='flex flex-col items-start gap-4'>
             {Object.keys(form.formState.errors).length > 0 && (
-              <div className='text-destructive text-[0.8rem] font-medium'>
+              <div className='text-destructive text-[0.8125rem] font-medium'>
                 {flattenErrors(form.formState.errors).map(
                   ({ path, message }) => (
                     <div key={path}>
@@ -721,7 +723,7 @@ export const CreateRunForm = ({
                   'Create'
                 )}
               </Button>
-              <div className='flex items-center space-x-2'>
+              <div className='flex items-center gap-2'>
                 <Switch
                   id='test-form'
                   checked={isTest}
@@ -735,7 +737,9 @@ export const CreateRunForm = ({
             </div>
             {isTest && !pluginsUnavailable && (
               <>
-                <h3 className='mt-4'>Form payload</h3>
+                <h2 className={cn(sectionHeadingClass, 'mt-4')}>
+                  Form payload
+                </h2>
                 <Label htmlFor='payload' className='text-muted-foreground'>
                   You can copy this payload to use it when triggering runs via
                   the API or CLI.
@@ -743,7 +747,7 @@ export const CreateRunForm = ({
                 <div className='relative w-full'>
                   <Textarea
                     id='payload'
-                    className='h-96 pr-12 font-mono'
+                    className='h-96 pr-12 font-mono text-xs'
                     readOnly
                     value={JSON.stringify(
                       formValuesToPayload(watchedValues, plugins),
@@ -763,9 +767,9 @@ export const CreateRunForm = ({
                 </div>
               </>
             )}
-          </CardFooter>
+          </div>
         </form>
       </Form>
-    </Card>
+    </div>
   );
 };

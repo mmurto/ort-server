@@ -47,7 +47,7 @@ const LastRunDateInner = ({ repoId }: { repoId: number }) => {
   if (!run) return <div className='min-h-10' />;
 
   return (
-    <div className='flex min-h-10 flex-col items-start'>
+    <div className='flex min-h-10 flex-col items-start text-[0.8125rem]'>
       {run.finishedAt ? (
         <TimestampWithUTC timestamp={run.finishedAt} />
       ) : (
@@ -56,13 +56,15 @@ const LastRunDateInner = ({ repoId }: { repoId: number }) => {
       {run.userDisplayName &&
         (run.userDisplayName.username ? (
           <Tooltip>
-            <TooltipTrigger className='cursor-pointer'>
+            <TooltipTrigger className='text-muted-foreground cursor-pointer'>
               {run.userDisplayName.fullName}
             </TooltipTrigger>
             <TooltipContent>{run.userDisplayName.username}</TooltipContent>
           </Tooltip>
         ) : (
-          <span>{run.userDisplayName.fullName}</span>
+          <span className='text-muted-foreground'>
+            {run.userDisplayName.fullName}
+          </span>
         ))}
     </div>
   );

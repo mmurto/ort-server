@@ -60,7 +60,7 @@ const SnippetProvenance = ({ snippet }: { snippet: SnippetSource }) => {
         href={snippet.artifactUrl}
         target='_blank'
         rel='noopener noreferrer'
-        className='link hover:underline'
+        className='link'
       >
         <BreakableString text={snippet.artifactUrl} />
       </a>
@@ -74,12 +74,14 @@ const SnippetProvenance = ({ snippet }: { snippet: SnippetSource }) => {
           href={snippet.vcsUrl}
           target='_blank'
           rel='noopener noreferrer'
-          className='link hover:underline'
+          className='link'
         >
           <BreakableString text={snippet.vcsUrl} />
         </a>
         {isValidRevision(snippet.vcsRevision) && (
-          <span>&nbsp;({snippet.vcsRevision})</span>
+          <span className='font-mono text-xs'>
+            &nbsp;({snippet.vcsRevision})
+          </span>
         )}
       </div>
     );
@@ -92,7 +94,7 @@ const SnippetSourceCard = ({ snippet }: { snippet: SnippetSource }) => {
   return (
     <div className='flex flex-col gap-2'>
       <div className='flex items-start justify-between gap-4'>
-        <div className='min-w-0 basis-2/3 text-left font-semibold'>
+        <div className='min-w-0 basis-2/3 text-left font-mono text-xs font-medium'>
           <BreakableString text={snippet.purl} />
           <CopyToClipboard
             copyText={snippet.purl}
@@ -100,16 +102,18 @@ const SnippetSourceCard = ({ snippet }: { snippet: SnippetSource }) => {
           />
         </div>
         <div className='flex shrink-0 items-center gap-2'>
-          <span className='text-muted-foreground text-sm'>Score:</span>
+          <span className='text-muted-foreground text-[0.8125rem]'>Score:</span>
           <span className='font-semibold'>{snippet.score}</span>
         </div>
       </div>
 
-      <div className='flex items-start justify-between gap-4 text-sm'>
+      <div className='flex items-start justify-between gap-4 text-[0.8125rem]'>
         <div className='flex min-w-0 flex-col gap-2'>
           <div className='flex min-w-0 gap-2'>
             <div className='text-muted-foreground shrink-0'>Path:</div>
-            <div className='wrap-break-word'>{snippet.path}</div>
+            <div className='font-mono text-xs wrap-break-word'>
+              {snippet.path}
+            </div>
           </div>
           <div className='flex gap-2'>
             <div className='text-muted-foreground shrink-0'>Line Range:</div>
@@ -122,7 +126,7 @@ const SnippetSourceCard = ({ snippet }: { snippet: SnippetSource }) => {
         </div>
       </div>
 
-      <div className='flex items-center gap-2 text-sm'>
+      <div className='flex items-center gap-2 text-[0.8125rem]'>
         <div className='text-muted-foreground shrink-0'>Provenance:</div>
         <SnippetProvenance snippet={snippet} />
       </div>

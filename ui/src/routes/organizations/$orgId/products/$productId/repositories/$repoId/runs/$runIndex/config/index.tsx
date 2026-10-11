@@ -25,6 +25,7 @@ import { useState } from 'react';
 import { OrtRun } from '@/api';
 import { getRepositoryRunOptions } from '@/api/@tanstack/react-query.gen';
 import { LoadingIndicator } from '@/components/loading-indicator';
+import { SheetSection } from '@/components/page-header';
 import { Sha1Component } from '@/components/sha1-component';
 import {
   Accordion,
@@ -33,8 +34,6 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
 import { jobSearchParameterSchema } from '@/schemas';
 import { AdvisorJobDetails } from './-components/advisor-job-details';
 import { AnalyzerJobDetails } from './-components/analyzer-job-details';
@@ -59,6 +58,24 @@ const getJob = (run: OrtRun, key: JobKey) => run.jobs[key];
 
 const allJobValues = jobSections.map(({ value }) => value);
 
+const KeyValueList = ({ entries }: { entries: Record<string, string> }) =>
+  Object.keys(entries).length > 0 ? (
+    <div className='flex flex-col gap-0.5'>
+      {Object.entries(entries).map(([key, value]) => (
+        <div
+          key={key}
+          className='grid grid-cols-[minmax(0,1fr)_auto_minmax(0,2fr)] gap-2 font-mono text-xs'
+        >
+          <span className='break-all'>{key}</span>
+          <span className='text-muted-foreground'>=</span>
+          <span className='break-all'>{value}</span>
+        </div>
+      ))}
+    </div>
+  ) : (
+    <span className='text-muted-foreground'>undefined</span>
+  );
+
 const ConfigComponent = () => {
   const params = Route.useParams();
   const { job } = Route.useSearch();
@@ -73,141 +90,100 @@ const ConfigComponent = () => {
     }),
   });
 
+  const labels = ortRun.labels;
+  const parameters = ortRun.jobConfigs.parameters ?? {};
+
   return (
-    <div className='flex flex-col gap-4'>
-      <Card>
-        <CardHeader>
-          <CardTitle>Run Configuration</CardTitle>
-        </CardHeader>
-        <CardContent>
+    <div className='flex flex-col gap-8'>
+      <SheetSection title='Run configuration'>
+        <dl className='grid grid-cols-[minmax(0,14rem)_minmax(0,1fr)] border-t text-[0.8125rem] [&>dd]:border-b [&>dd]:py-2 [&>dt]:border-b [&>dt]:py-2'>
           {ortRun.path && (
-            <div className='text-sm'>
-              <Label className='font-semibold'>Path:</Label> {ortRun.path}
-            </div>
+            <>
+              <dt className='text-muted-foreground'>Path</dt>
+              <dd className='font-mono text-xs break-all'>{ortRun.path}</dd>
+            </>
           )}
           {(ortRun.jobConfigContext || ortRun.resolvedJobConfigContext) && (
-            <div className='flex items-center gap-1 text-sm'>
-              <Label className='font-semibold'>Configuration context:</Label>
-              {ortRun.jobConfigContext && <div>{ortRun.jobConfigContext}</div>}
-              {ortRun.resolvedJobConfigContext &&
-                ortRun.jobConfigContext !== ortRun.resolvedJobConfigContext && (
-                  <div>
-                    <Sha1Component sha1={ortRun.resolvedJobConfigContext} />
-                  </div>
+            <>
+              <dt className='text-muted-foreground'>Configuration context</dt>
+              <dd className='flex flex-wrap items-center gap-1'>
+                {ortRun.jobConfigContext && (
+                  <span className='font-mono text-xs break-all'>
+                    {ortRun.jobConfigContext}
+                  </span>
                 )}
-            </div>
+                {ortRun.resolvedJobConfigContext &&
+                  ortRun.jobConfigContext !==
+                    ortRun.resolvedJobConfigContext && (
+                    <Sha1Component sha1={ortRun.resolvedJobConfigContext} />
+                  )}
+              </dd>
+            </>
           )}
           {ortRun.environmentConfigPath && (
-            <div className='flex items-center gap-1 text-sm'>
-              <Label className='font-semibold'>
-                Environment configuration path:
-              </Label>
-              {ortRun.environmentConfigPath && (
-                <div>{ortRun.environmentConfigPath}</div>
-              )}
-            </div>
+            <>
+              <dt className='text-muted-foreground'>
+                Environment configuration path
+              </dt>
+              <dd className='font-mono text-xs break-all'>
+                {ortRun.environmentConfigPath}
+              </dd>
+            </>
           )}
-          {(() => {
-            const labels = ortRun.labels;
-            const hasLabels = Object.keys(labels).length > 0;
-            return (
-              <div className='text-sm'>
-                <Label className='font-semibold'>Labels:</Label>{' '}
-                {hasLabels ? (
-                  Object.entries(labels).map(([key, value]) => (
-                    <div key={key} className='ml-4 grid grid-cols-12 text-xs'>
-                      <div className='col-span-3 text-left break-all'>
-                        {key}
-                      </div>
-                      <div className='col-span-1 text-center'>=</div>
-                      <div className='col-span-8 text-left break-all'>
-                        {value}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <span className='text-muted-foreground ml-4 text-xs italic'>
-                    undefined
-                  </span>
-                )}
-              </div>
-            );
-          })()}
-          {(() => {
-            const parameters = ortRun.jobConfigs.parameters ?? {};
-            const hasParameters = Object.keys(parameters).length > 0;
-            return (
-              <div className='text-sm'>
-                <Label className='font-semibold'>Parameters:</Label>{' '}
-                {hasParameters ? (
-                  Object.entries(parameters).map(([key, value]) => (
-                    <div key={key} className='ml-4 grid grid-cols-12 text-xs'>
-                      <div className='col-span-3 text-left break-all'>
-                        {key}
-                      </div>
-                      <div className='col-span-1 text-center'>=</div>
-                      <div className='col-span-8 text-left break-all'>
-                        {value}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <span className='text-muted-foreground ml-4 text-xs italic'>
-                    undefined
-                  </span>
-                )}
-              </div>
-            );
-          })()}
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle className='flex items-center justify-between'>
-            <span>Job Configurations</span>
-            <Button
-              variant='ghost'
-              size='xs'
-              className='-mr-1.5'
-              onClick={() =>
-                setOpenSections((prev) =>
-                  prev.length === allJobValues.length ? [] : [...allJobValues]
-                )
-              }
-            >
-              {openSections.length === allJobValues.length ? (
-                <>
-                  Collapse all
-                  <ChevronsDownUp className='size-4' />
-                </>
-              ) : (
-                <>
-                  Expand all
-                  <ChevronsUpDown className='size-4' />
-                </>
-              )}
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Accordion
-            type='multiple'
-            value={openSections}
-            onValueChange={setOpenSections}
+          <dt className='text-muted-foreground'>Labels</dt>
+          <dd>
+            <KeyValueList entries={labels} />
+          </dd>
+          <dt className='text-muted-foreground'>Parameters</dt>
+          <dd>
+            <KeyValueList entries={parameters} />
+          </dd>
+        </dl>
+      </SheetSection>
+      <SheetSection
+        title='Job configurations'
+        actions={
+          <Button
+            variant='ghost'
+            size='xs'
+            onClick={() =>
+              setOpenSections((prev) =>
+                prev.length === allJobValues.length ? [] : [...allJobValues]
+              )
+            }
           >
-            {jobSections.map(({ value, title, Component }) => (
-              <AccordionItem key={value} value={value}>
-                <AccordionTrigger>
-                  <JobTitle title={title} job={getJob(ortRun, value)} />
-                </AccordionTrigger>
-                <AccordionContent>
-                  <Component run={ortRun} />
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </CardContent>
-      </Card>
+            {openSections.length === allJobValues.length ? (
+              <>
+                Collapse all
+                <ChevronsDownUp className='size-4' />
+              </>
+            ) : (
+              <>
+                Expand all
+                <ChevronsUpDown className='size-4' />
+              </>
+            )}
+          </Button>
+        }
+      >
+        <Accordion
+          type='multiple'
+          value={openSections}
+          onValueChange={setOpenSections}
+          className='border-t'
+        >
+          {jobSections.map(({ value, title, Component }) => (
+            <AccordionItem key={value} value={value}>
+              <AccordionTrigger>
+                <JobTitle title={title} job={getJob(ortRun, value)} />
+              </AccordionTrigger>
+              <AccordionContent>
+                <Component run={ortRun} />
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      </SheetSection>
     </div>
   );
 };

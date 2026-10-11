@@ -44,15 +44,9 @@ import { DataTable } from '@/components/data-table/data-table';
 import { DeleteDialog } from '@/components/delete-dialog';
 import { DeleteIconButton } from '@/components/delete-icon-button';
 import { LoadingIndicator } from '@/components/loading-indicator';
+import { PageHeader, SheetSection } from '@/components/page-header';
 import { TooltipIfTruncated } from '@/components/tooltip-if-truncated';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
   Tooltip,
@@ -103,7 +97,11 @@ const columns = columnHelper.columns([
   columnHelper.accessor('user.username', {
     id: 'username',
     header: 'Username',
-    cell: ({ row }) => <TooltipIfTruncated text={row.original.user.username} />,
+    cell: ({ row }) => (
+      <span className='font-medium'>
+        <TooltipIfTruncated text={row.original.user.username} />
+      </span>
+    ),
   }),
   columnHelper.accessor('user.firstName', {
     id: 'firstName',
@@ -127,7 +125,9 @@ const columns = columnHelper.columns([
     enableSorting: false,
     cell: ({ row }) => (
       <>
-        {row.original.isSuperuser ? <ShieldCheck className='h-4 w-4' /> : null}
+        {row.original.isSuperuser ? (
+          <ShieldCheck className='text-brand size-4' aria-label='Superuser' />
+        ) : null}
       </>
     ),
   }),
@@ -185,7 +185,7 @@ const columns = columnHelper.columns([
       });
 
       return (
-        <div className='flex gap-2'>
+        <div className='flex justify-end gap-1'>
           {row.original.isSuperuser ? (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -200,7 +200,7 @@ const columns = columnHelper.columns([
                   }
                 >
                   <span className='sr-only'>Remove superuser</span>
-                  <ShieldMinus className='h-4 w-4' />
+                  <ShieldMinus />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Remove superuser role</TooltipContent>
@@ -219,7 +219,7 @@ const columns = columnHelper.columns([
                   }
                 >
                   <span className='sr-only'>Make superuser</span>
-                  <ShieldPlus className='h-4 w-4' />
+                  <ShieldPlus />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Add superuser role</TooltipContent>
@@ -278,13 +278,13 @@ const UserSearch = ({ search }: { search: AdminUsersSearchParameters }) => {
 
   return (
     <form
-      className='mb-4 max-w-xl'
+      className='max-w-xl'
       onSubmit={(event) => {
         event.preventDefault();
         applySearch();
       }}
     >
-      <label className='mb-2 block text-sm font-medium' htmlFor='user-search'>
+      <label className='label-caps mb-1.5 block' htmlFor='user-search'>
         Search users
       </label>
       <div className='flex gap-2'>
@@ -299,16 +299,12 @@ const UserSearch = ({ search }: { search: AdminUsersSearchParameters }) => {
         <Button
           type='button'
           variant='ghost'
-          className='px-2'
+          className='text-muted-foreground px-2'
           onMouseDown={(event) => event.preventDefault()}
           onClick={clearSearch}
         >
           <XCircle
-            className={
-              searchInput.length === 0
-                ? 'h-fit text-gray-400 opacity-40'
-                : 'h-fit text-gray-400 opacity-100'
-            }
+            className={searchInput.length === 0 ? 'opacity-40' : 'opacity-100'}
           />
           <span className='sr-only'>Clear search</span>
         </Button>
@@ -346,29 +342,28 @@ const Users = () => {
   );
 
   return (
-    <Card className='h-fit'>
-      <CardHeader>
-        <CardTitle>Users</CardTitle>
-        <CardDescription>
-          These are all current users of the server. By clicking the delete
-          button in the action column you can delete users, and a written
-          confirmation is required to prevent accidental deletions.
-        </CardDescription>
-        <div className='py-2'>
+    <div className='flex flex-col gap-8'>
+      <PageHeader
+        title='Users'
+        description='These are all current users of the server. By clicking the delete button in the action column you can delete users, and a written confirmation is required to prevent accidental deletions.'
+        actions={
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button asChild size='sm' className='ml-auto gap-1'>
+              <Button asChild>
                 <Link to='/admin/users/create-user'>
+                  <UserPlus />
                   Create user
-                  <UserPlus className='h-4 w-4' />
                 </Link>
               </Button>
             </TooltipTrigger>
             <TooltipContent>Create a new user account.</TooltipContent>
           </Tooltip>
-        </div>
-      </CardHeader>
-      <CardContent>
+        }
+      />
+      <SheetSection
+        title='All users'
+        meta={`${users.pagination.totalCount} ${search.search ? 'matching' : 'in total'}`}
+      >
         <UserSearch key={search.search ?? ''} search={search} />
         <DataTable
           table={table}
@@ -395,8 +390,8 @@ const Users = () => {
             };
           }}
         />
-      </CardContent>
-    </Card>
+      </SheetSection>
+    </div>
   );
 };
 
