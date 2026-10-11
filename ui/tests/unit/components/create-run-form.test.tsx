@@ -180,9 +180,6 @@ const getJobSwitch = (job: string) => screen.getByRole('switch', { name: job });
 
 const missingServerUrl = 'Required option "serverUrl" is missing for "OSV".';
 
-const getErrorSummary = () =>
-  screen.getByRole('region', { name: /to start the run$/ });
-
 describe('CreateRunForm', () => {
   // The form takes the plugin defaults as `values` and keeps dirty values when
   // they change, which React Hook Form reports as fragile under React Compiler.
@@ -463,7 +460,8 @@ describe('CreateRunForm', () => {
   it('shows validation errors without submitting an invalid form', async () => {
     const { onSubmit, user } = renderCreateRunForm();
 
-    await user.click(await screen.findByRole('button', { name: 'Start run' }));
+    await user.click(await screen.findByRole('switch', { name: 'Advisor' }));
+    await user.click(screen.getByRole('button', { name: 'Start run' }));
 
     expect(
       await screen.findByText(
@@ -772,22 +770,18 @@ describe('CreateRunForm', () => {
     ).not.toHaveTextContent('has errors');
   });
 
-  it('shows the errors of a disabled job in its section', async () => {
-    const { user } = renderCreateRunForm();
+  it('does not let the options of a disabled job block the run', async () => {
+    const { onSubmit, user } = renderCreateRunForm();
     expect(
       within(await screen.findByRole('region', { name: 'Advisor' })).getByText(
         'Not included in this run'
       )
     ).toBeVisible();
-    expect(screen.queryByText('Enabled advisors')).toBeNull();
 
     await user.click(screen.getByRole('button', { name: 'Start run' }));
 
-    expect(within(getErrorSummary()).getByText(missingServerUrl)).toBeVisible();
-    expect(screen.getByText('Enabled advisors')).toBeVisible();
-    await waitFor(() =>
-      expect(screen.getByLabelText(/serverUrl/)).toHaveFocus()
-    );
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    expect(screen.queryByText(missingServerUrl)).toBeNull();
   });
 
   it('summarizes the values of each section in its header', async () => {

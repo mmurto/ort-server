@@ -148,6 +148,8 @@ export const createRunFormSchema = (
             config: z.object(advisorConfigSchema).optional(),
           })
           .superRefine((data, ctx) => {
+            // A disabled job is not part of the run, so its options don't matter.
+            if (!data.enabled) return;
             validateRequiredPluginOptions(
               advisorPlugins,
               data.advisors,
@@ -174,6 +176,8 @@ export const createRunFormSchema = (
             config: z.object(scannerConfigSchema).optional(),
           })
           .superRefine((data, ctx) => {
+            // A disabled job is not part of the run, so its options don't matter.
+            if (!data.enabled) return;
             validateRequiredPluginOptions(
               scannerPlugins,
               data.scanners,
@@ -210,6 +214,8 @@ export const createRunFormSchema = (
               .optional(),
           })
           .superRefine((data, ctx) => {
+            // A disabled job is not part of the run, so its options don't matter.
+            if (!data.enabled) return;
             validateRequiredPluginOptions(
               reporterPlugins,
               data.formats,
