@@ -17,6 +17,7 @@
  * License-Filename: LICENSE
  */
 
+import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import {
   Boxes,
@@ -35,13 +36,33 @@ import {
 } from 'lucide-react';
 import { Suspense } from 'react';
 
-import { getRepositoryRunOptions } from '@/api/@tanstack/react-query.gen';
+import {
+  getRepositoryRunOptions,
+  getRunStatisticsOptions,
+} from '@/api/@tanstack/react-query.gen';
 import { PageLayout } from '@/components/page-layout';
 import { SidebarNavProps } from '@/components/sidebar';
+import { isJobFinished } from '@/helpers/job-helpers';
 import { RunDetailsBar } from './-components/run-details-bar';
 
 const Layout = () => {
   const params = Route.useParams();
+
+  // The rail shows how many unresolved items each result section holds, once the run has them.
+  const { data: ortRun } = useQuery(
+    getRepositoryRunOptions({
+      path: {
+        repositoryId: Number.parseInt(params.repoId),
+        ortRunIndex: Number.parseInt(params.runIndex),
+      },
+    })
+  );
+  const { data: statistics } = useQuery({
+    ...getRunStatisticsOptions({ path: { runId: ortRun?.id ?? 0 } }),
+    enabled:
+      ortRun !== undefined &&
+      Object.values(ortRun.jobs).some((job) => isJobFinished(job?.status)),
+  });
 
   const sections: SidebarNavProps['sections'] = [
     {
@@ -59,6 +80,7 @@ const Layout = () => {
       items: [
         {
           title: 'Rule Violations',
+          count: statistics?.ruleViolationsCount ?? undefined,
           to: '/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/rule-violations',
           params,
           search: {
@@ -87,6 +109,7 @@ const Layout = () => {
         },
         {
           title: 'Vulnerabilities',
+          count: statistics?.vulnerabilitiesCount ?? undefined,
           to: '/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/vulnerabilities',
           params,
           search: {
@@ -108,6 +131,7 @@ const Layout = () => {
         },
         {
           title: 'Packages',
+          count: statistics?.packagesCount ?? undefined,
           to: '/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/packages',
           params,
           icon: () => <Boxes className='h-4 w-4' />,
@@ -142,6 +166,7 @@ const Layout = () => {
       items: [
         {
           title: 'Issues',
+          count: statistics?.issuesCount ?? undefined,
           to: '/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/issues',
           params,
           search: {

@@ -19,19 +19,24 @@
 
 import { LinkOptions } from '@tanstack/react-router';
 import type { RowData } from '@tanstack/react-table';
-import React from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 
 import { DataTableCardsHeader } from '@/components/data-table-cards/data-table-cards-header';
-import { DataTableBody } from '@/components/data-table/data-table-body';
+import {
+  getGridTemplate,
+  resolveLayout,
+  type DataTableCardsColumn,
+} from '@/components/data-table-cards/data-table-cards-layout';
+import { DataTableCardsRows } from '@/components/data-table-cards/data-table-cards-rows';
 import { DataTablePagination } from '@/components/data-table/data-table-pagination';
-import { Table } from '@/components/ui/table';
 import type {
   AppReactTable,
   AppRow,
   AppTableState,
 } from '@/hooks/use-app-table';
-import { useTableSizing } from '@/hooks/use-table-sizing';
 import { cn } from '@/lib/utils';
+
+export type { DataTableCardsColumn } from '@/components/data-table-cards/data-table-cards-layout';
 
 const selectBodyState = (state: AppTableState) => ({
   columnFilters: state.columnFilters,
@@ -47,10 +52,22 @@ const selectPaginationState = (state: AppTableState) => ({
   sorting: state.sorting,
 });
 
+/** Whether a key event comes from a control the user types into. */
+const isTypingTarget = (target: EventTarget | null) =>
+  target instanceof HTMLElement &&
+  (target.isContentEditable ||
+    target.closest('input, textarea, select, [contenteditable="true"]') !==
+      null);
+
 interface DataTableCardsProps<
   TData extends RowData,
 > extends React.HTMLAttributes<HTMLDivElement> {
   table: AppReactTable<TData>;
+  /**
+   * The columns of the findings grid, from left to right. Without a layout,
+   * every visible column takes an equal share of the width.
+   */
+  layout?: DataTableCardsColumn[];
   renderSubComponent?: (props: { row: AppRow<TData> }) => React.ReactElement;
   noResultsContent?: React.ReactNode;
   setCurrentPageOptions: (page: number) => LinkOptions;
@@ -59,61 +76,206 @@ interface DataTableCardsProps<
     id: string;
     desc: boolean | undefined;
   }) => LinkOptions;
+  /**
+   * A function to provide `LinkOptions` for a link that marks a row in the URL.
+   * When given, every row offers to copy a link to it.
+   */
+  setMarkedOptions?: (marked: string) => LinkOptions;
+  /** Replaces the default toggling of a row's expansion. */
+  onToggleExpanded?: (row: AppRow<TData>) => void;
+  /**
+   * Whether J and K step through the rows while nothing on the page has focus.
+   * Turn this off for grids nested in the expanded rows of another one.
+   */
+  globalShortcuts?: boolean;
 }
 
 export function DataTableCards<TData extends RowData>({
   table,
+  layout,
   renderSubComponent,
   noResultsContent,
   className,
   setCurrentPageOptions,
   setPageSizeOptions,
   setSortingOptions,
+  setMarkedOptions,
+  onToggleExpanded,
+  globalShortcuts = true,
+  'aria-label': ariaLabel,
   ...props
 }: DataTableCardsProps<TData>) {
-  const { containerRef, columnSizing } = useTableSizing(table);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const gridId = useId();
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const columns = resolveLayout(table, layout);
+  const rowId = (index: number) => `${gridId}-row-${index}`;
+
+  const toggleRow = (row: AppRow<TData>) => {
+    if (!row.getCanExpand()) return;
+    if (onToggleExpanded) {
+      onToggleExpanded(row);
+    } else {
+      row.toggleExpanded();
+    }
+  };
+
+  const step = (delta: number) => {
+    const count = table.getRowModel().rows.length;
+    if (count === 0) return;
+    setSelectedIndex((index) =>
+      index < 0
+        ? delta > 0
+          ? 0
+          : count - 1
+        : Math.min(Math.max(index + delta, 0), count - 1)
+    );
+  };
+
+  // Keep the selected row in view while stepping through the rows.
+  useEffect(() => {
+    if (selectedIndex < 0) return;
+    const row = document.getElementById(`${gridId}-row-${selectedIndex}`);
+    // Not every environment implements scrolling, e.g. jsdom in the tests.
+    if (row && 'scrollIntoView' in row)
+      row.scrollIntoView({ block: 'nearest' });
+  }, [gridId, selectedIndex]);
+
+  // J and K also work while nothing on the page has focus, e.g. after reading
+  // the page. The grid takes the focus, so the arrow keys work afterwards.
+  useEffect(() => {
+    if (!globalShortcuts) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.altKey || event.ctrlKey) return;
+      if (event.metaKey) return;
+      const active = document.activeElement;
+      if (active !== null && active !== document.body) return;
+      const key = event.key.toLowerCase();
+      if (key !== 'j' && key !== 'k') return;
+      const count = table.getRowModel().rows.length;
+      if (count === 0) return;
+
+      event.preventDefault();
+      setSelectedIndex((index) =>
+        index < 0
+          ? key === 'j'
+            ? 0
+            : count - 1
+          : Math.min(Math.max(index + (key === 'j' ? 1 : -1), 0), count - 1)
+      );
+      gridRef.current?.focus({ preventScroll: true });
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [globalShortcuts, table]);
+
+  const onGridKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    // Events from portals (menus, dialogs) bubble through the React tree, but
+    // are not part of the grid.
+    if (!event.currentTarget.contains(event.target as Node)) return;
+    if (event.defaultPrevented) return;
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    if (isTypingTarget(event.target)) return;
+
+    const onGrid = event.target === event.currentTarget;
+    // The arrow keys only step through the rows from the grid or a row, so
+    // they keep working in the expanded details, e.g. in an accordion.
+    const onRow =
+      onGrid ||
+      (event.target as HTMLElement)
+        .closest('[role="row"]')
+        ?.hasAttribute('aria-selected') === true;
+
+    switch (event.key) {
+      case 'ArrowDown':
+      case 'ArrowUp':
+        if (!onRow) return;
+        event.preventDefault();
+        event.stopPropagation();
+        step(event.key === 'ArrowDown' ? 1 : -1);
+        break;
+      case 'j':
+      case 'J':
+      case 'k':
+      case 'K':
+        event.preventDefault();
+        event.stopPropagation();
+        step(event.key.toLowerCase() === 'j' ? 1 : -1);
+        break;
+      case 'Enter':
+      case ' ': {
+        // On the controls in a row, the keys keep activating the control.
+        if (!onGrid) return;
+        const row = table.getRowModel().rows[selectedIndex];
+        if (!row) return;
+        event.preventDefault();
+        event.stopPropagation();
+        toggleRow(row);
+        break;
+      }
+    }
+  };
 
   return (
-    <div
-      ref={containerRef}
-      className={cn('w-full space-y-2.5 overflow-auto', className)}
-      {...props}
-    >
-      <DataTableCardsHeader
-        table={table}
-        setSortingOptions={setSortingOptions}
-      />
-      <Table style={{ tableLayout: 'fixed' }}>
+    <div className={cn('flex w-full flex-col gap-3', className)} {...props}>
+      <div
+        ref={gridRef}
+        role='grid'
+        aria-label={ariaLabel}
+        aria-activedescendant={
+          selectedIndex >= 0 ? rowId(selectedIndex) : undefined
+        }
+        tabIndex={0}
+        className='w-full text-[0.8125rem] outline-none md:grid md:grid-cols-(--findings-cols) md:gap-x-4'
+        style={
+          {
+            '--findings-cols': getGridTemplate(columns),
+          } as React.CSSProperties
+        }
+        onKeyDown={onGridKeyDown}
+        onFocus={(event) => {
+          // Entering the grid with the keyboard selects its first row.
+          if (event.target !== event.currentTarget || selectedIndex >= 0) {
+            return;
+          }
+          if (table.getRowModel().rows.length > 0) setSelectedIndex(0);
+        }}
+      >
+        <DataTableCardsHeader
+          table={table}
+          layout={columns}
+          setSortingOptions={setSortingOptions}
+        />
         <table.Subscribe selector={selectBodyState}>
-          {() => {
-            const rows = table.getRowModel().rows;
-
-            return (
-              <DataTableBody
-                rows={rows}
-                renderSubComponent={renderSubComponent}
-                columnSizing={columnSizing}
-                noResultsContent={noResultsContent}
-                columnCount={table.getVisibleLeafColumns().length}
-              />
-            );
-          }}
+          {() => (
+            <DataTableCardsRows
+              rows={table.getRowModel().rows}
+              layout={columns}
+              rowId={rowId}
+              selectedIndex={selectedIndex}
+              onSelect={setSelectedIndex}
+              onToggle={toggleRow}
+              renderSubComponent={renderSubComponent}
+              setMarkedOptions={setMarkedOptions}
+              noResultsContent={noResultsContent}
+            />
+          )}
         </table.Subscribe>
-      </Table>
+      </div>
       <table.Subscribe selector={selectPaginationState}>
         {({ pagination }) => {
           if (table.getRowModel().rows.length === 0) return null;
 
           return (
-            <div className='flex flex-col gap-2.5'>
-              <DataTablePagination
-                currentPage={pagination.pageIndex + 1}
-                pageSize={pagination.pageSize}
-                totalPages={table.getPageCount()}
-                setCurrentPageOptions={setCurrentPageOptions}
-                setPageSizeOptions={setPageSizeOptions}
-              />
-            </div>
+            <DataTablePagination
+              currentPage={pagination.pageIndex + 1}
+              pageSize={pagination.pageSize}
+              totalPages={table.getPageCount()}
+              setCurrentPageOptions={setCurrentPageOptions}
+              setPageSizeOptions={setPageSizeOptions}
+            />
           );
         }}
       </table.Subscribe>

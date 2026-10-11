@@ -63,13 +63,13 @@ const STATUS_FONT_COLOR: { [K in Exclude<Status, undefined>]: string } = {
 const STATUS_CLASS: {
   [K in Exclude<Status, undefined>]: string;
 } = {
-  CREATED: 'block h-1.5 w-4',
-  SCHEDULED: 'block h-1.5 w-4',
-  RUNNING: 'block h-1.5 w-4 animate-pulse',
-  ACTIVE: 'block h-1.5 w-4 animate-pulse',
-  FAILED: 'block h-1.5 w-4',
-  FINISHED: 'block h-1.5 w-4',
-  FINISHED_WITH_ISSUES: 'block h-1.5 w-4',
+  CREATED: 'block h-1.5',
+  SCHEDULED: 'block h-1.5',
+  RUNNING: 'block h-1.5 animate-pulse',
+  ACTIVE: 'block h-1.5 animate-pulse',
+  FAILED: 'block h-1.5',
+  FINISHED: 'block h-1.5',
+  FINISHED_WITH_ISSUES: 'block h-1.5',
 } as const;
 
 const RULE_VIOLATION_SEVERITY_BG_COLOR: {
@@ -114,7 +114,7 @@ export function getStatusFontColor(status: Status): string {
 // Get the general class for the elements
 export function getStatusClass(status: Status): string {
   if (status === undefined) {
-    return 'block h-1.5 w-4';
+    return 'block h-1.5';
   }
   return STATUS_CLASS[status];
 }
@@ -169,66 +169,39 @@ export function getResolvedBackgroundColor(status: ItemResolved): string {
 // 3. Package managers which belong to the same group are chosen from inside
 //    these 14 color palettes in a way that the colors are visually distinct.
 export function getEcosystemBackgroundColor(ecosystem: string): string {
+  // Ecosystems are set in ink tones by language family, so that no colour that carries a
+  // meaning elsewhere (status, severity, job) is spent on them.
   switch (ecosystem) {
-    case 'Bazel':
-      return 'bg-stone-500';
-    case 'Bower':
-      return 'bg-teal-300';
-    case 'Bundler':
-      return 'bg-pink-400';
-    case 'Cargo':
-      return 'bg-purple-400';
-    case 'Carthage':
-      return 'bg-emerald-500';
-    case 'CocoaPods':
-      return 'bg-rose-400';
-    case 'Composer':
-      return 'bg-neutral-400';
-    case 'Conan':
-      return 'bg-emerald-400';
-    case 'Hex':
-      return 'bg-fuchsia-500';
-    case 'GoMod':
-      return 'bg-cyan-500';
     case 'Gradle':
-      return 'bg-indigo-400';
     case 'GradleInspector':
-      return 'bg-indigo-500';
     case 'Maven':
-      return 'bg-indigo-600';
-    case 'NPM':
-      return 'bg-teal-400';
-    case 'NuGet':
-      return 'bg-violet-500';
-    case 'OrtProjectFile':
-      return 'bg-orange-500';
-    case 'PIP':
-      return 'bg-lime-400';
-    case 'Pipenv':
-      return 'bg-lime-500';
-    case 'PNPM':
-      return 'bg-teal-500';
-    case 'Poetry':
-      return 'bg-lime-600';
-    case 'Pub':
-      return 'bg-fuchsia-400';
     case 'SBT':
-      return 'bg-sky-400';
-    case 'SPDX':
-      return 'bg-zinc-400';
-    case 'SpdxDocumentFile':
-      return 'bg-zinc-400';
-    case 'Stack':
-      return 'bg-slate-400';
-    case 'SwiftPM':
-      return 'bg-rose-500';
     case 'Tycho':
-      return 'bg-indigo-700';
+      return 'bg-foreground';
+    case 'Bower':
+    case 'NPM':
+    case 'PNPM':
     case 'Yarn':
-      return 'bg-teal-600';
     case 'Yarn2':
-      return 'bg-teal-700';
+      return 'bg-foreground/60';
+    case 'PIP':
+    case 'Pipenv':
+    case 'Poetry':
+      return 'bg-foreground/40';
+    case 'Bundler':
+    case 'Cargo':
+    case 'Carthage':
+    case 'CocoaPods':
+    case 'Composer':
+    case 'Conan':
+    case 'GoMod':
+    case 'Hex':
+    case 'NuGet':
+    case 'Pub':
+    case 'Stack':
+    case 'SwiftPM':
+      return 'bg-foreground/25';
     default:
-      return 'bg-input'; // Fallback for undefined ecosystems
+      return 'bg-input';
   }
 }

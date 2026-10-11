@@ -196,8 +196,10 @@ describe('issues table', () => {
   // The button that expands and collapses the row of the given issue.
   const getDetailsButton = (name: string) =>
     within(
-      screen.getByRole('link', { name: purlOf(name) }).closest('tr')!
-    ).getAllByRole('button')[0]!;
+      screen
+        .getByRole('link', { name: purlOf(name) })
+        .closest<HTMLElement>('[role="row"]')!
+    ).getByRole('button', { name: /^(Expand|Collapse) row$/ });
 
   const lastIssuesQuery = () =>
     mocks.issues.mock.calls.at(-1)?.[0].query as IssuesQuery;
@@ -267,22 +269,16 @@ describe('issues table', () => {
     await user.click(getDetailsButton('issue-1'));
 
     expect(await screen.findByText('Details of issue-1')).toBeVisible();
-    expect(
-      getDetailsButton('issue-1').querySelector('.lucide-chevron-up')
-    ).toBeInTheDocument();
+    expect(getDetailsButton('issue-1')).toHaveAccessibleName('Collapse row');
     expect(screen.queryByText('Details of issue-2')).not.toBeInTheDocument();
-    expect(
-      getDetailsButton('issue-2').querySelector('.lucide-chevron-down')
-    ).toBeInTheDocument();
+    expect(getDetailsButton('issue-2')).toHaveAccessibleName('Expand row');
 
     await user.click(getDetailsButton('issue-1'));
 
     await waitFor(() =>
       expect(screen.queryByText('Details of issue-1')).not.toBeInTheDocument()
     );
-    expect(
-      getDetailsButton('issue-1').querySelector('.lucide-chevron-down')
-    ).toBeInTheDocument();
+    expect(getDetailsButton('issue-1')).toHaveAccessibleName('Expand row');
   });
 
   it('expands the row marked in the URL', async () => {

@@ -17,10 +17,9 @@
  * License-Filename: LICENSE
  */
 
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { ExpandedState } from '@tanstack/react-table';
-import { ChevronDown, ChevronUp } from 'lucide-react';
 import { PackageURL } from 'packageurl-js';
 import { useState } from 'react';
 import z from 'zod';
@@ -28,15 +27,25 @@ import z from 'zod';
 import { VulnerabilityRating, VulnerabilityWithDetails } from '@/api';
 import {
   getRepositoryRunOptions,
+  getRunStatisticsOptions,
   getRunVulnerabilitiesOptions,
   getRunVulnerabilityAdvisorsOptions,
 } from '@/api/@tanstack/react-query.gen';
 import { zVulnerabilityRating } from '@/api/zod.gen';
-import { BreakableString } from '@/components/breakable-string';
 import { VulnerabilityMetrics } from '@/components/charts/vulnerability-metrics';
-import { CopyToClipboard } from '@/components/copy-to-clipboard';
 import { DataTableCards } from '@/components/data-table-cards/data-table-cards';
-import { MarkItems } from '@/components/data-table/mark-items';
+import {
+  CopyableValue,
+  EmptyValue,
+  FindingText,
+  ResolvedMark,
+  SeverityMark,
+} from '@/components/data-table-cards/findings-cells';
+import {
+  selectCountsByResolution,
+  sumCounts,
+} from '@/components/data-table-cards/findings-counts';
+import { FindingsFilterChips } from '@/components/data-table-cards/findings-filter-chips';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { MarkdownRenderer } from '@/components/markdown-renderer';
 import { SheetSection } from '@/components/page-header';
@@ -47,8 +56,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -62,10 +69,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import {
-  getResolvedBackgroundColor,
-  getVulnerabilityRatingBackgroundColor,
-} from '@/helpers/get-status-class';
+import { capitalize } from '@/helpers/capitalize';
+import { getVulnerabilityRatingBackgroundColor } from '@/helpers/get-status-class';
 import {
   convertToBackendSorting,
   EMPTY_SORTING_STATE,
@@ -89,7 +94,6 @@ import {
   useAppTable,
 } from '@/hooks/use-app-table';
 import type { AppRow } from '@/hooks/use-app-table';
-import { ACTION_COLUMN_SIZE } from '@/lib/constants';
 import { toastError } from '@/lib/toast';
 import {
   advisorSearchParameterSchema,
@@ -117,8 +121,8 @@ const supportedSortColumns = new Set([
 
 const columnHelper = createAppColumnHelper<VulnerabilityWithDetails>();
 
-// Component to render a single vulnerability card in the list.
-const VulnerabilityCard = ({
+// The affected package of a vulnerability, linked to the packages table.
+const VulnerabilityPackage = ({
   vulnerability,
 }: {
   vulnerability: VulnerabilityWithDetails;
@@ -135,71 +139,28 @@ const VulnerabilityCard = ({
     : packageIdTypeSchema.enum.ORT_ID;
 
   return (
-    <div className='flex flex-col gap-1'>
-      <div className='flex items-center justify-between'>
-        <div className='min-w-0 flex-1'>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link
-                className='link text-left font-mono text-xs'
-                to='/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/packages'
-                params={{
-                  orgId: params.orgId,
-                  productId: params.productId,
-                  repoId: params.repoId,
-                  runIndex: params.runIndex,
-                }}
-                search={{ pkgId: id, pkgIdType: idType, marked: '0' }}
-              >
-                <BreakableString text={id} />
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent>
-              Inspect the package details in packages table
-            </TooltipContent>
-          </Tooltip>
-          <CopyToClipboard copyText={id} className='h-5 px-2 align-middle' />
-        </div>
-        <Badge
-          className='bg-neutral-soft text-foreground font-mono whitespace-nowrap'
-          variant='small'
-        >
-          {vulnerability.vulnerability.externalId}
-        </Badge>
-      </div>
-      <div className='flex items-center justify-between'>
-        <div className='text-muted-foreground text-[0.8125rem] wrap-break-word'>
-          {vulnerability.vulnerability.summary || 'No summary available'}
-        </div>
-        <div className='text-muted-foreground text-[0.8125rem]'>
-          {vulnerability.advisor.name}
-        </div>
-      </div>
-
-      <div className='flex items-center justify-between'>
-        <div className='flex gap-2'>
-          <Badge
-            className={`${getResolvedBackgroundColor(getResolvedStatus(vulnerability))}`}
-            variant='small'
+    <CopyableValue value={id} className='font-mono text-xs'>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Link
+            className='link'
+            to='/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/packages'
+            params={{
+              orgId: params.orgId,
+              productId: params.productId,
+              repoId: params.repoId,
+              runIndex: params.runIndex,
+            }}
+            search={{ pkgId: id, pkgIdType: idType, marked: '0' }}
           >
-            {getResolvedStatus(vulnerability)}
-          </Badge>
-          <Badge
-            className={`${getVulnerabilityRatingBackgroundColor(
-              vulnerability.rating
-            )}`}
-            variant='small'
-          >
-            {vulnerability.rating}
-          </Badge>
-        </div>
-        {(vulnerability.firstFixedVersions?.length ?? 0) > 0 && (
-          <Badge className='bg-ok-soft text-ok border-transparent whitespace-nowrap'>
-            Fix available
-          </Badge>
-        )}
-      </div>
-    </div>
+            {id}
+          </Link>
+        </TooltipTrigger>
+        <TooltipContent>
+          Inspect the package details in packages table
+        </TooltipContent>
+      </Tooltip>
+    </CopyableValue>
   );
 };
 
@@ -246,49 +207,79 @@ const VulnerabilitiesComponent = () => {
 
   const columns = columnHelper.columns([
     columnHelper.display({
-      id: 'details',
-      header: 'Details',
-      size: ACTION_COLUMN_SIZE,
-      cell: function CellComponent({ row }) {
-        return row.getCanExpand() ? (
-          <div className='flex items-center gap-1'>
-            <Button
-              variant='outline'
-              size='sm'
-              {...{
-                onClick: row.getToggleExpandedHandler(),
-                style: { cursor: 'pointer' },
-              }}
+      id: 'ratingMark',
+      header: 'Rating',
+      cell: ({ row }) => (
+        <SeverityMark
+          label={row.original.rating}
+          colorClass={getVulnerabilityRatingBackgroundColor(
+            row.original.rating
+          )}
+        />
+      ),
+    }),
+    columnHelper.display({
+      id: 'vulnerabilityId',
+      header: 'ID',
+      cell: ({ row }) => {
+        const resolved = getResolvedStatus(row.original) === 'Resolved';
+
+        return (
+          <div className='flex min-w-0 items-center gap-2'>
+            <FindingText
+              resolved={resolved}
+              className='truncate font-mono text-xs font-medium'
             >
-              {row.getIsExpanded() ? (
-                <ChevronUp className='h-4 w-4' />
-              ) : (
-                <ChevronDown className='h-4 w-4' />
-              )}
-            </Button>
-            <MarkItems
-              row={row}
-              setMarked={(marked) => {
-                return {
-                  to: Route.to,
-                  search: {
-                    ...search,
-                    // If no items are marked for inspection, remove the "marked" parameter
-                    // from search parameters.
-                    marked: marked === '' ? undefined : marked,
-                  },
-                };
-              }}
-            />
+              {row.original.vulnerability.externalId}
+            </FindingText>
+            {resolved && <ResolvedMark />}
           </div>
-        ) : (
-          'No info'
         );
       },
     }),
     columnHelper.display({
-      id: 'card',
-      cell: ({ row }) => <VulnerabilityCard vulnerability={row.original} />,
+      id: 'package',
+      header: 'Package',
+      cell: ({ row }) => <VulnerabilityPackage vulnerability={row.original} />,
+    }),
+    columnHelper.display({
+      id: 'summaryText',
+      header: 'Summary',
+      cell: ({ row }) => {
+        const summary = row.original.vulnerability.summary;
+
+        return summary ? (
+          <div
+            className='text-muted-foreground line-clamp-2 wrap-break-word'
+            title={summary}
+          >
+            {summary}
+          </div>
+        ) : (
+          <div className='text-muted-foreground'>No summary available</div>
+        );
+      },
+    }),
+    columnHelper.display({
+      id: 'advisor',
+      header: 'Advisor',
+      cell: ({ row }) => (
+        <div className='text-muted-foreground truncate'>
+          {row.original.advisor.name}
+        </div>
+      ),
+    }),
+    columnHelper.display({
+      id: 'fix',
+      header: 'Fix',
+      cell: ({ row }) =>
+        (row.original.firstFixedVersions?.length ?? 0) > 0 ? (
+          <span className='text-ok text-[0.6875rem] font-semibold tracking-[0.04em] whitespace-nowrap uppercase'>
+            Fix available
+          </span>
+        ) : (
+          <EmptyValue />
+        ),
     }),
     columnHelper.accessor(
       (vuln) => {
@@ -416,6 +407,24 @@ const VulnerabilitiesComponent = () => {
 
   const columnId =
     packageIdType === packageIdTypeSchema.enum.ORT_ID ? 'identifier' : 'purl';
+
+  const { data: statistics } = useQuery({
+    ...getRunStatisticsOptions({ path: { runId: ortRun.id } }),
+  });
+
+  // The run statistics count the vulnerabilities per rating, but know nothing
+  // of the other filters, so the counts are only shown without them.
+  const ratingCounts =
+    packageIdentifier === undefined &&
+    externalId === undefined &&
+    advisor === undefined &&
+    search.itemFix === undefined
+      ? selectCountsByResolution(
+          statistics?.vulnerabilitiesCountTotalByRating,
+          statistics?.vulnerabilitiesCountByRating,
+          search.itemResolved
+        )
+      : undefined;
 
   const {
     data: totalVulnerabilities,
@@ -620,6 +629,8 @@ const VulnerabilitiesComponent = () => {
   const filtersInUse =
     totalVulnerabilities.pagination.totalCount !==
     vulnerabilities.pagination.totalCount;
+  const intro =
+    'This view shows the vulnerabilities found in any of the packages used as dependencies of a project. As vulnerabilities may be only discovered over time, new vulnerabilities may arise even without changes to the any of the projects or their dependencies. Therefore, it is important to check for vulnerabilities on a regular basis.';
   const matching = `, ${vulnerabilities.pagination.totalCount} matching filters`;
   const advisorWasIncludedInRun = ortRun.jobs.advisor != null;
   const noResultsContent = !advisorWasIncludedInRun ? (
@@ -634,15 +645,74 @@ const VulnerabilitiesComponent = () => {
       title='Vulnerabilities'
       meta={`${totalVulnerabilities.pagination.totalCount} in total${filtersInUse ? matching : ''}`}
     >
-      <p className='text-muted-foreground -mt-2 max-w-[75ch] text-[0.8125rem]'>
-        This view shows the vulnerabilities found in any of the packages used as
-        dependencies of a project. As vulnerabilities may be only discovered
-        over time, new vulnerabilities may arise even without changes to the any
-        of the projects or their dependencies. Therefore, it is important to
-        check for vulnerabilities on a regular basis.
+      <p
+        className='text-muted-foreground -mt-2 max-w-[75ch] text-[0.8125rem] max-md:line-clamp-1'
+        title={intro}
+      >
+        {intro}
       </p>
+      <FindingsFilterChips
+        label='Filter by rating'
+        chips={[...zVulnerabilityRating.options].reverse().map((value) => ({
+          value,
+          label: capitalize(value),
+          colorClass: getVulnerabilityRatingBackgroundColor(value),
+          count: ratingCounts ? (ratingCounts[value] ?? 0) : undefined,
+        }))}
+        total={sumCounts(ratingCounts)}
+        selected={rating}
+        onSelect={(ratings) => {
+          navigate({ search: { ...search, page: 1, rating: ratings } });
+        }}
+      />
       <DataTableCards
         table={table}
+        aria-label='Vulnerabilities'
+        layout={[
+          {
+            id: 'ratingMark',
+            width: 'max-content',
+            sortBy: 'rating',
+            filters: ['rating'],
+            mobile: 'lead',
+          },
+          {
+            id: 'vulnerabilityId',
+            width: 'minmax(0,1.1fr)',
+            sortBy: 'externalId',
+            filters: ['externalId'],
+            mobile: 'main',
+          },
+          {
+            id: 'package',
+            width: 'minmax(0,1.8fr)',
+            sortBy: columnId,
+            filters: [columnId],
+            mobile: 'sub',
+          },
+          { id: 'summaryText', width: 'minmax(0,2.2fr)', mobile: 'hidden' },
+          {
+            id: 'advisor',
+            width: 'minmax(0,0.7fr)',
+            filters: ['advisorName'],
+            mobile: 'hidden',
+          },
+          {
+            id: 'fix',
+            width: 'max-content',
+            filters: ['itemStatus'],
+            mobile: 'end',
+          },
+        ]}
+        setMarkedOptions={(marked) => ({
+          to: Route.to,
+          search: {
+            ...search,
+            // If no items are marked for inspection, remove the "marked"
+            // parameter from search parameters.
+            marked: marked === '' ? undefined : marked,
+          },
+        })}
         noResultsContent={noResultsContent}
         renderSubComponent={renderSubComponent}
         setCurrentPageOptions={(currentPage) => {

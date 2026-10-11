@@ -20,7 +20,6 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { ExpandedState } from '@tanstack/react-table';
-import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
 import z from 'zod';
 
@@ -33,7 +32,10 @@ import {
 import { BreakableString } from '@/components/breakable-string';
 import { CopyToClipboard } from '@/components/copy-to-clipboard';
 import { DataTableCards } from '@/components/data-table-cards/data-table-cards';
-import { MarkItems } from '@/components/data-table/mark-items';
+import {
+  CopyableValue,
+  EmptyValue,
+} from '@/components/data-table-cards/findings-cells';
 import { DependencyPaths } from '@/components/dependency-paths';
 import {
   LicensesAccordion,
@@ -51,7 +53,6 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   Tooltip,
   TooltipContent,
@@ -73,7 +74,6 @@ import {
   useAppTable,
 } from '@/hooks/use-app-table';
 import type { AppRow } from '@/hooks/use-app-table';
-import { ACTION_COLUMN_SIZE } from '@/lib/constants';
 import { toastError } from '@/lib/toast';
 import { getRepositoryTypeLabel } from '@/lib/types';
 import {
@@ -100,113 +100,81 @@ const LicenseList = ({ licenses }: { licenses: string[] }) => (
   </div>
 );
 
-// Component to render a single package card in the list.
-const PackageCard = ({ pkg }: { pkg: Package }) => {
+const getDeclaredLicenses = (pkg: Package) => [
+  ...(pkg.processedDeclaredLicense.spdxExpression
+    ? [pkg.processedDeclaredLicense.spdxExpression]
+    : []),
+  ...pkg.processedDeclaredLicense.unmappedLicenses,
+];
+
+// The identifier of a package in the format chosen by the user.
+const PackageId = ({ pkg }: { pkg: Package }) => {
   const packageIdType = useUserSettingsStore((state) => state.packageIdType);
   const id =
     packageIdType === packageIdTypeSchema.enum.PURL && pkg.purl
       ? pkg.purl
       : identifierToString(pkg.identifier);
-  const declaredLicenses = [
-    ...(pkg.processedDeclaredLicense.spdxExpression
-      ? [pkg.processedDeclaredLicense.spdxExpression]
-      : []),
-    ...pkg.processedDeclaredLicense.unmappedLicenses,
-  ];
 
   return (
-    <div className='flex flex-col gap-1'>
-      <div className='flex items-start justify-between gap-4'>
-        <div className='min-w-0 text-left font-mono text-xs font-medium'>
-          <BreakableString text={id} />
-          <CopyToClipboard copyText={id} className='h-5 px-2 align-middle' />
-        </div>
-        {pkg.publishedAt && (
-          <TimestampWithUTC
-            timestamp={pkg.publishedAt}
-            label='Publishing timestamp'
-            className='text-muted-foreground shrink-0 text-[0.8125rem]'
-          />
-        )}
-      </div>
-      <div className='flex items-start justify-between gap-4'>
-        {declaredLicenses.length > 0 ? (
-          <div className='flex min-w-0 gap-2 text-[0.8125rem]'>
-            <div className='text-muted-foreground'>Declared License:</div>
-            <LicenseList licenses={declaredLicenses} />
-          </div>
-        ) : (
-          <div className='text-muted-foreground text-[0.8125rem]'>
-            No declared license
-          </div>
-        )}
-        <a
-          href={pkg.homepageUrl}
-          target='_blank'
-          rel='noopener noreferrer'
-          className='link max-w-1/2 min-w-0 text-right text-[0.8125rem] wrap-break-word'
-        >
-          {pkg.homepageUrl}
-        </a>
-      </div>
-
-      <div className='flex gap-2'>
-        {pkg.curations.length > 0 && (
-          <Tooltip>
-            <TooltipTrigger>
-              <Badge
-                variant='small'
-                className={`${getIssueSeverityBackgroundColor('HINT')}`}
-              >
-                CURATED
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-              This package has {pkg.curations.length} metadata curation
-              {pkg.curations.length > 1 ? 's' : ''}.
-            </TooltipContent>
-          </Tooltip>
-        )}
-        {pkg.isMetadataOnly && (
-          <div>
-            <Tooltip>
-              <TooltipTrigger>
-                <Badge
-                  variant='small'
-                  className={`${getIssueSeverityBackgroundColor('HINT')}`}
-                >
-                  METADATA ONLY
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent>
-                This is a metadata-only package that has no source code
-                associated to it.
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        )}
-        {pkg.isModified && (
-          <div>
-            <Tooltip>
-              <TooltipTrigger>
-                <Badge
-                  variant='small'
-                  className={`${getIssueSeverityBackgroundColor('WARNING')}`}
-                >
-                  MODIFIED
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent>
-                The package has been modified compared to the original package,
-                e.g. in case of a fork of an upstream Open Source project.
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        )}
-      </div>
-    </div>
+    <CopyableValue value={id} className='font-mono text-xs font-medium'>
+      <span title={id}>{id}</span>
+    </CopyableValue>
   );
 };
+
+// The marks of a curated, metadata-only or modified package.
+const PackageFlags = ({ pkg }: { pkg: Package }) => (
+  <div className='flex flex-wrap gap-1'>
+    {pkg.curations.length > 0 && (
+      <Tooltip>
+        <TooltipTrigger>
+          <Badge
+            variant='small'
+            className={`${getIssueSeverityBackgroundColor('HINT')}`}
+          >
+            CURATED
+          </Badge>
+        </TooltipTrigger>
+        <TooltipContent>
+          This package has {pkg.curations.length} metadata curation
+          {pkg.curations.length > 1 ? 's' : ''}.
+        </TooltipContent>
+      </Tooltip>
+    )}
+    {pkg.isMetadataOnly && (
+      <Tooltip>
+        <TooltipTrigger>
+          <Badge
+            variant='small'
+            className={`${getIssueSeverityBackgroundColor('HINT')}`}
+          >
+            METADATA ONLY
+          </Badge>
+        </TooltipTrigger>
+        <TooltipContent>
+          This is a metadata-only package that has no source code associated to
+          it.
+        </TooltipContent>
+      </Tooltip>
+    )}
+    {pkg.isModified && (
+      <Tooltip>
+        <TooltipTrigger>
+          <Badge
+            variant='small'
+            className={`${getIssueSeverityBackgroundColor('WARNING')}`}
+          >
+            MODIFIED
+          </Badge>
+        </TooltipTrigger>
+        <TooltipContent>
+          The package has been modified compared to the original package, e.g.
+          in case of a fork of an upstream Open Source project.
+        </TooltipContent>
+      </Tooltip>
+    )}
+  </div>
+);
 
 // Component to ender the expanded subrow of a package card, showing additional details.
 const renderSubComponent = ({
@@ -431,48 +399,61 @@ const PackagesComponent = () => {
   });
 
   const columns = columnHelper.columns([
-    // Leftmost action column.
+    // The columns of the grid.
     columnHelper.display({
-      id: 'details',
-      header: 'Details',
-      size: ACTION_COLUMN_SIZE,
-      cell: function CellComponent({ row }) {
-        return row.getCanExpand() ? (
-          <div className='flex items-center gap-1'>
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={row.getToggleExpandedHandler()}
-              style={{ cursor: 'pointer' }}
-            >
-              {row.getIsExpanded() ? (
-                <ChevronUp className='h-4 w-4' />
-              ) : (
-                <ChevronDown className='h-4 w-4' />
-              )}
-            </Button>
-            <MarkItems
-              row={row}
-              setMarked={(marked) => {
-                return {
-                  to: Route.to,
-                  search: {
-                    ...search,
-                    marked: marked === '' ? undefined : marked,
-                  },
-                };
-              }}
-            />
-          </div>
+      id: 'package',
+      header: 'Package',
+      cell: ({ row }) => <PackageId pkg={row.original} />,
+    }),
+    columnHelper.display({
+      id: 'license',
+      header: 'Declared license',
+      cell: ({ row }) => {
+        const licenses = getDeclaredLicenses(row.original);
+
+        return licenses.length > 0 ? (
+          <LicenseList licenses={licenses} />
         ) : (
-          'No info'
+          <EmptyValue />
         );
       },
     }),
-    // Main column that presents all data.
     columnHelper.display({
-      id: 'card',
-      cell: ({ row }) => <PackageCard pkg={row.original} />,
+      id: 'flags',
+      header: 'Flags',
+      cell: ({ row }) => <PackageFlags pkg={row.original} />,
+    }),
+    columnHelper.display({
+      id: 'published',
+      header: 'Published',
+      cell: ({ row }) =>
+        row.original.publishedAt ? (
+          <TimestampWithUTC
+            timestamp={row.original.publishedAt}
+            label='Publishing timestamp'
+            className='text-muted-foreground text-[0.8125rem] whitespace-nowrap'
+          />
+        ) : (
+          <EmptyValue />
+        ),
+    }),
+    columnHelper.display({
+      id: 'homepage',
+      header: 'Homepage',
+      cell: ({ row }) =>
+        row.original.homepageUrl ? (
+          <a
+            href={row.original.homepageUrl}
+            target='_blank'
+            rel='noopener noreferrer'
+            className='link block truncate'
+            title={row.original.homepageUrl}
+          >
+            {row.original.homepageUrl}
+          </a>
+        ) : (
+          <EmptyValue />
+        ),
     }),
     // All (hidden) columns that are used for filtering/sorting the main column.
     // They don't render any data, but need to retain their accessor logic, and
@@ -620,6 +601,8 @@ const PackagesComponent = () => {
   }
   const filtersInUse =
     totalPackages.pagination.totalCount !== packages.pagination.totalCount;
+  const intro =
+    'This view shows the flat set of de-duplicated packages discovered for all projects.';
   const matching = `, ${packages.pagination.totalCount} matching filters`;
 
   return (
@@ -627,12 +610,46 @@ const PackagesComponent = () => {
       title='Packages'
       meta={`${totalPackages.pagination.totalCount} in total${filtersInUse ? matching : ''}`}
     >
-      <p className='text-muted-foreground -mt-2 text-[0.8125rem]'>
-        This view shows the flat set of de-duplicated packages discovered for
-        all projects.
+      <p
+        className='text-muted-foreground -mt-2 text-[0.8125rem] max-md:line-clamp-1'
+        title={intro}
+      >
+        {intro}
       </p>
       <DataTableCards
         table={table}
+        aria-label='Packages'
+        layout={[
+          {
+            id: 'package',
+            width: 'minmax(0,2.4fr)',
+            sortBy: columnId,
+            filters: [columnId, 'isDirectDependency'],
+            mobile: 'main',
+          },
+          {
+            id: 'license',
+            width: 'minmax(0,1.4fr)',
+            sortBy: 'processedDeclaredLicense',
+            filters: ['processedDeclaredLicense'],
+            mobile: 'sub',
+          },
+          { id: 'flags', width: 'max-content', mobile: 'end' },
+          {
+            id: 'published',
+            width: 'max-content',
+            sortBy: 'publishedAt',
+            mobile: 'hidden',
+          },
+          { id: 'homepage', width: 'minmax(0,1.2fr)', mobile: 'hidden' },
+        ]}
+        setMarkedOptions={(marked) => ({
+          to: Route.to,
+          search: {
+            ...search,
+            marked: marked === '' ? undefined : marked,
+          },
+        })}
         renderSubComponent={({ row }) =>
           renderSubComponent({ row, packageIdType, runId: ortRun.id })
         }

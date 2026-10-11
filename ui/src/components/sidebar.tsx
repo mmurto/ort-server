@@ -30,6 +30,8 @@ export interface SidebarNavProps {
       params?: LinkProps['params'];
       search?: LinkProps['search'];
       title: string;
+      /** A count shown at the end of the item, such as unresolved findings. */
+      count?: number;
       icon?: React.ComponentType<{
         className?: string;
       }>;
@@ -94,7 +96,12 @@ export const Sidebar = ({ sections, className, ...props }: SidebarNavProps) => {
                   }}
                   className={railItemClass}
                 >
-                  {item.title}
+                  <span className='min-w-0 flex-1 truncate'>{item.title}</span>
+                  {item.count !== undefined && (
+                    <span className='text-rail-muted text-xs tabular-nums'>
+                      {item.count}
+                    </span>
+                  )}
                 </Link>
               ) : null;
             })}

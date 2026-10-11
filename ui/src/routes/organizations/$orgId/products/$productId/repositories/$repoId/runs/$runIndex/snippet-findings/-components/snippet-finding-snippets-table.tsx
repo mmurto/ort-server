@@ -23,8 +23,8 @@ import { useSearch } from '@tanstack/react-router';
 import { SnippetSource } from '@/api';
 import { getRunSnippetFindingSnippetsOptions } from '@/api/@tanstack/react-query.gen';
 import { BreakableString } from '@/components/breakable-string';
-import { CopyToClipboard } from '@/components/copy-to-clipboard';
 import { DataTableCards } from '@/components/data-table-cards/data-table-cards';
+import { CopyableValue } from '@/components/data-table-cards/findings-cells';
 import { SpdxExpressionBadgeGroup } from '@/components/licenses';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import {
@@ -90,50 +90,6 @@ const SnippetProvenance = ({ snippet }: { snippet: SnippetSource }) => {
   return <span className='text-muted-foreground'>N/A</span>;
 };
 
-const SnippetSourceCard = ({ snippet }: { snippet: SnippetSource }) => {
-  return (
-    <div className='flex flex-col gap-2'>
-      <div className='flex items-start justify-between gap-4'>
-        <div className='min-w-0 basis-2/3 text-left font-mono text-xs font-medium'>
-          <BreakableString text={snippet.purl} />
-          <CopyToClipboard
-            copyText={snippet.purl}
-            className='h-5 px-2 align-middle'
-          />
-        </div>
-        <div className='flex shrink-0 items-center gap-2'>
-          <span className='text-muted-foreground text-[0.8125rem]'>Score:</span>
-          <span className='font-semibold'>{snippet.score}</span>
-        </div>
-      </div>
-
-      <div className='flex items-start justify-between gap-4 text-[0.8125rem]'>
-        <div className='flex min-w-0 flex-col gap-2'>
-          <div className='flex min-w-0 gap-2'>
-            <div className='text-muted-foreground shrink-0'>Path:</div>
-            <div className='font-mono text-xs wrap-break-word'>
-              {snippet.path}
-            </div>
-          </div>
-          <div className='flex gap-2'>
-            <div className='text-muted-foreground shrink-0'>Line Range:</div>
-            <div>{formatLineRange(snippet.startLine, snippet.endLine)}</div>
-          </div>
-        </div>
-        <div className='flex shrink-0 gap-2'>
-          <div className='text-muted-foreground shrink-0'>License:</div>
-          <SpdxExpressionBadgeGroup expression={snippet.license} />
-        </div>
-      </div>
-
-      <div className='flex items-center gap-2 text-[0.8125rem]'>
-        <div className='text-muted-foreground shrink-0'>Provenance:</div>
-        <SnippetProvenance snippet={snippet} />
-      </div>
-    </div>
-  );
-};
-
 export const SnippetFindingSnippetsTable = ({
   runId,
   snippetFindingId,
@@ -163,8 +119,52 @@ export const SnippetFindingSnippetsTable = ({
 
   const snippetColumns = snippetColumnHelper.columns([
     snippetColumnHelper.display({
-      id: 'card',
-      cell: ({ row }) => <SnippetSourceCard snippet={row.original} />,
+      id: 'source',
+      header: 'Source',
+      cell: ({ row }) => (
+        <CopyableValue
+          value={row.original.purl}
+          className='font-mono text-xs font-medium'
+        >
+          <span title={row.original.purl}>{row.original.purl}</span>
+        </CopyableValue>
+      ),
+    }),
+    snippetColumnHelper.display({
+      id: 'location',
+      header: 'Path',
+      cell: ({ row }) => (
+        <div className='flex min-w-0 items-baseline gap-2'>
+          <span
+            className='truncate font-mono text-xs'
+            title={row.original.path}
+          >
+            {row.original.path}
+          </span>
+          <span className='text-muted-foreground shrink-0 tabular-nums'>
+            {formatLineRange(row.original.startLine, row.original.endLine)}
+          </span>
+        </div>
+      ),
+    }),
+    snippetColumnHelper.display({
+      id: 'licenseExpression',
+      header: 'License',
+      cell: ({ row }) => (
+        <SpdxExpressionBadgeGroup expression={row.original.license} />
+      ),
+    }),
+    snippetColumnHelper.display({
+      id: 'scoreValue',
+      header: 'Score',
+      cell: ({ row }) => (
+        <span className='font-semibold tabular-nums'>{row.original.score}</span>
+      ),
+    }),
+    snippetColumnHelper.display({
+      id: 'provenance',
+      header: 'Provenance',
+      cell: ({ row }) => <SnippetProvenance snippet={row.original} />,
     }),
     snippetColumnHelper.accessor('purl', {
       id: 'purl',
@@ -216,7 +216,30 @@ export const SnippetFindingSnippetsTable = ({
   return (
     <DataTableCards
       table={snippetsTable}
-      className='space-y-0 [&_tbody_tr:first-child]:border-t [&>div:first-child]:py-0'
+      aria-label='Snippets'
+      globalShortcuts={false}
+      layout={[
+        {
+          id: 'source',
+          width: 'minmax(0,1.6fr)',
+          sortBy: 'purl',
+          mobile: 'main',
+        },
+        { id: 'location', width: 'minmax(0,1.6fr)', mobile: 'sub' },
+        {
+          id: 'licenseExpression',
+          width: 'minmax(0,1fr)',
+          sortBy: 'license',
+          mobile: 'hidden',
+        },
+        {
+          id: 'scoreValue',
+          width: 'max-content',
+          sortBy: 'score',
+          mobile: 'end',
+        },
+        { id: 'provenance', width: 'minmax(0,1.4fr)', mobile: 'sub' },
+      ]}
       setCurrentPageOptions={(currentPage) => {
         return {
           to: '.',

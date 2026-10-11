@@ -20,7 +20,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { ExpandedState } from '@tanstack/react-table';
-import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
 import z from 'zod';
 
@@ -30,16 +29,16 @@ import {
   getProductVulnerabilityAdvisorsOptions,
 } from '@/api/@tanstack/react-query.gen';
 import { zVulnerabilityRating } from '@/api/zod.gen';
-import { BreakableString } from '@/components/breakable-string';
 import { VulnerabilityMetrics } from '@/components/charts/vulnerability-metrics';
-import { CopyToClipboard } from '@/components/copy-to-clipboard';
 import { DataTableCards } from '@/components/data-table-cards/data-table-cards';
-import { MarkItems } from '@/components/data-table/mark-items';
+import {
+  CopyableValue,
+  SeverityMark,
+} from '@/components/data-table-cards/findings-cells';
+import { FindingsFilterChips } from '@/components/data-table-cards/findings-filter-chips';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { MarkdownRenderer } from '@/components/markdown-renderer';
 import { PageHeader, SheetSection } from '@/components/page-header';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -53,6 +52,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { capitalize } from '@/helpers/capitalize';
 import { getVulnerabilityRatingBackgroundColor } from '@/helpers/get-status-class';
 import {
   convertToBackendSorting,
@@ -66,7 +66,6 @@ import {
   useAppTable,
 } from '@/hooks/use-app-table';
 import type { AppRow } from '@/hooks/use-app-table';
-import { ACTION_COLUMN_SIZE } from '@/lib/constants';
 import { toastError } from '@/lib/toast';
 import {
   advisorSearchParameterSchema,
@@ -84,8 +83,32 @@ const defaultPageSize = 10;
 
 const columnHelper = createAppColumnHelper<VulnerabilityWithStats>();
 
-// Component to render a single vulnerability card in the list.
-const VulnerabilityCard = ({
+// The affected package of a vulnerability in the format chosen by the user.
+const usePackageId = (vulnerability: VulnerabilityWithStats) => {
+  const packageIdType = useUserSettingsStore((state) => state.packageIdType);
+
+  return packageIdType === packageIdTypeSchema.enum.PURL && vulnerability.purl
+    ? vulnerability.purl
+    : identifierToString(vulnerability.identifier);
+};
+
+const VulnerabilityPackage = ({
+  vulnerability,
+}: {
+  vulnerability: VulnerabilityWithStats;
+}) => {
+  const id = usePackageId(vulnerability);
+
+  return (
+    <CopyableValue value={id} className='font-mono text-xs'>
+      <span title={id}>{id}</span>
+    </CopyableValue>
+  );
+};
+
+// The number of repositories affected by a vulnerability, linked to the
+// package search.
+const AffectedRepositories = ({
   vulnerability,
   organizationId,
   productId,
@@ -94,66 +117,30 @@ const VulnerabilityCard = ({
   organizationId: string;
   productId: string;
 }) => {
-  const packageIdType = useUserSettingsStore((state) => state.packageIdType);
-  const id =
-    packageIdType === packageIdTypeSchema.enum.PURL && vulnerability.purl
-      ? vulnerability.purl
-      : identifierToString(vulnerability.identifier);
+  const id = usePackageId(vulnerability);
 
   return (
-    <div className='flex flex-col gap-1'>
-      <div className='flex items-center justify-between'>
-        <div className='min-w-0 flex-1 text-left font-mono text-xs font-medium'>
-          <BreakableString text={id} />
-          <CopyToClipboard copyText={id} className='h-5 px-2 align-middle' />
-        </div>
-        <Badge
-          className='bg-neutral-soft text-foreground font-mono whitespace-nowrap'
-          variant='small'
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Link
+          className='link flex gap-1 text-[0.8125rem] whitespace-nowrap hover:underline'
+          to='/organizations/$orgId/products/$productId/search-package'
+          params={{
+            orgId: organizationId,
+            productId: productId,
+          }}
+          search={{ pkgId: id }}
         >
-          {vulnerability.vulnerability.externalId}
-        </Badge>
-      </div>
-      <div className='flex items-center justify-between'>
-        <div className='text-muted-foreground text-[0.8125rem] wrap-break-word'>
-          {vulnerability.vulnerability.summary || 'No summary available'}
-        </div>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Link
-              className='link flex gap-1 text-[0.8125rem] whitespace-nowrap hover:underline'
-              to='/organizations/$orgId/products/$productId/search-package'
-              params={{
-                orgId: organizationId,
-                productId: productId,
-              }}
-              search={{ pkgId: id }}
-            >
-              <div className='tabular-nums'>
-                {vulnerability.repositoriesCount}
-              </div>
-              <div>
-                {vulnerability.repositoriesCount === 1
-                  ? 'repository'
-                  : 'repositories'}
-              </div>
-            </Link>
-          </TooltipTrigger>
-          <TooltipContent>Show affected repositories</TooltipContent>
-        </Tooltip>
-      </div>
-
-      <div className='flex gap-2'>
-        <Badge
-          className={`${getVulnerabilityRatingBackgroundColor(
-            vulnerability.rating
-          )}`}
-          variant='small'
-        >
-          {vulnerability.rating}
-        </Badge>
-      </div>
-    </div>
+          <div className='tabular-nums'>{vulnerability.repositoriesCount}</div>
+          <div>
+            {vulnerability.repositoriesCount === 1
+              ? 'repository'
+              : 'repositories'}
+          </div>
+        </Link>
+      </TooltipTrigger>
+      <TooltipContent>Show affected repositories</TooltipContent>
+    </Tooltip>
   );
 };
 
@@ -233,52 +220,54 @@ const ProductVulnerabilitiesComponent = () => {
 
   const columns = columnHelper.columns([
     columnHelper.display({
-      id: 'moreInfo',
-      header: 'Details',
-      size: ACTION_COLUMN_SIZE,
-      cell: function CellComponent({ row }) {
-        return row.getCanExpand() ? (
-          <div className='flex items-center gap-1'>
-            <Button
-              variant='outline'
-              size='sm'
-              {...{
-                onClick: row.getToggleExpandedHandler(),
-                style: { cursor: 'pointer' },
-              }}
-            >
-              {row.getIsExpanded() ? (
-                <ChevronUp className='h-4 w-4' />
-              ) : (
-                <ChevronDown className='h-4 w-4' />
-              )}
-            </Button>
-            <MarkItems
-              row={row}
-              setMarked={(marked) => {
-                return {
-                  to: Route.to,
-                  search: {
-                    ...search,
-                    // If no items are marked for inspection, remove the "marked" parameter
-                    // from search parameters.
-                    marked: marked === '' ? undefined : marked,
-                  },
-                };
-              }}
-            />
-          </div>
-        ) : (
-          'No info'
-        );
-      },
-      enableSorting: false,
-      enableColumnFilter: false,
+      id: 'ratingMark',
+      header: 'Rating',
+      cell: ({ row }) => (
+        <SeverityMark
+          label={row.original.rating}
+          colorClass={getVulnerabilityRatingBackgroundColor(
+            row.original.rating
+          )}
+        />
+      ),
     }),
     columnHelper.display({
-      id: 'card',
+      id: 'vulnerabilityId',
+      header: 'ID',
       cell: ({ row }) => (
-        <VulnerabilityCard
+        <div className='truncate font-mono text-xs font-medium'>
+          {row.original.vulnerability.externalId}
+        </div>
+      ),
+    }),
+    columnHelper.display({
+      id: 'package',
+      header: 'Package',
+      cell: ({ row }) => <VulnerabilityPackage vulnerability={row.original} />,
+    }),
+    columnHelper.display({
+      id: 'summaryText',
+      header: 'Summary',
+      cell: ({ row }) => {
+        const summary = row.original.vulnerability.summary;
+
+        return summary ? (
+          <div
+            className='text-muted-foreground line-clamp-2 wrap-break-word'
+            title={summary}
+          >
+            {summary}
+          </div>
+        ) : (
+          <div className='text-muted-foreground'>No summary available</div>
+        );
+      },
+    }),
+    columnHelper.display({
+      id: 'repositories',
+      header: 'Repositories',
+      cell: ({ row }) => (
+        <AffectedRepositories
           vulnerability={row.original}
           organizationId={params.orgId}
           productId={params.productId}
@@ -496,6 +485,8 @@ const ProductVulnerabilitiesComponent = () => {
   const filtersInUse =
     totalVulnerabilities.pagination.totalCount !==
     vulnerabilities.pagination.totalCount;
+  const intro =
+    "This is an overview of the vulnerabilities found within this product. It only takes into account the latest runs per repository that have successful advisor results. Please note that new vulnerabilities may get discovered over time. Therefore, your product's repositories should be scanned for vulnerabilities regularly, even if no code changes occurred.";
   const matching = `, ${vulnerabilities.pagination.totalCount} matching filters`;
 
   return (
@@ -503,22 +494,75 @@ const ProductVulnerabilitiesComponent = () => {
       <PageHeader
         title='Vulnerabilities'
         description={
-          <>
-            This is an overview of the vulnerabilities found within this
-            product. It only takes into account the latest runs per repository
-            that have successful advisor results. Please note that new
-            vulnerabilities may get discovered over time. Therefore, your
-            product's repositories should be scanned for vulnerabilities
-            regularly, even if no code changes occurred.
-          </>
+          <span className='max-md:line-clamp-1' title={intro}>
+            {intro}
+          </span>
         }
       />
       <SheetSection
         title='All vulnerabilities'
         meta={`${totalVulnerabilities.pagination.totalCount} in total${filtersInUse ? matching : ''}`}
       >
+        <FindingsFilterChips
+          label='Filter by rating'
+          chips={[...zVulnerabilityRating.options].reverse().map((value) => ({
+            value,
+            label: capitalize(value),
+            colorClass: getVulnerabilityRatingBackgroundColor(value),
+          }))}
+          total={
+            packageIdentifier === undefined &&
+            externalId === undefined &&
+            advisor === undefined
+              ? totalVulnerabilities.pagination.totalCount
+              : undefined
+          }
+          selected={rating}
+          onSelect={(ratings) => {
+            navigate({ search: { ...search, page: 1, rating: ratings } });
+          }}
+        />
         <DataTableCards
           table={table}
+          aria-label='Vulnerabilities'
+          layout={[
+            {
+              id: 'ratingMark',
+              width: 'max-content',
+              sortBy: 'rating',
+              filters: ['rating'],
+              mobile: 'lead',
+            },
+            {
+              id: 'vulnerabilityId',
+              width: 'minmax(0,1.1fr)',
+              sortBy: 'externalId',
+              filters: ['externalId'],
+              mobile: 'main',
+            },
+            {
+              id: 'package',
+              width: 'minmax(0,1.8fr)',
+              sortBy: columnId,
+              filters: [columnId],
+              mobile: 'sub',
+            },
+            { id: 'summaryText', width: 'minmax(0,2.4fr)', mobile: 'hidden' },
+            {
+              id: 'repositories',
+              width: 'max-content',
+              sortBy: 'repositoriesCount',
+              mobile: 'end',
+            },
+          ]}
+          setMarkedOptions={(marked) => ({
+            search: {
+              ...search,
+              // If no items are marked for inspection, remove the "marked"
+              // parameter from search parameters.
+              marked: marked === '' ? undefined : marked,
+            },
+          })}
           renderSubComponent={renderSubComponent}
           setCurrentPageOptions={(currentPage) => {
             return {

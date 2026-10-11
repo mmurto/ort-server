@@ -40,9 +40,24 @@ type OrtRunJobStatusProps = {
   runIndex: string;
 };
 
+const MIN_SHARE = 0.08;
+
+const durationOf = (
+  job:
+    { startedAt?: string | null; finishedAt?: string | null } | null | undefined
+) =>
+  job?.startedAt
+    ? Math.max(
+        (job.finishedAt ? Date.parse(job.finishedAt) : Date.now()) -
+          Date.parse(job.startedAt),
+        0
+      )
+    : 0;
+
 /**
- * The jobs of a run as a compact trajectory: one flat segment per job, in pipeline order,
- * coloured by the job's status.
+ * The jobs of a run as a compact trajectory, the flight plan in miniature: one flat segment per
+ * job in pipeline order, its length proportional to how long the job ran and its colour its
+ * status.
  */
 export const OrtRunJobStatus = ({
   jobs,
@@ -52,9 +67,14 @@ export const OrtRunJobStatus = ({
   runIndex,
 }: OrtRunJobStatusProps) => {
   return (
-    <div className='flex items-center gap-0.5'>
+    <div className='flex w-24 items-center gap-px'>
       {RUN_JOBS.map(({ key, label }) => {
         const job = jobs[key];
+        const total = RUN_JOBS.reduce(
+          (sum, j) => sum + durationOf(jobs[j.key]),
+          0
+        );
+        const share = total > 0 ? durationOf(job) / total : 0;
         return (
           <Tooltip key={key}>
             <TooltipTrigger asChild>
@@ -62,11 +82,12 @@ export const OrtRunJobStatus = ({
                 to='/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/config'
                 params={{ orgId, productId, repoId, runIndex }}
                 search={{ job: key }}
-                className='py-1.5'
+                className='min-w-1.5 py-1.5'
+                style={{ flexGrow: Math.max(share, MIN_SHARE) }}
                 aria-label={`${label}: ${job?.status ?? 'not included'}`}
               >
                 <span
-                  className={`${getStatusClass(job?.status)} ${getStatusBackgroundColor(job?.status)}`}
+                  className={`${getStatusClass(job?.status)} ${getStatusBackgroundColor(job?.status)} w-full`}
                 />
               </Link>
             </TooltipTrigger>

@@ -134,9 +134,9 @@ const findVulnerability = (name: string) =>
 
 // The button that expands and collapses the row of the given vulnerability.
 const getDetailsButton = (name: string) =>
-  within(screen.getByText(`Summary of ${name}`).closest('tr')!).getAllByRole(
-    'button'
-  )[0]!;
+  within(
+    screen.getByText(`Summary of ${name}`).closest<HTMLElement>('[role="row"]')!
+  ).getByRole('button', { name: /^(Expand|Collapse) row$/ });
 
 // The package IDs that the "repositories" links of the cards search for.
 const getLinkedPackageIds = () =>
@@ -302,13 +302,9 @@ describe('organization vulnerabilities table', () => {
     await user.click(getDetailsButton('vuln-1'));
 
     expect(await screen.findByText('Description of vuln-1')).toBeVisible();
-    expect(
-      getDetailsButton('vuln-1').querySelector('.lucide-chevron-up')
-    ).toBeInTheDocument();
+    expect(getDetailsButton('vuln-1')).toHaveAccessibleName('Collapse row');
     expect(screen.queryByText('Description of vuln-2')).not.toBeInTheDocument();
-    expect(
-      getDetailsButton('vuln-2').querySelector('.lucide-chevron-down')
-    ).toBeInTheDocument();
+    expect(getDetailsButton('vuln-2')).toHaveAccessibleName('Expand row');
 
     await user.click(getDetailsButton('vuln-1'));
 
@@ -317,9 +313,7 @@ describe('organization vulnerabilities table', () => {
         screen.queryByText('Description of vuln-1')
       ).not.toBeInTheDocument()
     );
-    expect(
-      getDetailsButton('vuln-1').querySelector('.lucide-chevron-down')
-    ).toBeInTheDocument();
+    expect(getDetailsButton('vuln-1')).toHaveAccessibleName('Expand row');
   });
 
   it('expands the row marked in the URL', async () => {
@@ -349,12 +343,16 @@ describe('organization vulnerabilities table', () => {
     const { queryClient } = renderVulnerabilities();
 
     expect(await findVulnerability('vuln-1')).toBeVisible();
-    expect(screen.getByText('Rating')).toBeVisible();
-    expect(screen.queryByText('Advisor')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Rating' })).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: 'Advisor' })
+    ).not.toBeInTheDocument();
 
     mocks.advisors.mockResolvedValue({ data: ['OSV', 'VulnerableCode'] });
     await act(() => queryClient!.invalidateQueries());
 
-    expect(await screen.findByText('Advisor')).toBeVisible();
+    expect(
+      await screen.findByRole('button', { name: 'Advisor' })
+    ).toBeVisible();
   });
 });

@@ -20,7 +20,6 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { ExpandedState } from '@tanstack/react-table';
-import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
 
 import { SnippetFindingProvenance } from '@/api';
@@ -29,12 +28,10 @@ import {
   getRunSnippetFindingProvenancesOptions,
 } from '@/api/@tanstack/react-query.gen';
 import { BreakableString } from '@/components/breakable-string';
-import { CopyToClipboard } from '@/components/copy-to-clipboard';
 import { DataTableCards } from '@/components/data-table-cards/data-table-cards';
+import { CopyableValue } from '@/components/data-table-cards/findings-cells';
 import { SheetSection } from '@/components/page-header';
 import { Sha1Component } from '@/components/sha1-component';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   EMPTY_SORTING_STATE,
   updateColumnSorting,
@@ -45,7 +42,6 @@ import {
   selectNoTableState,
   useAppTable,
 } from '@/hooks/use-app-table';
-import { ACTION_COLUMN_SIZE } from '@/lib/constants';
 import { toastError } from '@/lib/toast';
 import { ProvenanceSnippetFindingsTable } from './provenance-snippet-findings-table';
 import {
@@ -105,40 +101,6 @@ const ProvenanceDetails = ({
   return <span className='text-muted-foreground'>N/A</span>;
 };
 
-const SnippetFindingProvenanceCard = ({
-  provenance,
-}: {
-  provenance: SnippetFindingProvenance;
-}) => {
-  const identifier = identifierToString(provenance.identifier);
-
-  return (
-    <div className='flex flex-col gap-2'>
-      <div className='flex items-start justify-between gap-4'>
-        <div className='min-w-0 basis-2/3 text-left font-mono text-xs font-medium'>
-          <BreakableString text={identifier} />
-          <CopyToClipboard
-            copyText={identifier}
-            className='h-5 px-2 align-middle'
-          />
-        </div>
-        <div className='flex shrink-0 items-center gap-2'>
-          <Badge variant='small'>{provenance.provenanceType}</Badge>
-          <div className='text-muted-foreground ml-4 text-[0.8125rem]'>
-            {provenance.snippetFindingCount} finding
-            {provenance.snippetFindingCount === 1 ? '' : 's'}
-          </div>
-        </div>
-      </div>
-
-      <div className='flex items-center gap-2 text-[0.8125rem]'>
-        <div className='text-muted-foreground shrink-0'>Provenance:</div>
-        <ProvenanceDetails provenance={provenance} />
-      </div>
-    </div>
-  );
-};
-
 export const SnippetFindingsView = () => {
   const params = useParams({ from: snippetFindingsRoutePath });
   const search = useSearch({ from: snippetFindingsRoutePath });
@@ -173,43 +135,44 @@ export const SnippetFindingsView = () => {
 
   const columns = provenanceColumnHelper.columns([
     provenanceColumnHelper.display({
-      id: 'details',
-      header: 'Details',
-      size: ACTION_COLUMN_SIZE,
-      cell: function CellComponent({ row }) {
-        return row.getCanExpand() ? (
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={() => {
-              const isOpening = !row.getIsExpanded();
+      id: 'package',
+      header: 'Package',
+      cell: ({ row }) => {
+        const identifier = identifierToString(row.original.identifier);
 
-              setExpanded(isOpening ? { [row.id]: true } : {});
-              navigate({
-                search: {
-                  ...search,
-                  findingsPage: 1,
-                  snippetsPage: 1,
-                },
-                replace: true,
-              });
-            }}
-            style={{ cursor: 'pointer' }}
+        return (
+          <CopyableValue
+            value={identifier}
+            className='font-mono text-xs font-medium'
           >
-            {row.getIsExpanded() ? (
-              <ChevronUp className='h-4 w-4' />
-            ) : (
-              <ChevronDown className='h-4 w-4' />
-            )}
-          </Button>
-        ) : null;
+            <span title={identifier}>{identifier}</span>
+          </CopyableValue>
+        );
       },
     }),
     provenanceColumnHelper.display({
-      id: 'card',
+      id: 'provenanceType',
+      header: 'Provenance type',
       cell: ({ row }) => (
-        <SnippetFindingProvenanceCard provenance={row.original} />
+        <span className='label-caps text-foreground whitespace-nowrap'>
+          {row.original.provenanceType}
+        </span>
       ),
+    }),
+    provenanceColumnHelper.display({
+      id: 'findings',
+      header: 'Findings',
+      cell: ({ row }) => (
+        <span className='text-muted-foreground whitespace-nowrap tabular-nums'>
+          {row.original.snippetFindingCount} finding
+          {row.original.snippetFindingCount === 1 ? '' : 's'}
+        </span>
+      ),
+    }),
+    provenanceColumnHelper.display({
+      id: 'provenance',
+      header: 'Provenance',
+      cell: ({ row }) => <ProvenanceDetails provenance={row.original} />,
     }),
     provenanceColumnHelper.accessor((row) => row.identifier.type, {
       id: 'type',
@@ -281,12 +244,42 @@ export const SnippetFindingsView = () => {
       title='Detected snippets'
       meta={`${provenances.pagination.totalCount} package provenances with findings`}
     >
-      <p className='text-muted-foreground -mt-2 text-[0.8125rem]'>
+      <p className='text-muted-foreground -mt-2 text-[0.8125rem] max-md:line-clamp-1'>
         Snippet findings detected in package provenances by the configured
         scanners.
       </p>
       <DataTableCards
         table={table}
+        aria-label='Package provenances with snippet findings'
+        layout={[
+          {
+            id: 'package',
+            width: 'minmax(0,2fr)',
+            sortBy: 'name',
+            mobile: 'main',
+          },
+          {
+            id: 'provenanceType',
+            width: 'max-content',
+            sortBy: 'type',
+            mobile: 'end',
+          },
+          { id: 'findings', width: 'max-content', mobile: 'end' },
+          { id: 'provenance', width: 'minmax(0,2fr)', mobile: 'sub' },
+        ]}
+        onToggleExpanded={(row) => {
+          const isOpening = !row.getIsExpanded();
+
+          setExpanded(isOpening ? { [row.id]: true } : {});
+          navigate({
+            search: {
+              ...search,
+              findingsPage: 1,
+              snippetsPage: 1,
+            },
+            replace: true,
+          });
+        }}
         noResultsContent={noResultsContent}
         renderSubComponent={({ row }) => (
           <ProvenanceSnippetFindingsTable

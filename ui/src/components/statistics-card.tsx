@@ -94,8 +94,9 @@ export const StatisticsCard = ({
 
   return (
     <div
+      data-figure
       className={cn(
-        'flex h-full min-w-0 flex-col gap-1 px-5 py-4 transition-colors duration-100',
+        'flex h-full min-w-0 flex-col gap-1 py-4 transition-colors duration-100 md:px-5',
         className
       )}
     >
@@ -157,7 +158,10 @@ export const StatisticsCard = ({
   );
 };
 
-/** A row of summary figures divided by hairlines. */
+/**
+ * A row of summary figures divided by hairlines: the first figure stands flush with the page
+ * edge, and on narrow screens the figures stack.
+ */
 export const StatisticsRow = ({
   className,
   children,
@@ -167,7 +171,7 @@ export const StatisticsRow = ({
 }) => (
   <div
     className={cn(
-      'grid grid-cols-2 border-y md:auto-cols-fr md:grid-flow-col md:grid-cols-none [&>*]:border-b [&>*]:md:border-b-0 [&>*:not(:first-child)]:md:border-l [&>*:nth-child(even)]:border-l',
+      'grid grid-cols-1 divide-y md:auto-cols-fr md:grid-flow-col md:grid-cols-none md:divide-x md:divide-y-0 md:[&>*:first-child_[data-figure]]:pl-0 md:[&>[data-figure]:first-child]:pl-0',
       className
     )}
   >

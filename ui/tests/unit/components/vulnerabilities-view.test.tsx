@@ -191,7 +191,11 @@ describe('vulnerabilities table', () => {
     const { container, router, user } = renderVulnerabilities();
 
     const link = await screen.findByRole('link', { name: idOf('library') });
-    await user.click(within(link.closest('tr')!).getAllByRole('button')[0]!);
+    await user.click(
+      within(link.closest<HTMLElement>('[role="row"]')!).getByRole('button', {
+        name: 'Expand row',
+      })
+    );
     expect(
       await screen.findByRole('button', { name: 'Resolve vulnerability' })
     ).toBeVisible();

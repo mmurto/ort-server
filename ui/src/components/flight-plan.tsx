@@ -164,11 +164,8 @@ export const FlightPlan = ({
   });
 
   return (
-    <section
-      aria-label='Flight plan'
-      className={cn('-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0', className)}
-    >
-      <div className='border-foreground min-w-[680px] border-t pt-2'>
+    <section aria-label='Flight plan' className={className}>
+      <div className='border-foreground border-t pt-2'>
         <div className='flex h-4 items-center justify-between gap-4'>
           <span className='label-caps'>
             Flight plan · {plannedCount} {plannedCount === 1 ? 'job' : 'jobs'}
@@ -199,8 +196,8 @@ export const FlightPlan = ({
           </span>
         </div>
 
-        {/* Job labels */}
-        <div className='relative mt-2 h-14'>
+        {/* Job labels; narrow screens list the jobs below instead */}
+        <div className='relative mt-2 hidden h-14 md:block'>
           {segments.length === 0 && (
             <p className='text-muted-foreground absolute bottom-1 left-0 text-[0.8125rem]'>
               {status === 'FAILED'
@@ -286,7 +283,7 @@ export const FlightPlan = ({
           {ticks.map((t) => (
             <span
               key={t}
-              className='before:bg-input absolute top-1.5 -translate-x-1/2 whitespace-nowrap before:absolute before:-top-1.5 before:left-1/2 before:h-1 before:w-px first:translate-x-0 first:before:left-0'
+              className='before:bg-input absolute top-1.5 -translate-x-1/2 whitespace-nowrap before:absolute before:-top-1.5 before:left-1/2 before:h-1 before:w-px first:translate-x-0 first:before:left-0 not-first:max-md:hidden'
               style={{ left: `${(t / total) * 100}%` }}
             >
               {formatElapsed(t)}
@@ -299,7 +296,7 @@ export const FlightPlan = ({
 
         {/* Events */}
         {placedEvents.length > 0 && (
-          <div className='relative h-7 text-xs leading-4'>
+          <div className='relative hidden h-7 text-xs leading-4 md:block'>
             {placedEvents.map((event) => (
               <div
                 key={event.job}
@@ -320,6 +317,38 @@ export const FlightPlan = ({
             ))}
           </div>
         )}
+        <ul className='mt-1 divide-y text-[0.8125rem] md:hidden'>
+          {labelled.map((segment) => {
+            const event = placedEvents.find((e) => e.job === segment.key);
+            return (
+              <li key={segment.key} className='flex items-center gap-2 py-1.5'>
+                <span
+                  aria-hidden
+                  className='size-2 shrink-0'
+                  style={{ backgroundColor: segment.color }}
+                />
+                <span className='font-medium'>{segment.label}</span>
+                <span className='text-muted-foreground'>
+                  {segment.running
+                    ? 'running'
+                    : formatDuration(segment.duration)}
+                </span>
+                {event && (
+                  <span
+                    className={cn(
+                      'ml-auto text-xs',
+                      event.alert
+                        ? 'text-err font-medium'
+                        : 'text-muted-foreground'
+                    )}
+                  >
+                    {event.content}
+                  </span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
       </div>
     </section>
   );

@@ -20,7 +20,6 @@
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { ExpandedState } from '@tanstack/react-table';
-import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
 import z from 'zod';
 
@@ -29,12 +28,21 @@ import {
   getRepositoryRunOptions,
   getRunRuleViolationRulesOptions,
   getRunRuleViolationsOptions,
+  getRunStatisticsOptions,
 } from '@/api/@tanstack/react-query.gen';
 import { zSeverity } from '@/api/zod.gen';
-import { BreakableString } from '@/components/breakable-string';
-import { CopyToClipboard } from '@/components/copy-to-clipboard';
 import { DataTableCards } from '@/components/data-table-cards/data-table-cards';
-import { MarkItems } from '@/components/data-table/mark-items';
+import {
+  CopyableValue,
+  FindingText,
+  ResolvedMark,
+  SeverityMark,
+} from '@/components/data-table-cards/findings-cells';
+import {
+  selectCountsByResolution,
+  sumCounts,
+} from '@/components/data-table-cards/findings-counts';
+import { FindingsFilterChips } from '@/components/data-table-cards/findings-filter-chips';
 import { FormattedValue } from '@/components/formatted-value';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { MarkdownRenderer } from '@/components/markdown-renderer';
@@ -46,17 +54,13 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import {
-  getResolvedBackgroundColor,
-  getRuleViolationSeverityBackgroundColor,
-} from '@/helpers/get-status-class';
+import { capitalize } from '@/helpers/capitalize';
+import { getRuleViolationSeverityBackgroundColor } from '@/helpers/get-status-class';
 import {
   convertToBackendSorting,
   updateColumnSorting,
@@ -73,7 +77,6 @@ import {
   useAppTable,
 } from '@/hooks/use-app-table';
 import type { AppRow } from '@/hooks/use-app-table';
-import { ACTION_COLUMN_SIZE } from '@/lib/constants';
 import { toastError } from '@/lib/toast';
 import {
   ItemResolved,
@@ -100,8 +103,8 @@ const supportedSortColumns = new Set([
 
 const columnHelper = createAppColumnHelper<RuleViolation>();
 
-// Component to render a single rule violation card in the list.
-const RuleViolationCard = ({
+// The package or project of a rule violation, linked to its table.
+const RuleViolationPackage = ({
   ruleViolation,
 }: {
   ruleViolation: RuleViolation;
@@ -116,85 +119,77 @@ const RuleViolationCard = ({
   const idType = purl
     ? packageIdTypeSchema.enum.PURL
     : packageIdTypeSchema.enum.ORT_ID;
+  const linkParams = {
+    orgId: params.orgId,
+    productId: params.productId,
+    repoId: params.repoId,
+    runIndex: params.runIndex,
+  };
 
   return (
-    <div className='flex flex-col gap-1'>
-      <div className='flex items-center justify-between'>
-        <div className='min-w-0 flex-1'>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              {ruleViolation.purl != null ? (
-                <Link
-                  className='link text-left font-mono text-xs'
-                  to='/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/packages'
-                  params={{
-                    orgId: params.orgId,
-                    productId: params.productId,
-                    repoId: params.repoId,
-                    runIndex: params.runIndex,
-                  }}
-                  search={{ pkgId: id, pkgIdType: idType, marked: '0' }}
-                >
-                  <BreakableString text={id} />
-                </Link>
-              ) : (
-                <Link
-                  className='link text-left font-mono text-xs'
-                  to='/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/projects'
-                  params={{
-                    orgId: params.orgId,
-                    productId: params.productId,
-                    repoId: params.repoId,
-                    runIndex: params.runIndex,
-                  }}
-                  search={{ projectId: id, marked: id }}
-                >
-                  <BreakableString text={id} />
-                </Link>
-              )}
-            </TooltipTrigger>
-            <TooltipContent>
-              {ruleViolation.purl != null
-                ? 'Inspect the package details in packages table'
-                : 'Inspect the project details in projects table'}
-            </TooltipContent>
-          </Tooltip>
-          <CopyToClipboard copyText={id} className='h-5 px-2 align-middle' />
-        </div>
-        <Badge
-          className='bg-neutral-soft text-foreground font-mono whitespace-nowrap'
-          variant='small'
-        >
-          {ruleViolation.rule}
-        </Badge>
+    <CopyableValue value={id} className='font-mono text-xs'>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {ruleViolation.purl != null ? (
+            <Link
+              className='link'
+              to='/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/packages'
+              params={linkParams}
+              search={{ pkgId: id, pkgIdType: idType, marked: '0' }}
+            >
+              {id}
+            </Link>
+          ) : (
+            <Link
+              className='link'
+              to='/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/projects'
+              params={linkParams}
+              search={{ projectId: id, marked: id }}
+            >
+              {id}
+            </Link>
+          )}
+        </TooltipTrigger>
+        <TooltipContent>
+          {ruleViolation.purl != null
+            ? 'Inspect the package details in packages table'
+            : 'Inspect the project details in projects table'}
+        </TooltipContent>
+      </Tooltip>
+    </CopyableValue>
+  );
+};
+
+// The license a rule violation is about, or else its message.
+const RuleViolationFinding = ({
+  ruleViolation,
+}: {
+  ruleViolation: RuleViolation;
+}) => {
+  if (!ruleViolation.license) {
+    return (
+      <div
+        className='text-muted-foreground truncate'
+        title={ruleViolation.message}
+      >
+        {ruleViolation.message}
       </div>
-      <div className='flex items-center justify-between'>
-        <div className='flex gap-2'>
-          <Badge
-            className={`${getResolvedBackgroundColor(
-              getResolvedStatus(ruleViolation)
-            )}`}
-            variant='small'
-          >
-            {getResolvedStatus(ruleViolation)}
-          </Badge>
-          <Badge
-            className={`${getRuleViolationSeverityBackgroundColor(
-              ruleViolation.severity
-            )}`}
-            variant='small'
-          >
-            {ruleViolation.severity}
-          </Badge>
-        </div>
-        <div className='text-muted-foreground flex gap-1 text-[0.8125rem]'>
-          {ruleViolation.license && <div>{ruleViolation.license}</div>}
-          {ruleViolation.licenseSources &&
-            ruleViolation.licenseSources.length > 0 && (
-              <div>({ruleViolation.licenseSources.join(', ')})</div>
-            )}
-        </div>
-      </div>
+    );
+  }
+
+  const sources =
+    ruleViolation.licenseSources && ruleViolation.licenseSources.length > 0
+      ? ruleViolation.licenseSources.join(', ')
+      : undefined;
+
+  return (
+    <div className='flex min-w-0 items-baseline gap-1.5'>
+      <span className='truncate font-mono text-xs'>
+        {ruleViolation.license}
+      </span>
+      {sources && (
+        <span className='text-muted-foreground shrink-0'>({sources})</span>
+      )}
     </div>
   );
 };
@@ -257,6 +252,21 @@ const RuleViolationsComponent = () => {
     }),
   });
 
+  const { data: statistics } = useQuery({
+    ...getRunStatisticsOptions({ path: { runId: ortRun.id } }),
+  });
+
+  // The run statistics count the rule violations per severity, but know
+  // nothing of the other filters, so the counts are only shown without them.
+  const severityCounts =
+    packageIdentifier === undefined && selectedRules === undefined
+      ? selectCountsByResolution(
+          statistics?.ruleViolationsCountTotalBySeverity,
+          statistics?.ruleViolationsCountBySeverity,
+          itemStatus
+        )
+      : undefined;
+
   const {
     data: ruleViolations,
     isPending,
@@ -284,49 +294,46 @@ const RuleViolationsComponent = () => {
 
   const columns = columnHelper.columns([
     columnHelper.display({
-      id: 'details',
-      header: 'Details',
-      size: ACTION_COLUMN_SIZE,
-      cell: function CellComponent({ row }) {
-        return row.getCanExpand() ? (
-          <div className='flex items-center gap-1'>
-            <Button
-              variant='outline'
-              size='sm'
-              {...{
-                onClick: row.getToggleExpandedHandler(),
-                style: { cursor: 'pointer' },
-              }}
-            >
-              {row.getIsExpanded() ? (
-                <ChevronUp className='h-4 w-4' />
-              ) : (
-                <ChevronDown className='h-4 w-4' />
-              )}
-            </Button>
-            <MarkItems
-              row={row}
-              setMarked={(marked) => {
-                return {
-                  to: Route.to,
-                  search: {
-                    ...search,
-                    // If no items are marked for inspection, remove the "marked" parameter
-                    // from search parameters.
-                    marked: marked === '' ? undefined : marked,
-                  },
-                };
-              }}
-            />
-          </div>
-        ) : (
-          'No info'
-        );
-      },
+      id: 'severityMark',
+      header: 'Severity',
+      cell: ({ row }) => (
+        <SeverityMark
+          label={row.original.severity}
+          colorClass={getRuleViolationSeverityBackgroundColor(
+            row.original.severity
+          )}
+        />
+      ),
     }),
     columnHelper.display({
-      id: 'card',
-      cell: ({ row }) => <RuleViolationCard ruleViolation={row.original} />,
+      id: 'ruleName',
+      header: 'Rule',
+      cell: ({ row }) => (
+        <FindingText
+          resolved={getResolvedStatus(row.original) === 'Resolved'}
+          className='block truncate font-mono text-xs font-medium'
+        >
+          {row.original.rule}
+        </FindingText>
+      ),
+    }),
+    columnHelper.display({
+      id: 'package',
+      header: 'Package',
+      cell: ({ row }) => <RuleViolationPackage ruleViolation={row.original} />,
+    }),
+    columnHelper.display({
+      id: 'finding',
+      header: 'License / finding',
+      cell: ({ row }) => <RuleViolationFinding ruleViolation={row.original} />,
+    }),
+    columnHelper.display({
+      id: 'resolution',
+      header: 'Status',
+      cell: ({ row }) =>
+        getResolvedStatus(row.original) === 'Resolved' ? (
+          <ResolvedMark />
+        ) : null,
     }),
     columnHelper.accessor(
       (ruleViolation) => {
@@ -522,6 +529,8 @@ const RuleViolationsComponent = () => {
   }
 
   const filtersInUse = columnFilters.length > 0;
+  const intro =
+    'This view shows all violations that go against the rules defined in the configured policy.';
   const matching = `, ${ruleViolations.pagination.totalCount} matching filters`;
   const evaluatorWasIncludedInRun = ortRun.jobs.evaluator != null;
   const noResultsContent = !evaluatorWasIncludedInRun ? (
@@ -536,12 +545,69 @@ const RuleViolationsComponent = () => {
       title='Rule violations'
       meta={`${totalRuleViolations.pagination.totalCount} in total${filtersInUse ? matching : ''}`}
     >
-      <p className='text-muted-foreground -mt-2 max-w-[75ch] text-[0.8125rem]'>
-        This view shows all violations that go against the rules defined in the
-        configured policy.
+      <p
+        className='text-muted-foreground -mt-2 max-w-[75ch] text-[0.8125rem] max-md:line-clamp-1'
+        title={intro}
+      >
+        {intro}
       </p>
+      <FindingsFilterChips
+        label='Filter by severity'
+        chips={[...zSeverity.options].reverse().map((value) => ({
+          value,
+          label: capitalize(value),
+          colorClass: getRuleViolationSeverityBackgroundColor(value),
+          count: severityCounts ? (severityCounts[value] ?? 0) : undefined,
+        }))}
+        total={sumCounts(severityCounts)}
+        selected={severity}
+        onSelect={(severities) => {
+          navigate({ search: { ...search, page: 1, severity: severities } });
+        }}
+      />
       <DataTableCards
         table={table}
+        aria-label='Rule violations'
+        layout={[
+          {
+            id: 'severityMark',
+            width: 'max-content',
+            sortBy: 'severity',
+            filters: ['severity'],
+            mobile: 'lead',
+          },
+          {
+            id: 'ruleName',
+            width: 'minmax(0,1.2fr)',
+            sortBy: 'rule',
+            filters: ['rule'],
+            mobile: 'main',
+          },
+          {
+            id: 'package',
+            width: 'minmax(0,2fr)',
+            sortBy: columnId,
+            filters: [columnId],
+            mobile: 'sub',
+          },
+          { id: 'finding', width: 'minmax(0,1.5fr)', mobile: 'hidden' },
+          {
+            id: 'resolution',
+            width: 'max-content',
+            sortBy: 'status',
+            filters: ['status'],
+            mobile: 'end',
+          },
+        ]}
+        setMarkedOptions={(marked) => ({
+          to: Route.to,
+          search: {
+            ...search,
+            // If no items are marked for inspection, remove the "marked"
+            // parameter from search parameters.
+            marked: marked === '' ? undefined : marked,
+          },
+        })}
         noResultsContent={noResultsContent}
         renderSubComponent={renderSubComponent}
         setCurrentPageOptions={(currentPage) => {

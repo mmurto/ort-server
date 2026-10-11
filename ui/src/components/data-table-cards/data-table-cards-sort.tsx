@@ -76,11 +76,14 @@ export function DataTableCardsSort<TData extends RowData>({
                 <Button
                   variant='ghost'
                   size='narrow'
-                  className='text-sm font-medium'
+                  className='text-muted-foreground hover:text-foreground h-6 gap-1 font-medium'
                 >
-                  <div className='text-sm font-medium'>Sort</div>
+                  <div className='text-[0.75rem] font-medium'>Sort</div>
                   <ChevronDown
-                    className={cn('size-4', isSortingActive && 'link')}
+                    className={cn(
+                      'size-3.5',
+                      isSortingActive && 'text-foreground'
+                    )}
                   />
                 </Button>
               </div>

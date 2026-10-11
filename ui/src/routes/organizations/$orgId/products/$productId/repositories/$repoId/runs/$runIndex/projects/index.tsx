@@ -20,7 +20,6 @@
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { ExpandedState } from '@tanstack/react-table';
-import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import z from 'zod';
 
@@ -30,9 +29,8 @@ import {
   getRunProjectLicensesOptions,
   getRunProjectsOptions,
 } from '@/api/@tanstack/react-query.gen';
-import { BreakableString } from '@/components/breakable-string';
 import { DataTableCards } from '@/components/data-table-cards/data-table-cards';
-import { MarkItems } from '@/components/data-table/mark-items';
+import { EmptyValue } from '@/components/data-table-cards/findings-cells';
 import {
   LicensesAccordion,
   SpdxExpressionBadgeGroup,
@@ -40,7 +38,6 @@ import {
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { SheetSection } from '@/components/page-header';
 import { RenderProperty } from '@/components/render-property';
-import { Button } from '@/components/ui/button';
 import {
   convertToBackendSorting,
   EMPTY_SORTING_STATE,
@@ -53,7 +50,6 @@ import {
   useAppTable,
 } from '@/hooks/use-app-table';
 import type { AppRow } from '@/hooks/use-app-table';
-import { ACTION_COLUMN_SIZE } from '@/lib/constants';
 import { routePrefetchStaleTime } from '@/lib/query-client';
 import { toastError } from '@/lib/toast';
 import { getRepositoryTypeLabel } from '@/lib/types';
@@ -83,62 +79,6 @@ const LicenseList = ({ licenses }: { licenses: string[] }) => (
     ))}
   </div>
 );
-
-// Component to render a single project card in the list.
-const ProjectCard = ({ project }: { project: Project }) => {
-  const declaredLicenses = [
-    ...(project.processedDeclaredLicense.spdxExpression
-      ? [project.processedDeclaredLicense.spdxExpression]
-      : []),
-    ...project.processedDeclaredLicense.unmappedLicenses,
-  ];
-
-  return (
-    <div className='flex flex-col gap-1'>
-      <div className='flex items-center justify-between'>
-        <div className='font-mono text-xs font-medium'>
-          <BreakableString text={identifierToString(project.identifier)} />
-        </div>
-        {project.homepageUrl ? (
-          <a
-            href={project.homepageUrl}
-            target='_blank'
-            rel='noopener noreferrer'
-            className='link text-[0.8125rem]'
-          >
-            {project.homepageUrl}
-          </a>
-        ) : (
-          <div className='text-muted-foreground text-[0.8125rem]'>
-            No homepage
-          </div>
-        )}
-      </div>
-      {project.definitionFilePath ? (
-        <div className='flex items-baseline gap-2 text-[0.8125rem]'>
-          <div className='text-muted-foreground'>Definition File:</div>
-          <div className='font-mono text-xs wrap-break-word'>
-            {project.definitionFilePath}
-          </div>
-        </div>
-      ) : (
-        <div className='text-muted-foreground text-[0.8125rem]'>
-          No definition file
-        </div>
-      )}
-      {declaredLicenses.length > 0 ? (
-        <div className='flex gap-2 text-[0.8125rem]'>
-          <div className='text-muted-foreground'>Declared License: </div>
-          <LicenseList licenses={declaredLicenses} />
-        </div>
-      ) : (
-        <div className='text-muted-foreground text-[0.8125rem]'>
-          No declared license
-        </div>
-      )}
-    </div>
-  );
-};
 
 const renderSubComponent = ({
   row,
@@ -319,49 +259,68 @@ const ProjectsComponent = () => {
 
   const columns = columnHelper.columns([
     columnHelper.display({
-      id: 'details',
-      header: 'Details',
-      size: ACTION_COLUMN_SIZE,
-      cell: function CellComponent({ row }) {
-        return row.getCanExpand() ? (
-          <div className='flex items-center gap-1'>
-            <Button
-              variant='outline'
-              size='sm'
-              {...{
-                onClick: row.getToggleExpandedHandler(),
-                style: { cursor: 'pointer' },
-              }}
-            >
-              {row.getIsExpanded() ? (
-                <ChevronUp className='h-4 w-4' />
-              ) : (
-                <ChevronDown className='h-4 w-4' />
-              )}
-            </Button>
-            <MarkItems
-              row={row}
-              setMarked={(marked) => {
-                return {
-                  to: Route.to,
-                  search: {
-                    ...search,
-                    // If no items are marked for inspection, remove the "marked" parameter
-                    // from search parameters.
-                    marked: marked === '' ? undefined : marked,
-                  },
-                };
-              }}
-            />
+      id: 'project',
+      header: 'Project',
+      cell: ({ row }) => {
+        const id = identifierToString(row.original.identifier);
+
+        return (
+          <div className='truncate font-mono text-xs font-medium' title={id}>
+            {id}
           </div>
-        ) : (
-          'No info'
         );
       },
     }),
     columnHelper.display({
-      id: 'card',
-      cell: ({ row }) => <ProjectCard project={row.original} />,
+      id: 'definitionFile',
+      header: 'Definition file',
+      cell: ({ row }) =>
+        row.original.definitionFilePath ? (
+          <div
+            className='truncate font-mono text-xs'
+            title={row.original.definitionFilePath}
+          >
+            {row.original.definitionFilePath}
+          </div>
+        ) : (
+          <EmptyValue />
+        ),
+    }),
+    columnHelper.display({
+      id: 'license',
+      header: 'Declared license',
+      cell: ({ row }) => {
+        const declaredLicenses = [
+          ...(row.original.processedDeclaredLicense.spdxExpression
+            ? [row.original.processedDeclaredLicense.spdxExpression]
+            : []),
+          ...row.original.processedDeclaredLicense.unmappedLicenses,
+        ];
+
+        return declaredLicenses.length > 0 ? (
+          <LicenseList licenses={declaredLicenses} />
+        ) : (
+          <EmptyValue />
+        );
+      },
+    }),
+    columnHelper.display({
+      id: 'homepage',
+      header: 'Homepage',
+      cell: ({ row }) =>
+        row.original.homepageUrl ? (
+          <a
+            href={row.original.homepageUrl}
+            target='_blank'
+            rel='noopener noreferrer'
+            className='link block truncate'
+            title={row.original.homepageUrl}
+          >
+            {row.original.homepageUrl}
+          </a>
+        ) : (
+          <EmptyValue />
+        ),
     }),
     columnHelper.accessor(
       (project) => {
@@ -483,11 +442,45 @@ const ProjectsComponent = () => {
       title='Projects'
       meta={`${totalProjects.pagination.totalCount} in total${filtersInUse ? matching : ''}`}
     >
-      <p className='text-muted-foreground -mt-2 text-[0.8125rem]'>
+      <p className='text-muted-foreground -mt-2 text-[0.8125rem] max-md:line-clamp-1'>
         This view shows all projects.
       </p>
       <DataTableCards
         table={table}
+        aria-label='Projects'
+        layout={[
+          {
+            id: 'project',
+            width: 'minmax(0,2fr)',
+            sortBy: 'identifier',
+            filters: ['identifier'],
+            mobile: 'main',
+          },
+          {
+            id: 'definitionFile',
+            width: 'minmax(0,1.6fr)',
+            sortBy: 'definitionFilePath',
+            filters: ['definitionFilePath'],
+            mobile: 'sub',
+          },
+          {
+            id: 'license',
+            width: 'minmax(0,1.2fr)',
+            sortBy: 'declaredLicense',
+            filters: ['declaredLicense'],
+            mobile: 'hidden',
+          },
+          { id: 'homepage', width: 'minmax(0,1.2fr)', mobile: 'hidden' },
+        ]}
+        setMarkedOptions={(marked) => ({
+          to: Route.to,
+          search: {
+            ...search,
+            // If no items are marked for inspection, remove the "marked"
+            // parameter from search parameters.
+            marked: marked === '' ? undefined : marked,
+          },
+        })}
         renderSubComponent={({ row }) =>
           renderSubComponent({ row, runId: ortRun.id })
         }

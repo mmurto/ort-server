@@ -270,7 +270,7 @@ describe('JobDurations', () => {
   };
 
   const bar = (runIndex: number) =>
-    screen.findByRole('button', { name: new RegExp(`"runId":${runIndex},`) });
+    screen.findByRole('button', { name: new RegExp(`^Run ${runIndex},`) });
 
   it('shows the durations of newly loaded runs', async () => {
     respondWithRuns(run(1));

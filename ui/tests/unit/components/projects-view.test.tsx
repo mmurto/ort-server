@@ -19,7 +19,7 @@
 
 // @vitest-environment jsdom
 
-import { act, screen, waitFor } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { GetRunProjectsData, Project } from '@/api';
@@ -146,7 +146,12 @@ describe('projects table', () => {
       screen.queryByText('Description of project-1')
     ).not.toBeInTheDocument();
 
-    await user.click(definitionFile.closest('tr')!.querySelector('button')!);
+    await user.click(
+      within(definitionFile.closest<HTMLElement>('[role="row"]')!).getByRole(
+        'button',
+        { name: 'Expand row' }
+      )
+    );
 
     expect(await screen.findByText('Description of project-1')).toBeVisible();
     expect(

@@ -20,7 +20,7 @@
 // @vitest-environment jsdom
 
 import { defaultParseSearch } from '@tanstack/react-router';
-import { act, screen, waitFor } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { GetRunRuleViolationsData, RuleViolation } from '@/api';
@@ -34,6 +34,7 @@ import { renderInteractiveWithRouter } from '../fixtures/render-interactive';
 const mocks = vi.hoisted(() => ({
   run: vi.fn(),
   rules: vi.fn(),
+  statistics: vi.fn(),
   violations: vi.fn(),
 }));
 
@@ -42,6 +43,7 @@ vi.mock('@/api/sdk.gen', async (importOriginal) => ({
   getRepositoryRun: mocks.run,
   getRunRuleViolationRules: mocks.rules,
   getRunRuleViolations: mocks.violations,
+  getRunStatistics: mocks.statistics,
 }));
 
 const RuleViolationsComponent = Route.options.component!;
@@ -61,6 +63,12 @@ beforeEach(() => {
   });
   mocks.run.mockResolvedValue({ data: { id: 42, jobs: {} } });
   mocks.rules.mockResolvedValue({ data: [] });
+  mocks.statistics.mockResolvedValue({
+    data: {
+      ruleViolationsCountBySeverity: { ERROR: 1, WARNING: 2, HINT: 0 },
+      ruleViolationsCountTotalBySeverity: { ERROR: 2, WARNING: 3, HINT: 0 },
+    },
+  });
 });
 
 const renderViolation = (violationPurl: string | null) => {
@@ -209,5 +217,45 @@ describe('rule violations table', () => {
       rule: 'RuleA,RuleB',
     });
     expect(container).toHaveTextContent('5 in total, 1 matching filters');
+  });
+
+  it('filters by severity with the chips, which show the counts of the run statistics', async () => {
+    const { router, user } = renderInteractiveWithRouter(
+      <TooltipProvider>
+        <RuleViolationsComponent />
+      </TooltipProvider>,
+      {
+        path: '/organizations/1/products/2/repositories/3/runs/4/rule-violations',
+        routes: [
+          {
+            path: '/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/rule-violations/',
+          },
+        ],
+        withQueryClient: true,
+      }
+    );
+
+    const chips = await screen.findByRole('group', {
+      name: 'Filter by severity',
+    });
+    await waitFor(() => expect(chips).toHaveTextContent('All5'));
+    expect(chips).toHaveTextContent('Error2');
+
+    await user.click(within(chips).getByRole('button', { name: /Error/ }));
+
+    await waitFor(() =>
+      expect(router.state.location.search).toMatchObject({
+        page: 1,
+        severity: ['ERROR'],
+      })
+    );
+    // The page shows the chips again once the filtered violations have loaded.
+    await waitFor(() =>
+      expect(
+        within(
+          screen.getByRole('group', { name: 'Filter by severity' })
+        ).getByRole('button', { name: /Error/ })
+      ).toHaveAttribute('aria-pressed', 'true')
+    );
   });
 });

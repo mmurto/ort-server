@@ -20,8 +20,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
 
+import type { OrtRunSummary } from '@/api';
 import { getRepositoryRunsOptions } from '@/api/@tanstack/react-query.gen';
 import {
   DEFAULT_RUNS,
@@ -30,58 +30,12 @@ import {
 } from '@/components/form/runs-filter-form';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { SheetSection } from '@/components/page-header';
-import { RunDuration } from '@/components/run-duration';
-import {
-  ChartConfig,
-  ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@/components/ui/chart';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { config } from '@/config';
-import {
-  convertDurationToHms,
-  getDurationChartData,
-} from '@/helpers/calculate-duration';
+import { formatDuration } from '@/helpers/format-elapsed';
+import { RUN_JOBS } from '@/helpers/run-jobs';
 import { toastError } from '@/lib/toast';
-
-const chartConfig = {
-  infrastructure: {
-    label: 'Infrastructure',
-    color: 'var(--muted-foreground)',
-  },
-  analyzer: {
-    label: 'Analyzer',
-    color: 'var(--analyzer)',
-  },
-  advisor: {
-    label: 'Advisor',
-    color: 'var(--advisor)',
-  },
-  scanner: {
-    label: 'Scanner',
-    color: 'var(--scanner)',
-  },
-  evaluator: {
-    label: 'Evaluator',
-    color: 'var(--evaluator)',
-  },
-  reporter: {
-    label: 'Reporter',
-    color: 'var(--reporter)',
-  },
-} satisfies ChartConfig;
-
-const legendOrderWorkers = [
-  'analyzer',
-  'advisor',
-  'scanner',
-  'evaluator',
-  'reporter',
-];
 
 type JobDurationsProps = {
   repoId: string;
@@ -91,6 +45,61 @@ type JobDurationsProps = {
 
 const pollInterval = config.pollInterval;
 
+type Segment = {
+  key: string;
+  label: string;
+  color: string;
+  start: number;
+  duration: number;
+  lane: number;
+};
+
+/**
+ * Lays out the jobs of a run on its own clock. With infrastructure included, jobs sit where they
+ * actually ran, so the gaps between them are the time spent on infrastructure and parallel jobs
+ * get lanes of their own; without it, the jobs are packed back to back.
+ */
+const layoutRun = (run: OrtRunSummary, withInfrastructure: boolean) => {
+  const createdAt = Date.parse(run.createdAt);
+  const now = Date.now();
+  const timed = RUN_JOBS.flatMap(({ key, label, color }) => {
+    const job = run.jobs[key];
+    if (!job?.startedAt) return [];
+    const from = Date.parse(job.startedAt);
+    const to = job.finishedAt ? Date.parse(job.finishedAt) : now;
+    return [{ key, label, color, from, duration: Math.max(to - from, 0) }];
+  });
+
+  const segments: Segment[] = [];
+  const laneEnds: number[] = [];
+  let cursor = 0;
+  for (const job of timed) {
+    if (withInfrastructure) {
+      const start = job.from - createdAt;
+      const free = laneEnds.findIndex((end) => end <= start);
+      const lane = free === -1 ? laneEnds.length : free;
+      laneEnds[lane] = start + job.duration;
+      segments.push({ ...job, start, lane });
+    } else {
+      segments.push({ ...job, start: cursor, lane: 0 });
+      cursor += job.duration;
+    }
+  }
+
+  const total = withInfrastructure
+    ? (run.finishedAt ? Date.parse(run.finishedAt) : now) - createdAt
+    : cursor;
+  return {
+    segments,
+    total: Math.max(total, 0),
+    lanes: Math.max(laneEnds.length, 1),
+  };
+};
+
+/**
+ * The repository's flight log: every run's jobs as a trajectory on one shared time scale, so runs
+ * that took longer read longer. Selecting a run opens it.
+ */
 export const JobDurations = ({
   repoId,
   pageIndex,
@@ -104,7 +113,7 @@ export const JobDurations = ({
     nRuns: DEFAULT_RUNS,
   });
 
-  // This state is used to toggle the visibility of the infrastructure duration in the chart.
+  // Whether the time between jobs, spent on infrastructure, is part of the trajectories.
   const [showInfrastructure, setShowInfrastructure] = useState(false);
 
   // Compute query params from applied values.
@@ -128,13 +137,6 @@ export const JobDurations = ({
     refetchInterval: pollInterval,
   });
 
-  const chartData = getDurationChartData(runs, showInfrastructure);
-
-  // Determine legend order based on whether infrastructure is shown.
-  const legendOrder = showInfrastructure
-    ? [...legendOrderWorkers, 'infrastructure']
-    : legendOrderWorkers;
-
   if (runsIsPending) {
     return <LoadingIndicator />;
   }
@@ -148,19 +150,22 @@ export const JobDurations = ({
     return null;
   }
 
-  const handleBarClick = (runIndex: string) => {
-    const run = runs.data.find((run) => run.index === Number(runIndex));
-    if (run)
-      navigate({
-        to: '/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex',
-        params: {
-          orgId: run.organizationId.toString(),
-          productId: run.productId.toString(),
-          repoId: run.repositoryId.toString(),
-          runIndex: run.index.toString(),
-        },
-      });
-  };
+  const laidOut = runs.data.map((run) => ({
+    run,
+    ...layoutRun(run, showInfrastructure),
+  }));
+  const scale = Math.max(...laidOut.map(({ total }) => total), 1);
+
+  const openRun = (run: OrtRunSummary) =>
+    navigate({
+      to: '/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex',
+      params: {
+        orgId: run.organizationId.toString(),
+        productId: run.productId.toString(),
+        repoId: run.repositoryId.toString(),
+        runIndex: run.index.toString(),
+      },
+    });
 
   return (
     <SheetSection
@@ -200,126 +205,68 @@ export const JobDurations = ({
         </div>
       }
     >
-      <ChartContainer
-        config={chartConfig}
-        className='h-[200px] min-h-[200px] w-full'
-      >
-        <BarChart
-          accessibilityLayer
-          data={chartData}
-          onClick={(data) => {
-            handleBarClick(data.activeLabel as string);
-          }}
-        >
-          <CartesianGrid vertical={false} stroke='var(--border)' />
-          <XAxis
-            dataKey='runId'
-            tickLine={false}
-            tickMargin={10}
-            axisLine={false}
-            tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
-            reversed
-          />
-          <ChartTooltip
-            wrapperStyle={{ zIndex: 1000 }}
-            content={(props) => (
-              <ChartTooltipContent
-                {...props}
-                hideLabel
-                className='w-[230px]'
-                formatter={(value, name, item, index) => {
-                  return (
-                    <>
-                      <div className='flex w-full items-baseline justify-between'>
-                        <div className='flex items-baseline gap-2'>
-                          <div
-                            className='size-2.5 shrink-0 rounded-xs'
-                            style={{
-                              backgroundColor: `var(--color-${name})`,
-                            }}
-                          />
-                          <div>
-                            {chartConfig[name as keyof typeof chartConfig]
-                              .label || name}
-                          </div>
-                        </div>
-                        <div className='text-muted-foreground font-mono text-xs'>
-                          {convertDurationToHms(Number(value))}
-                        </div>
-                      </div>
-                      {index === item.payload.finishedDurations - 1 && (
-                        <div className='flex w-full flex-col items-center justify-between'>
-                          <div className='flex w-full items-center justify-between'>
-                            Total{showInfrastructure ? ' run' : ' jobs'}{' '}
-                            duration:
-                            <div className='text-muted-foreground mt-0.5 flex flex-col font-mono text-xs'>
-                              <RunDuration
-                                createdAt={
-                                  showInfrastructure
-                                    ? item.payload.createdAt
-                                    : undefined
-                                }
-                                finishedAt={item.payload.finishedAt}
-                                duration={
-                                  showInfrastructure
-                                    ? undefined
-                                    : item.payload.jobsDurationTotal
-                                }
-                              />
-                            </div>
-                          </div>
-                          <div className='text-muted-foreground mt-0.5 text-xs'>
-                            Click bar to go to run
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  );
-                }}
+      <div className='border-foreground border-t pt-2'>
+        <ul className='flex max-h-72 flex-col overflow-y-auto'>
+          {laidOut.map(({ run, segments, total, lanes }) => (
+            <li key={run.id}>
+              <button
+                type='button'
+                onClick={() => openRun(run)}
+                aria-label={`Run ${run.index}, ${formatDuration(total)}`}
+                className='hover:bg-muted/70 grid w-full grid-cols-[4.5rem_minmax(0,1fr)_5rem] items-center gap-3 py-1.5 text-left text-[0.8125rem] transition-colors duration-100'
+              >
+                <span className='font-medium'>Run {run.index}</span>
+                <span
+                  className='relative block'
+                  style={{ height: `${lanes * 6 + (lanes - 1) * 2}px` }}
+                >
+                  {showInfrastructure && (
+                    <span
+                      aria-hidden
+                      className='bg-border absolute top-0 left-0 h-1.5'
+                      style={{ width: `${(total / scale) * 100}%` }}
+                    />
+                  )}
+                  {segments.map((segment) => (
+                    <span
+                      key={segment.key}
+                      title={`${segment.label}: ${formatDuration(segment.duration)}`}
+                      className='animate-flight-draw absolute h-1.5 origin-left'
+                      style={{
+                        left: `${(segment.start / scale) * 100}%`,
+                        width: `max(${(segment.duration / scale) * 100}%, 2px)`,
+                        top: `${segment.lane * 8}px`,
+                        backgroundColor: segment.color,
+                      }}
+                    />
+                  ))}
+                </span>
+                <span className='text-muted-foreground text-right'>
+                  {total > 0 ? formatDuration(total) : '—'}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+        <div className='text-muted-foreground mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs'>
+          {RUN_JOBS.map(({ key, label, color }) => (
+            <span key={key} className='flex items-center gap-1.5'>
+              <span
+                aria-hidden
+                className='size-2'
+                style={{ backgroundColor: color }}
               />
-            )}
-          />
-          <ChartLegend content={<ChartLegendContent order={legendOrder} />} />
+              {label}
+            </span>
+          ))}
           {showInfrastructure && (
-            <Bar
-              dataKey='infrastructure'
-              stackId='a'
-              fill='var(--color-infrastructure)'
-              className='cursor-pointer'
-            />
+            <span className='flex items-center gap-1.5'>
+              <span aria-hidden className='bg-border size-2' />
+              Infrastructure
+            </span>
           )}
-          <Bar
-            dataKey='analyzer'
-            stackId='a'
-            fill='var(--color-analyzer)'
-            className='cursor-pointer'
-          />
-          <Bar
-            dataKey='advisor'
-            stackId='a'
-            fill='var(--color-advisor)'
-            className='cursor-pointer'
-          />
-          <Bar
-            dataKey='scanner'
-            stackId='a'
-            fill='var(--color-scanner)'
-            className='cursor-pointer'
-          />
-          <Bar
-            dataKey='evaluator'
-            stackId='a'
-            fill='var(--color-evaluator)'
-            className='cursor-pointer'
-          />
-          <Bar
-            dataKey='reporter'
-            stackId='a'
-            fill='var(--color-reporter)'
-            className='cursor-pointer'
-          />
-        </BarChart>
-      </ChartContainer>
+        </div>
+      </div>
     </SheetSection>
   );
 };

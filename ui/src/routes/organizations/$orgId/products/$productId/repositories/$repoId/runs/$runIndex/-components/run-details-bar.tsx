@@ -19,7 +19,7 @@
 
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link, useLocation } from '@tanstack/react-router';
-import { ChevronLeft, ChevronRight, Repeat } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Repeat } from 'lucide-react';
 
 import {
   getRepositoryRunOptions,
@@ -257,6 +257,15 @@ export const RunDetailsBar = ({ className }: RunDetailsBarProps) => {
               </Link>
             </Button>
           </nav>
+          <Button asChild variant='outline'>
+            <Link
+              to='/organizations/$orgId/products/$productId/repositories/$repoId/runs/$runIndex/sbom'
+              params={params}
+            >
+              <Download />
+              Download reports
+            </Link>
+          </Button>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button asChild disabled={canTriggerRun === false}>

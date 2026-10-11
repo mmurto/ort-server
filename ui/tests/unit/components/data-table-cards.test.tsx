@@ -25,6 +25,12 @@ import { describe, expect, it } from 'vitest';
 
 import { DataTableCardsHeader } from '@/components/data-table-cards/data-table-cards-header';
 import { DataTableCardsSort } from '@/components/data-table-cards/data-table-cards-sort';
+import { CopyableValue } from '@/components/data-table-cards/findings-cells';
+import {
+  selectCountsByResolution,
+  sumCounts,
+} from '@/components/data-table-cards/findings-counts';
+import { FindingsFilterChips } from '@/components/data-table-cards/findings-filter-chips';
 import {
   selectNoTableState,
   useAppTable,
@@ -177,5 +183,62 @@ describe('DataTableCardsSort', () => {
     );
 
     expect(markup).toContain('>Sort<');
+  });
+});
+
+describe('CopyableValue', () => {
+  it('renders a dash and no copy button without a value', () => {
+    const markup = renderToStaticMarkup(<CopyableValue value='' />);
+
+    expect(markup).toContain('—');
+    expect(markup).not.toContain('<button');
+  });
+
+  it('renders the value with a copy button', () => {
+    const markup = renderToStaticMarkup(
+      <CopyableValue value='pkg:npm/example@1.0' />
+    );
+
+    expect(markup).toContain('pkg:npm/example@1.0');
+    expect(markup).toContain('aria-label="Copy to clipboard"');
+  });
+});
+
+describe('FindingsFilterChips', () => {
+  const chips = [
+    { value: 'ERROR', label: 'Error', colorClass: 'bg-err', count: 3 },
+    { value: 'HINT', label: 'Hint', colorClass: 'bg-ok', count: 2 },
+  ];
+
+  it('shows the counts and presses the selected chip', () => {
+    const markup = renderToStaticMarkup(
+      <FindingsFilterChips
+        label='Filter by severity'
+        chips={chips}
+        total={5}
+        selected={['ERROR']}
+        onSelect={() => {}}
+      />
+    );
+
+    expect(markup).toMatch(/aria-pressed="false"[^>]*>All<span[^>]*>5</);
+    expect(markup).toMatch(/aria-pressed="true"[^>]*>.*Error<span[^>]*>3</);
+  });
+});
+
+describe('selectCountsByResolution', () => {
+  const all = { ERROR: 3, HINT: 2 };
+  const unresolved = { ERROR: 1, HINT: 2 };
+
+  it('selects the counts that match the resolution filter', () => {
+    expect(selectCountsByResolution(all, unresolved, undefined)).toEqual(all);
+    expect(selectCountsByResolution(all, unresolved, ['Unresolved'])).toEqual(
+      unresolved
+    );
+    expect(selectCountsByResolution(all, unresolved, ['Resolved'])).toEqual({
+      ERROR: 2,
+      HINT: 0,
+    });
+    expect(sumCounts(all)).toBe(5);
   });
 });
