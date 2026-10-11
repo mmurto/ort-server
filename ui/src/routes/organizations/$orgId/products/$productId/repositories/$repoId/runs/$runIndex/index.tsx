@@ -41,7 +41,7 @@ import {
   getVulnerabilityRatingBackgroundColor,
 } from '@/helpers/get-status-class';
 import { getPackageIdString } from '@/helpers/identifier-conversion';
-import { isJobFinished } from '@/helpers/job-helpers';
+import { isJobFinished, isRunFinished } from '@/helpers/job-helpers';
 import { RUN_JOBS } from '@/helpers/run-jobs';
 import { cn } from '@/lib/utils';
 import { useUserSettingsStore } from '@/store/user-settings.store';
@@ -110,6 +110,8 @@ const RunTimelineWithFindings = ({ ortRun }: { ortRun: OrtRun }) => {
   const { data: statistics } = useQuery({
     ...getRunStatisticsOptions({ path: { runId: ortRun.id } }),
     enabled: anyJobFinished,
+    // The findings grow while the run is still going.
+    refetchInterval: isRunFinished(ortRun.status) ? false : config.pollInterval,
   });
 
   const events: RunTimelineEvent[] = [];

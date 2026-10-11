@@ -47,6 +47,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import MultipleSelector, { Option } from '@/components/ui/multiple-selector';
+import { UnsavedChangesGuard } from '@/components/unsaved-changes-guard';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useInfiniteList } from '@/hooks/use-infinite-list';
 import { ApiError } from '@/lib/api-error';
@@ -101,6 +102,7 @@ export const CreateUserForm = ({
 
   return (
     <div className='flex flex-col gap-8'>
+      <UnsavedChangesGuard control={form.control} />
       <PageHeader
         title='Create User'
         description='Create a new user account.'

@@ -24,6 +24,7 @@ import React, { Suspense, useState } from 'react';
 import { getServerSettingByKeyOptions } from '@/api/@tanstack/react-query.gen';
 import { RouterContext } from '@/app';
 import { AppRail } from '@/components/app-rail';
+import { NotFoundComponent } from '@/components/error-component';
 import { Footer } from '@/components/footer';
 import { Header } from '@/components/header';
 import { RailContext } from '@/components/rail-context';
@@ -76,4 +77,5 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     }
   },
   component: RootComponent,
+  notFoundComponent: NotFoundComponent,
 });

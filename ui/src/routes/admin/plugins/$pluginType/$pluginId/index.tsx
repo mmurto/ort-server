@@ -20,7 +20,7 @@
 import { useMutation, useQueries, useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, useLoaderData } from '@tanstack/react-router';
 import { Pencil, PlusIcon } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { PluginDescriptor, PluginTemplate } from '@/api';
 import {
@@ -34,6 +34,7 @@ import {
   getPluginTemplatesQueryKey,
   removeTemplateFromOrganizationMutation,
 } from '@/api/@tanstack/react-query.gen';
+import { ConfirmDialog } from '@/components/confirm-dialog.tsx';
 import { DeleteDialog } from '@/components/delete-dialog.tsx';
 import { DeleteIconButton } from '@/components/delete-icon-button.tsx';
 import { LoadingIndicator } from '@/components/loading-indicator.tsx';
@@ -69,6 +70,12 @@ const PluginTemplateCard = ({ plugin, template }: PluginTemplateCardProps) => {
   // costs no request for the organizations of any of them.
   const [isSelectorUsed, setIsSelectorUsed] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isConfirmingGlobal, setIsConfirmingGlobal] = useState(false);
+  // The organizations whose removal from the template waits for confirmation.
+  const [pendingRemovalIds, setPendingRemovalIds] = useState<number[]>([]);
+  // Remounts the selector when a removal is cancelled, so that the removed chip comes back.
+  const [selectorKey, setSelectorKey] = useState(0);
+  const isRemovalConfirmed = useRef(false);
 
   const filter = toSearchFilter(useDebounce(searchTerm, 300));
 
@@ -116,7 +123,7 @@ const PluginTemplateCard = ({ plugin, template }: PluginTemplateCardProps) => {
 
   const toggleIsGlobal = () => {
     if (template.isGlobal) {
-      disableGlobal(
+      return disableGlobal(
         {
           path: {
             pluginType: template.pluginType,
@@ -145,7 +152,7 @@ const PluginTemplateCard = ({ plugin, template }: PluginTemplateCardProps) => {
         }
       );
     } else {
-      enableGlobal(
+      return enableGlobal(
         {
           path: {
             pluginType: template.pluginType,
@@ -274,6 +281,7 @@ const PluginTemplateCard = ({ plugin, template }: PluginTemplateCardProps) => {
           </Tooltip>
           <DeleteDialog
             thingName={'template'}
+            thingLabel={template.name}
             uiComponent={<DeleteIconButton />}
             onDelete={onDelete}
             tooltip='Delete Template'
@@ -284,10 +292,26 @@ const PluginTemplateCard = ({ plugin, template }: PluginTemplateCardProps) => {
         <label className='flex items-center gap-2 text-[0.8125rem] font-medium'>
           <Switch
             checked={template.isGlobal}
-            onCheckedChange={() => toggleIsGlobal()}
+            onCheckedChange={() => setIsConfirmingGlobal(true)}
           />
           Global Template
         </label>
+        <ConfirmDialog
+          open={isConfirmingGlobal}
+          onOpenChange={setIsConfirmingGlobal}
+          title={
+            template.isGlobal
+              ? `Stop using ${template.name} as the global template?`
+              : `Make ${template.name} the global template?`
+          }
+          description={
+            template.isGlobal
+              ? 'Organizations without an assigned template no longer use this template.'
+              : 'All organizations that do not have another template assigned use this template.'
+          }
+          confirmLabel={template.isGlobal ? 'Make not global' : 'Make global'}
+          onConfirm={() => toggleIsGlobal().then(() => undefined)}
+        />
         <p className='text-muted-foreground text-[0.8125rem]'>
           {template.isGlobal
             ? 'This template is global, it is active for all organizations that do not have another template assigned.'
@@ -302,6 +326,7 @@ const PluginTemplateCard = ({ plugin, template }: PluginTemplateCardProps) => {
             : 'This template is not assigned to any organizations.'}
         </p>
         <MultipleSelector
+          key={selectorKey}
           value={assignedOptions}
           options={organizationOptions}
           loading={organizations.isPending}
@@ -341,8 +366,36 @@ const PluginTemplateCard = ({ plugin, template }: PluginTemplateCardProps) => {
                 });
               }
             }
-            for (const id of oldIds) {
-              if (!newIds.includes(id)) {
+            const removedIds = oldIds.filter((id) => !newIds.includes(id));
+            if (removedIds.length > 0) setPendingRemovalIds(removedIds);
+          }}
+        />
+        <ConfirmDialog
+          open={pendingRemovalIds.length > 0}
+          onOpenChange={(open) => {
+            if (!open) {
+              if (!isRemovalConfirmed.current) setSelectorKey((key) => key + 1);
+              isRemovalConfirmed.current = false;
+              setPendingRemovalIds([]);
+            }
+          }}
+          title={`Remove ${pendingRemovalIds
+            .map(
+              (id) =>
+                assignedOptions.find((option) => option.value === id.toString())
+                  ?.label ?? id.toString()
+            )
+            .join(', ')} from ${template.name}?`}
+          description={
+            pendingRemovalIds.length > 1
+              ? 'The template no longer applies to the runs of these organizations.'
+              : 'The template no longer applies to the runs of this organization.'
+          }
+          confirmLabel='Remove'
+          destructive
+          onConfirm={() =>
+            Promise.all(
+              pendingRemovalIds.map((id) =>
                 removeOrganization({
                   path: {
                     pluginType: template.pluginType,
@@ -350,10 +403,12 @@ const PluginTemplateCard = ({ plugin, template }: PluginTemplateCardProps) => {
                     templateName: template.name,
                   },
                   query: { organizationId: id.toString() },
-                });
-              }
-            }
-          }}
+                })
+              )
+            ).then(() => {
+              isRemovalConfirmed.current = true;
+            })
+          }
         />
       </div>
 

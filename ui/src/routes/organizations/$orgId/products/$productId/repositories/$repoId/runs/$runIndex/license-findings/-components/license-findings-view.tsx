@@ -33,6 +33,7 @@ import {
   DEFAULT_PAGE_SIZE,
 } from '@/components/data-table/data-table';
 import { SpdxExpressionBadgeGroup } from '@/components/licenses';
+import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { SheetSection } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
@@ -51,7 +52,6 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { useInfiniteList } from '@/hooks/use-infinite-list';
 import { DROPDOWN_PAGE_SIZE } from '@/lib/constants';
 import { KEEP_SCROLL_POSITION, markPanelOpened, panelKey } from '@/lib/scroll';
-import { toastError } from '@/lib/toast';
 import { useUserSettingsStore } from '@/store/user-settings.store';
 import { DetectedLicensePackagesTable } from './detected-license-packages-table';
 import {
@@ -272,8 +272,7 @@ export const LicenseFindingsView = () => {
   if (needsNormalization) return <LoadingIndicator />;
 
   if (isError) {
-    toastError('Unable to load data', error);
-    return;
+    return <LoadError error={error} />;
   }
 
   const filtersInUse =

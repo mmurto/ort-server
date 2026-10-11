@@ -26,6 +26,7 @@ import { RunWithPackage } from '@/api/types.gen';
 import { BreakableString } from '@/components/breakable-string';
 import { DataTable } from '@/components/data-table/data-table';
 import { RegexForm } from '@/components/form/regex-form';
+import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { PageHeader, SheetSection } from '@/components/page-header';
 import { TimestampWithUTC } from '@/components/timestamp-with-utc';
@@ -42,7 +43,6 @@ import {
   selectNoTableState,
   useAppTable,
 } from '@/hooks/use-app-table';
-import { toastError } from '@/lib/toast';
 import {
   packageIdentifierSearchParameterSchema,
   packageIdTypeSchema,
@@ -165,10 +165,6 @@ function SearchPackageComponent() {
     selectNoTableState
   );
 
-  if (isRunsError) {
-    toastError('Unable to load data', runsError);
-  }
-
   return (
     <div className='flex flex-col gap-8'>
       <PageHeader
@@ -177,6 +173,7 @@ function SearchPackageComponent() {
       />
       <RegexForm
         className='max-w-2xl'
+        label='Package ID'
         initialValue={identifier}
         onRegexChange={(regex) => {
           navigate({
@@ -187,11 +184,20 @@ function SearchPackageComponent() {
         }}
       />
       <SheetSection title='Matching runs'>
-        {isRunsPending && identifier ? (
+        {isRunsError ? (
+          <LoadError what='matching runs' error={runsError} />
+        ) : isRunsPending && identifier ? (
           <LoadingIndicator />
         ) : (
           <DataTable
             table={table}
+            noResultsContent={
+              <div className='text-muted-foreground text-[0.8125rem]'>
+                {identifier
+                  ? 'No runs contain a matching package.'
+                  : 'Enter a package to search.'}
+              </div>
+            }
             setCurrentPageOptions={(currentPage) => {
               return {
                 to: Route.to,

@@ -18,6 +18,7 @@
  */
 
 import {
+  keepPreviousData,
   useMutation,
   useQuery,
   useQueryClient,
@@ -39,6 +40,7 @@ import {
 import { DataTable } from '@/components/data-table/data-table';
 import { DeleteDialog } from '@/components/delete-dialog';
 import { DeleteIconButton } from '@/components/delete-icon-button';
+import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { PageHeader, SheetSection } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
@@ -109,6 +111,7 @@ const ActionCell = ({ row }: AppCellContext<Secret, unknown>) => {
       </Tooltip>
       <DeleteDialog
         thingName={'secret'}
+        thingLabel={row.original.name}
         uiComponent={<DeleteIconButton />}
         onDelete={async () =>
           await deleteSecret({
@@ -163,23 +166,13 @@ const ProductSecrets = () => {
   const orgPageIndex = search.orgPage ? search.orgPage - 1 : 0;
   const orgPageSize = search.orgPageSize ? search.orgPageSize : defaultPageSize;
 
-  const {
-    data: product,
-    error: prodError,
-    isPending: prodIsPending,
-    isError: prodIsError,
-  } = useQuery({
+  const { data: product } = useQuery({
     ...getProductOptions({
       path: { productId: Number.parseInt(params.productId) },
     }),
   });
 
-  const {
-    data: organization,
-    error: orgError,
-    isPending: orgIsPending,
-    isError: orgIsError,
-  } = useQuery({
+  const { data: organization } = useQuery({
     ...getOrganizationOptions({
       path: { organizationId: Number.parseInt(params.orgId) },
     }),
@@ -190,11 +183,13 @@ const ProductSecrets = () => {
     error: secretsError,
     isPending: secretsIsPending,
     isError: secretsIsError,
+    refetch: refetchSecrets,
   } = useQuery({
     ...getProductSecretsOptions({
       path: { productId: Number.parseInt(params.productId) },
       query: { limit: pageSize, offset: pageIndex * pageSize },
     }),
+    placeholderData: keepPreviousData,
   });
 
   const {
@@ -202,11 +197,13 @@ const ProductSecrets = () => {
     error: orgSecretsError,
     isPending: orgSecretsIsPending,
     isError: orgSecretsIsError,
+    refetch: refetchOrgSecrets,
   } = useQuery({
     ...getOrganizationSecretsOptions({
       path: { organizationId: Number.parseInt(params.orgId) },
       query: { limit: orgPageSize, offset: orgPageIndex * orgPageSize },
     }),
+    placeholderData: keepPreviousData,
   });
 
   const table = useAppTable(
@@ -243,28 +240,11 @@ const ProductSecrets = () => {
     selectNoTableState
   );
 
-  if (
-    prodIsPending ||
-    secretsIsPending ||
-    orgIsPending ||
-    orgSecretsIsPending
-  ) {
-    return <LoadingIndicator />;
-  }
-
-  if (prodIsError || secretsIsError || orgIsError || orgSecretsIsError) {
-    toastError(
-      'Unable to load data',
-      prodError || secretsError || orgError || orgSecretsError
-    );
-    return;
-  }
-
   return (
     <div className='flex flex-col gap-8'>
       <PageHeader
         title='Secrets'
-        description={`Manage secrets for ${product.name}.`}
+        description={`Manage secrets for ${product?.name ?? 'this product'}.`}
         actions={
           <Tooltip>
             <TooltipTrigger asChild>
@@ -289,27 +269,46 @@ const ProductSecrets = () => {
       />
       <SheetSection
         title='Product Secrets'
-        meta={`${secrets.pagination.totalCount} in total`}
+        meta={secrets ? `${secrets.pagination.totalCount} in total` : undefined}
       >
-        <DataTable
-          table={table}
-          setCurrentPageOptions={(currentPage) => {
-            return {
-              to: Route.to,
-              search: { ...search, page: currentPage },
-            };
-          }}
-          setPageSizeOptions={(size) => {
-            return {
-              to: Route.to,
-              search: { ...search, page: 1, pageSize: size },
-            };
-          }}
-        />
+        {secretsIsError ? (
+          <LoadError
+            what='product secrets'
+            error={secretsError}
+            onRetry={() => refetchSecrets()}
+          />
+        ) : secretsIsPending ? (
+          <LoadingIndicator />
+        ) : (
+          <DataTable
+            table={table}
+            noResultsContent={
+              <div className='text-muted-foreground text-[0.8125rem]'>
+                No product secrets yet.
+              </div>
+            }
+            setCurrentPageOptions={(currentPage) => {
+              return {
+                to: Route.to,
+                search: { ...search, page: currentPage },
+              };
+            }}
+            setPageSizeOptions={(size) => {
+              return {
+                to: Route.to,
+                search: { ...search, page: 1, pageSize: size },
+              };
+            }}
+          />
+        )}
       </SheetSection>
       <SheetSection
         title='Organization Secrets'
-        meta={`Inherited secrets from ${organization.name}.`}
+        meta={
+          organization
+            ? `Inherited secrets from ${organization.name}.`
+            : 'Inherited secrets from the organization.'
+        }
         actions={
           <Tooltip>
             <TooltipTrigger asChild>
@@ -335,21 +334,36 @@ const ProductSecrets = () => {
           </Tooltip>
         }
       >
-        <DataTable
-          table={orgTable}
-          setCurrentPageOptions={(currentPage) => {
-            return {
-              to: Route.to,
-              search: { ...search, orgPage: currentPage },
-            };
-          }}
-          setPageSizeOptions={(size) => {
-            return {
-              to: Route.to,
-              search: { ...search, orgPage: 1, orgPageSize: size },
-            };
-          }}
-        />
+        {orgSecretsIsError ? (
+          <LoadError
+            what='organization secrets'
+            error={orgSecretsError}
+            onRetry={() => refetchOrgSecrets()}
+          />
+        ) : orgSecretsIsPending ? (
+          <LoadingIndicator />
+        ) : (
+          <DataTable
+            table={orgTable}
+            noResultsContent={
+              <div className='text-muted-foreground text-[0.8125rem]'>
+                The organization has no secrets.
+              </div>
+            }
+            setCurrentPageOptions={(currentPage) => {
+              return {
+                to: Route.to,
+                search: { ...search, orgPage: currentPage },
+              };
+            }}
+            setPageSizeOptions={(size) => {
+              return {
+                to: Route.to,
+                search: { ...search, orgPage: 1, orgPageSize: size },
+              };
+            }}
+          />
+        )}
       </SheetSection>
     </div>
   );

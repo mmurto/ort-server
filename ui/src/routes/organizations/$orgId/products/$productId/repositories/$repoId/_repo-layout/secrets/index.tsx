@@ -18,6 +18,7 @@
  */
 
 import {
+  keepPreviousData,
   useMutation,
   useQuery,
   useQueryClient,
@@ -41,6 +42,7 @@ import {
 import { DataTable } from '@/components/data-table/data-table';
 import { DeleteDialog } from '@/components/delete-dialog';
 import { DeleteIconButton } from '@/components/delete-icon-button';
+import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { PageHeader, SheetSection } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
@@ -116,6 +118,7 @@ const ActionCell = ({ row }: AppCellContext<Secret, unknown>) => {
       </Tooltip>
       <DeleteDialog
         thingName={'secret'}
+        thingLabel={row.original.name}
         uiComponent={<DeleteIconButton />}
         onDelete={() =>
           deleteSecret({
@@ -175,34 +178,19 @@ const RepositorySecrets = () => {
   const orgPageIndex = search.orgPage ? search.orgPage - 1 : 0;
   const orgPageSize = search.orgPageSize ? search.orgPageSize : defaultPageSize;
 
-  const {
-    data: repo,
-    error: repoError,
-    isPending: repoIsPending,
-    isError: repoIsError,
-  } = useQuery({
+  const { data: repo } = useQuery({
     ...getRepositoryOptions({
       path: { repositoryId: Number.parseInt(params.repoId) },
     }),
   });
 
-  const {
-    data: product,
-    error: productError,
-    isPending: productIsPending,
-    isError: productIsError,
-  } = useQuery({
+  const { data: product } = useQuery({
     ...getProductOptions({
       path: { productId: Number.parseInt(params.productId) },
     }),
   });
 
-  const {
-    data: organization,
-    error: orgError,
-    isPending: orgIsPending,
-    isError: orgIsError,
-  } = useQuery({
+  const { data: organization } = useQuery({
     ...getOrganizationOptions({
       path: { organizationId: Number.parseInt(params.orgId) },
     }),
@@ -213,11 +201,13 @@ const RepositorySecrets = () => {
     error: secretsError,
     isPending: secretsIsPending,
     isError: secretsIsError,
+    refetch: refetchSecrets,
   } = useQuery({
     ...getRepositorySecretsOptions({
       path: { repositoryId: Number.parseInt(params.repoId) },
       query: { limit: pageSize, offset: pageIndex * pageSize },
     }),
+    placeholderData: keepPreviousData,
   });
 
   const {
@@ -225,6 +215,7 @@ const RepositorySecrets = () => {
     error: productSecretsError,
     isPending: productSecretsIsPending,
     isError: productSecretsIsError,
+    refetch: refetchProductSecrets,
   } = useQuery({
     ...getProductSecretsOptions({
       path: { productId: Number.parseInt(params.productId) },
@@ -233,6 +224,7 @@ const RepositorySecrets = () => {
         offset: productPageIndex * productPageSize,
       },
     }),
+    placeholderData: keepPreviousData,
   });
 
   const {
@@ -240,6 +232,7 @@ const RepositorySecrets = () => {
     error: orgSecretsError,
     isPending: orgSecretsIsPending,
     isError: orgSecretsIsError,
+    refetch: refetchOrgSecrets,
   } = useQuery({
     ...getOrganizationSecretsOptions({
       path: { organizationId: Number.parseInt(params.orgId) },
@@ -248,6 +241,7 @@ const RepositorySecrets = () => {
         offset: orgPageIndex * orgPageSize,
       },
     }),
+    placeholderData: keepPreviousData,
   });
 
   const table = useAppTable(
@@ -271,7 +265,7 @@ const RepositorySecrets = () => {
       data: productSecrets?.data || [],
       columns: baseColumns,
       pageCount: Math.ceil(
-        (productSecrets?.pagination.totalCount ?? 0) / orgPageSize
+        (productSecrets?.pagination.totalCount ?? 0) / productPageSize
       ),
       state: {
         pagination: {
@@ -302,42 +296,11 @@ const RepositorySecrets = () => {
     selectNoTableState
   );
 
-  if (
-    repoIsPending ||
-    productIsPending ||
-    orgIsPending ||
-    secretsIsPending ||
-    productSecretsIsPending ||
-    orgSecretsIsPending
-  ) {
-    return <LoadingIndicator />;
-  }
-
-  if (
-    repoIsError ||
-    productIsError ||
-    orgIsError ||
-    secretsIsError ||
-    productSecretsIsError ||
-    orgSecretsIsError
-  ) {
-    toastError(
-      'Unable to load data',
-      repoError ||
-        productError ||
-        orgError ||
-        secretsError ||
-        productSecretsError ||
-        orgSecretsError
-    );
-    return;
-  }
-
   return (
     <div className='flex flex-col gap-8'>
       <PageHeader
         title='Secrets'
-        description={`Manage secrets for ${repo.url}.`}
+        description={`Manage secrets for ${repo?.url ?? 'this repository'}.`}
         actions={
           <Tooltip>
             <TooltipTrigger asChild>
@@ -363,27 +326,42 @@ const RepositorySecrets = () => {
       />
       <SheetSection
         title='Repository Secrets'
-        meta={`${secrets.pagination.totalCount} in total`}
+        meta={secrets ? `${secrets.pagination.totalCount} in total` : undefined}
       >
-        <DataTable
-          table={table}
-          setCurrentPageOptions={(currentPage) => {
-            return {
-              to: Route.to,
-              search: { ...search, page: currentPage },
-            };
-          }}
-          setPageSizeOptions={(size) => {
-            return {
-              to: Route.to,
-              search: { ...search, page: 1, pageSize: size },
-            };
-          }}
-        />
+        {secretsIsError ? (
+          <LoadError
+            what='repository secrets'
+            error={secretsError}
+            onRetry={() => refetchSecrets()}
+          />
+        ) : secretsIsPending ? (
+          <LoadingIndicator />
+        ) : (
+          <DataTable
+            table={table}
+            noResultsContent={
+              <div className='text-muted-foreground text-[0.8125rem]'>
+                No repository secrets yet.
+              </div>
+            }
+            setCurrentPageOptions={(currentPage) => {
+              return {
+                to: Route.to,
+                search: { ...search, page: currentPage },
+              };
+            }}
+            setPageSizeOptions={(size) => {
+              return {
+                to: Route.to,
+                search: { ...search, page: 1, pageSize: size },
+              };
+            }}
+          />
+        )}
       </SheetSection>
       <SheetSection
         title='Product Secrets'
-        meta={`Inherited secrets from ${product.name}.`}
+        meta={`Inherited secrets from ${product?.name ?? 'the product'}.`}
         actions={
           <Tooltip>
             <TooltipTrigger asChild>
@@ -409,25 +387,40 @@ const RepositorySecrets = () => {
           </Tooltip>
         }
       >
-        <DataTable
-          table={productTable}
-          setCurrentPageOptions={(currentPage) => {
-            return {
-              to: Route.to,
-              search: { ...search, productPage: currentPage },
-            };
-          }}
-          setPageSizeOptions={(size) => {
-            return {
-              to: Route.to,
-              search: { ...search, productPage: 1, productPageSize: size },
-            };
-          }}
-        />
+        {productSecretsIsError ? (
+          <LoadError
+            what='product secrets'
+            error={productSecretsError}
+            onRetry={() => refetchProductSecrets()}
+          />
+        ) : productSecretsIsPending ? (
+          <LoadingIndicator />
+        ) : (
+          <DataTable
+            table={productTable}
+            noResultsContent={
+              <div className='text-muted-foreground text-[0.8125rem]'>
+                The product has no secrets.
+              </div>
+            }
+            setCurrentPageOptions={(currentPage) => {
+              return {
+                to: Route.to,
+                search: { ...search, productPage: currentPage },
+              };
+            }}
+            setPageSizeOptions={(size) => {
+              return {
+                to: Route.to,
+                search: { ...search, productPage: 1, productPageSize: size },
+              };
+            }}
+          />
+        )}
       </SheetSection>
       <SheetSection
         title='Organization Secrets'
-        meta={`Inherited secrets from ${organization.name}.`}
+        meta={`Inherited secrets from ${organization?.name ?? 'the organization'}.`}
         actions={
           <Tooltip>
             <TooltipTrigger asChild>
@@ -452,21 +445,36 @@ const RepositorySecrets = () => {
           </Tooltip>
         }
       >
-        <DataTable
-          table={orgTable}
-          setCurrentPageOptions={(currentPage) => {
-            return {
-              to: Route.to,
-              search: { ...search, orgPage: currentPage },
-            };
-          }}
-          setPageSizeOptions={(size) => {
-            return {
-              to: Route.to,
-              search: { ...search, orgPage: 1, orgPageSize: size },
-            };
-          }}
-        />
+        {orgSecretsIsError ? (
+          <LoadError
+            what='organization secrets'
+            error={orgSecretsError}
+            onRetry={() => refetchOrgSecrets()}
+          />
+        ) : orgSecretsIsPending ? (
+          <LoadingIndicator />
+        ) : (
+          <DataTable
+            table={orgTable}
+            noResultsContent={
+              <div className='text-muted-foreground text-[0.8125rem]'>
+                The organization has no secrets.
+              </div>
+            }
+            setCurrentPageOptions={(currentPage) => {
+              return {
+                to: Route.to,
+                search: { ...search, orgPage: currentPage },
+              };
+            }}
+            setPageSizeOptions={(size) => {
+              return {
+                to: Route.to,
+                search: { ...search, orgPage: 1, orgPageSize: size },
+              };
+            }}
+          />
+        )}
       </SheetSection>
     </div>
   );

@@ -25,6 +25,11 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { CreateUserForm } from '@/routes/admin/users/create-user';
 
+// The guard needs a router, which is not part of this test.
+vi.mock('@/components/unsaved-changes-guard', () => ({
+  UnsavedChangesGuard: () => null,
+}));
+
 vi.mock('@/hooks/use-in-view', () => ({
   useInView: () => ({ ref: vi.fn(), inView: false }),
 }));

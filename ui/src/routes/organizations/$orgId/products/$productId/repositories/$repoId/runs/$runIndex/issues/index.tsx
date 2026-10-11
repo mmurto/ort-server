@@ -43,6 +43,7 @@ import {
 } from '@/components/data-table-cards/findings-counts';
 import { FindingsFilterChips } from '@/components/data-table-cards/findings-filter-chips';
 import { FormattedValue } from '@/components/formatted-value';
+import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { SheetSection } from '@/components/page-header';
 import { Resolutions } from '@/components/resolutions';
@@ -77,7 +78,6 @@ import {
   useAppTable,
 } from '@/hooks/use-app-table';
 import type { AppRow } from '@/hooks/use-app-table';
-import { toastError } from '@/lib/toast';
 import {
   ItemResolved,
   itemResolvedSchema,
@@ -453,8 +453,7 @@ const IssuesComponent = () => {
   }
 
   if (isError || totalIsError) {
-    toastError('Unable to load data', error || totalError);
-    return;
+    return <LoadError error={error || totalError} />;
   }
   const filtersInUse =
     totalIssues.pagination.totalCount !== issues.pagination.totalCount;
@@ -488,6 +487,17 @@ const IssuesComponent = () => {
         }}
       />
       <DataTableCards
+        onClearFilters={() =>
+          navigate({
+            search: {
+              ...search,
+              page: 1,
+              pkgId: undefined,
+              itemResolved: undefined,
+              severity: undefined,
+            },
+          })
+        }
         table={table}
         aria-label='Issues'
         layout={[
@@ -545,6 +555,7 @@ const IssuesComponent = () => {
             to: Route.to,
             search: {
               ...search,
+              page: 1,
               sortBy: updateColumnSorting(search.sortBy, sortBy),
             },
           };

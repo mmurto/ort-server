@@ -17,6 +17,7 @@
  * License-Filename: LICENSE
  */
 
+import { Link } from '@tanstack/react-router';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { useState } from 'react';
 
@@ -38,6 +39,70 @@ type SecretSelectProps = {
   repositoryId?: string;
   permissions: UseSecretsParams['permissions'];
   className?: string;
+};
+
+/** Says where to add a secret, linking to the secrets of the narrowest level that is known. */
+const NoSecrets = ({
+  orgId,
+  productId,
+  repositoryId,
+}: Pick<SecretSelectProps, 'orgId' | 'productId' | 'repositoryId'>) => {
+  const prefix = 'No secrets found. Add one on the ';
+
+  if (orgId && productId && repositoryId) {
+    return (
+      <>
+        {prefix}
+        <Link
+          className='link underline'
+          to='/organizations/$orgId/products/$productId/repositories/$repoId/secrets'
+          params={{ orgId, productId, repoId: repositoryId }}
+        >
+          secrets page of the repository
+        </Link>
+        .
+      </>
+    );
+  }
+
+  if (orgId && productId) {
+    return (
+      <>
+        {prefix}
+        <Link
+          className='link underline'
+          to='/organizations/$orgId/products/$productId/secrets'
+          params={{ orgId, productId }}
+        >
+          secrets page of the product
+        </Link>
+        .
+      </>
+    );
+  }
+
+  if (orgId) {
+    return (
+      <>
+        {prefix}
+        <Link
+          className='link underline'
+          to='/organizations/$orgId/secrets'
+          params={{ orgId }}
+        >
+          secrets page of the organization
+        </Link>
+        .
+      </>
+    );
+  }
+
+  return (
+    <>
+      No secrets found. Add one on the secrets page of the organization, product
+      or repository.
+    </>
+  );
 };
 
 /**
@@ -118,7 +183,13 @@ export const SecretSelect = ({
         </CommandItem>
       )}
       searchable={false}
-      emptyMessage='No secrets found.'
+      emptyMessage={
+        <NoSecrets
+          orgId={orgId}
+          productId={productId}
+          repositoryId={repositoryId}
+        />
+      }
       errorMessage='Failed to load secrets'
     />
   );

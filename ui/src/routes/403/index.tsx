@@ -18,18 +18,9 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { Lock } from 'lucide-react';
+
+import { ForbiddenComponent } from '@/components/error-component';
 
 export const Route = createFileRoute('/403/')({
-  component: () => (
-    <div className='flex flex-col gap-3 py-8'>
-      <h1 className='flex items-center gap-2 text-2xl font-semibold tracking-[-0.015em]'>
-        <Lock className='text-muted-foreground size-5' />
-        403 Forbidden
-      </h1>
-      <p className='text-muted-foreground text-[0.8125rem]'>
-        Sorry, you are not allowed to access this page.
-      </p>
-    </div>
-  ),
+  component: ForbiddenComponent,
 });

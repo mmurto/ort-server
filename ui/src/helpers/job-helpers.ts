@@ -17,7 +17,7 @@
  * License-Filename: LICENSE
  */
 
-import { JobStatus } from '@/api';
+import { JobStatus, OrtRunStatus } from '@/api';
 
 /**
  * Check if a job is finished, based on its status. The finished states are
@@ -30,6 +30,15 @@ export const isJobFinished = (status: JobStatus | undefined) => {
     status && ['FINISHED', 'FINISHED_WITH_ISSUES', 'FAILED'].includes(status)
   );
 };
+
+/**
+ * Check if a run is in a final state, so it changes no more: 'FINISHED',
+ * 'FINISHED_WITH_ISSUES' or 'FAILED'.
+ */
+export const isRunFinished = (status: OrtRunStatus | undefined) =>
+  status === 'FINISHED' ||
+  status === 'FINISHED_WITH_ISSUES' ||
+  status === 'FAILED';
 
 /**
  * A helper function to determine the contents of the statistics cards for the run.

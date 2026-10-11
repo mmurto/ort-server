@@ -165,12 +165,18 @@ export const OrganizationsPage = () => {
         actions={
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button asChild disabled={isSuperuser === false}>
-                <Link to='/create-organization'>
-                  <PlusIcon />
-                  Add organization
-                </Link>
-              </Button>
+              {/* The wrapper keeps the tooltip reachable while the disabled link ignores the pointer. */}
+              <span
+                className='inline-flex'
+                tabIndex={isSuperuser === false ? 0 : undefined}
+              >
+                <Button asChild disabled={isSuperuser === false}>
+                  <Link to='/create-organization'>
+                    <PlusIcon />
+                    Add organization
+                  </Link>
+                </Button>
+              </span>
             </TooltipTrigger>
             <TooltipContent>
               {isSuperuser !== false

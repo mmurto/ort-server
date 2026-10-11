@@ -380,4 +380,14 @@ describe('formValuesToPayload', () => {
 
     expect(payload.jobConfigs.analyzer?.packageManagerOptions).toBeUndefined();
   });
+
+  it('sends the rule set only when one is set', () => {
+    const values = createFormValues();
+
+    expect(formValuesToPayload(values, []).jobConfigs.ruleSet).toBeUndefined();
+
+    values.jobConfigs.ruleSet = 'strict';
+
+    expect(formValuesToPayload(values, []).jobConfigs.ruleSet).toBe('strict');
+  });
 });

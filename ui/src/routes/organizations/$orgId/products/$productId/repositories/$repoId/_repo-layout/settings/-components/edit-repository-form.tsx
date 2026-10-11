@@ -41,20 +41,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { UnsavedChangesGuard } from '@/components/unsaved-changes-guard';
 import { getRepositoryTypeLabel } from '@/lib/types';
 import { repositoryFormSchema, type RepositoryFormValues } from '@/schemas';
 
 interface EditRepositoryFormProps {
   defaultValues: RepositoryFormValues;
   isPending: boolean;
-  onCancel: () => void;
-  onSubmit: (values: RepositoryFormValues) => Promise<void> | void;
+  /**
+   * Save the values. The form stays on the page and starts over from the returned saved values,
+   * or from the submitted values if nothing is returned. A rejected promise keeps the changes.
+   */
+  onSubmit: (
+    values: RepositoryFormValues
+  ) => Promise<RepositoryFormValues | void> | RepositoryFormValues | void;
 }
 
 export const EditRepositoryForm = ({
   defaultValues,
   isPending,
-  onCancel,
   onSubmit,
 }: EditRepositoryFormProps) => {
   const form = useForm<RepositoryFormValues>({
@@ -63,11 +68,23 @@ export const EditRepositoryForm = ({
     mode: 'onChange',
   });
 
+  const submit = async (values: RepositoryFormValues) => {
+    let saved: RepositoryFormValues | void;
+    try {
+      saved = await onSubmit(values);
+    } catch {
+      // The caller reports the error. The changes stay in the form to be saved again.
+      return;
+    }
+    form.reset(saved ?? values);
+  };
+
   return (
     <Card className='max-w-2xl'>
+      <UnsavedChangesGuard control={form.control} />
       <Form {...form}>
         <form
-          onSubmit={form.handleSubmit(onSubmit)}
+          onSubmit={form.handleSubmit(submit)}
           className='flex flex-col gap-6'
         >
           <CardContent className='flex flex-col gap-5'>
@@ -91,10 +108,7 @@ export const EditRepositoryForm = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Type</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder='Select a type' />
@@ -151,16 +165,16 @@ export const EditRepositoryForm = ({
                   <Loader2 size={16} className='mx-3 animate-spin' />
                 </>
               ) : (
-                'Submit'
+                'Save'
               )}
             </Button>
             <Button
               type='button'
               variant='outline'
-              onClick={onCancel}
-              disabled={isPending}
+              onClick={() => form.reset()}
+              disabled={isPending || !form.formState.isDirty}
             >
-              Cancel
+              Reset
             </Button>
           </CardFooter>
         </form>

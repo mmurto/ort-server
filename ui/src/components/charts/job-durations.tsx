@@ -28,6 +28,7 @@ import {
   RunsFilterForm,
   type RunsFilterValues,
 } from '@/components/form/runs-filter-form';
+import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { SheetSection } from '@/components/page-header';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -35,7 +36,6 @@ import { Label } from '@/components/ui/label';
 import { config } from '@/config';
 import { formatDuration } from '@/helpers/format-elapsed';
 import { RUN_JOBS } from '@/helpers/run-jobs';
-import { toastError } from '@/lib/toast';
 
 type JobDurationsProps = {
   repoId: string;
@@ -142,8 +142,7 @@ export const JobDurations = ({
   }
 
   if (runsIsError) {
-    toastError('Unable to load data', runsError);
-    return;
+    return <LoadError error={runsError} />;
   }
 
   if (runs.pagination.totalCount === 0) {

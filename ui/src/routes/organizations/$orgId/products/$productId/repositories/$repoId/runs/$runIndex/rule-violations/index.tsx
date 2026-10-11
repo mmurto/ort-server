@@ -78,7 +78,6 @@ import {
   useAppTable,
 } from '@/hooks/use-app-table';
 import type { AppRow } from '@/hooks/use-app-table';
-import { toastError } from '@/lib/toast';
 import {
   ItemResolved,
   itemResolvedSchema,
@@ -230,24 +229,14 @@ const RuleViolationsComponent = () => {
     { id: 'rule', value: selectedRules },
   ].filter(({ value }) => value !== undefined);
 
-  const {
-    data: totalRuleViolations,
-    isPending: totalIsPending,
-    isError: totalIsError,
-    error: totalError,
-  } = useQuery({
+  const { data: totalRuleViolations } = useSuspenseQuery({
     ...getRunRuleViolationsOptions({
       path: { runId: ortRun.id },
       query: { limit: 1 },
     }),
   });
 
-  const {
-    data: availableRules,
-    isPending: rulesIsPending,
-    isError: rulesIsError,
-    error: rulesError,
-  } = useQuery({
+  const { data: availableRules } = useSuspenseQuery({
     ...getRunRuleViolationRulesOptions({
       path: { runId: ortRun.id },
     }),
@@ -268,12 +257,7 @@ const RuleViolationsComponent = () => {
         )
       : undefined;
 
-  const {
-    data: ruleViolations,
-    isPending,
-    isError,
-    error,
-  } = useQuery({
+  const { data: ruleViolations } = useSuspenseQuery({
     ...getRunRuleViolationsOptions({
       path: { runId: ortRun.id },
       query: {
@@ -290,8 +274,10 @@ const RuleViolationsComponent = () => {
     }),
   });
 
-  const ruleOptions =
-    availableRules?.map((rule) => ({ label: rule, value: rule })) ?? [];
+  const ruleOptions = availableRules.map((rule) => ({
+    label: rule,
+    value: rule,
+  }));
 
   const columns = columnHelper.columns([
     columnHelper.display({
@@ -491,11 +477,9 @@ const RuleViolationsComponent = () => {
 
   const table = useAppTable(
     {
-      data: ruleViolations?.data || [],
+      data: ruleViolations.data,
       columns,
-      pageCount: Math.ceil(
-        (ruleViolations?.pagination.totalCount ?? 0) / pageSize
-      ),
+      pageCount: Math.ceil(ruleViolations.pagination.totalCount / pageSize),
       state: {
         pagination: {
           pageIndex,
@@ -519,15 +503,6 @@ const RuleViolationsComponent = () => {
     },
     selectNoTableState
   );
-
-  if (isPending || totalIsPending || rulesIsPending) {
-    return <LoadingIndicator />;
-  }
-
-  if (isError || totalIsError || rulesIsError) {
-    toastError('Unable to load data', error || totalError || rulesError);
-    return;
-  }
 
   const filtersInUse = columnFilters.length > 0;
   const intro =
@@ -567,6 +542,18 @@ const RuleViolationsComponent = () => {
         }}
       />
       <DataTableCards
+        onClearFilters={() =>
+          navigate({
+            search: {
+              ...search,
+              page: 1,
+              pkgId: undefined,
+              itemResolved: undefined,
+              severity: undefined,
+              rule: undefined,
+            },
+          })
+        }
         table={table}
         aria-label='Rule violations'
         layout={[
@@ -628,6 +615,7 @@ const RuleViolationsComponent = () => {
             to: Route.to,
             search: {
               ...search,
+              page: 1,
               sortBy: updateColumnSorting(
                 search.sortBy?.filter((sort) =>
                   supportedSortColumns.has(sort.id)

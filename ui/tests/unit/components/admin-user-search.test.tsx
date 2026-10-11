@@ -57,6 +57,10 @@ vi.mock('@tanstack/react-query', async (importOriginal) => {
   };
 });
 
+vi.mock('@/hooks/use-user', () => ({
+  useUser: () => ({ username: 'alpha' }),
+}));
+
 const UsersComponent = Route.options.component!;
 
 const createUser = (username: string) => ({
@@ -246,5 +250,38 @@ describe('admin user list', () => {
         sortBy: [{ id: 'isSuperuser', desc: false }],
       }).success
     ).toBe(false);
+  });
+
+  it('keeps the signed-in user from changing their own account', async () => {
+    renderUsers();
+
+    const rows = await screen.findAllByRole('row');
+    const ownRow = rows.find((row) => within(row).queryByText('alpha'))!;
+    const otherRow = rows.find((row) => within(row).queryByText('mike'))!;
+
+    expect(
+      within(ownRow).getByRole('button', { name: 'Make superuser' })
+    ).toBeDisabled();
+    expect(
+      within(ownRow).getByRole('button', { name: 'Delete' })
+    ).toBeDisabled();
+    expect(
+      within(otherRow).getByRole('button', { name: 'Make superuser' })
+    ).toBeEnabled();
+  });
+
+  it('asks before making a user a superuser', async () => {
+    const { user } = renderUsers();
+
+    const rows = await screen.findAllByRole('row');
+    const otherRow = rows.find((row) => within(row).queryByText('mike'))!;
+
+    await user.click(
+      within(otherRow).getByRole('button', { name: 'Make superuser' })
+    );
+
+    expect(
+      await screen.findByRole('alertdialog', { name: 'Make mike a superuser?' })
+    ).toBeVisible();
   });
 });

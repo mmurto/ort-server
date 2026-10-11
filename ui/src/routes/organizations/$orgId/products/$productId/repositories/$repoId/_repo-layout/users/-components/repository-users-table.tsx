@@ -31,6 +31,8 @@ import {
 import { DataTable } from '@/components/data-table/data-table.tsx';
 import { DeleteDialog } from '@/components/delete-dialog.tsx';
 import { DeleteIconButton } from '@/components/delete-icon-button.tsx';
+import { LoadError } from '@/components/load-error';
+import { LoadingIndicator } from '@/components/loading-indicator';
 import {
   Tooltip,
   TooltipContent,
@@ -238,9 +240,22 @@ const columns = columnHelper.columns([
           />
         </div>
       ) : (
-        <div>
-          <DeleteIconButton icon={<FileOutput size={16} />} disabled={true} />
-        </div>
+        <Tooltip delayDuration={300}>
+          <TooltipTrigger asChild>
+            {/* The wrapper keeps the tooltip reachable while the button is disabled. */}
+            <span className='inline-flex cursor-not-allowed' tabIndex={0}>
+              <DeleteIconButton
+                icon={<FileOutput size={16} />}
+                disabled={true}
+                srDescription='Remove user from this repository'
+              />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            You can't change your own role or remove yourself from this
+            repository.
+          </TooltipContent>
+        </Tooltip>
       );
     },
   }),
@@ -256,7 +271,13 @@ export const RepositoryUsersTable = () => {
   const { page = 1, pageSize = 10 } = search;
   const pageIndex = page - 1;
 
-  const { data: usersWithGroups } = useQuery({
+  const {
+    data: usersWithGroups,
+    error: usersError,
+    isPending: usersIsPending,
+    isError: usersIsError,
+    refetch: refetchUsers,
+  } = useQuery({
     ...getRepositoryUsersOptions({
       path: { repositoryId: Number.parseInt(repoId) },
       query: {
@@ -285,9 +306,28 @@ export const RepositoryUsersTable = () => {
     selectNoTableState
   );
 
+  if (usersIsError) {
+    return (
+      <LoadError
+        what='users'
+        error={usersError}
+        onRetry={() => refetchUsers()}
+      />
+    );
+  }
+
   return (
     <DataTable
       table={table}
+      noResultsContent={
+        usersIsPending ? (
+          <LoadingIndicator />
+        ) : (
+          <div className='text-muted-foreground text-[0.8125rem]'>
+            No users have a role in this repository yet.
+          </div>
+        )
+      }
       setCurrentPageOptions={(currentPage) => {
         return {
           search: { ...search, page: currentPage },

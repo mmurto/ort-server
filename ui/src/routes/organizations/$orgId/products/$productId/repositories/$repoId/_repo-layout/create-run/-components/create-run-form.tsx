@@ -47,6 +47,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { UnsavedChangesGuard } from '@/components/unsaved-changes-guard';
 import { useDebounce } from '@/hooks/use-debounce';
 import type {
   OrganizationPermissions,
@@ -364,6 +365,7 @@ export const CreateRunForm = ({
 
   return (
     <div className='flex flex-col gap-8'>
+      <UnsavedChangesGuard control={form.control} />
       <PageHeader
         title='Create a Run'
         description={

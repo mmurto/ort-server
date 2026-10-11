@@ -44,7 +44,7 @@ type SearchableInfiniteListProps<TItem> = {
   renderItem: (item: TItem) => ReactNode;
   getItemKey: (item: TItem) => Key;
   /** Shown when the list has loaded without returning anything. */
-  emptyMessage: string;
+  emptyMessage: ReactNode;
   /** Shown in front of the reason when the list fails to load. */
   errorMessage: string;
   /**

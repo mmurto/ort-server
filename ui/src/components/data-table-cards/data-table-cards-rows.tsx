@@ -27,6 +27,7 @@ import {
   type DataTableCardsColumn,
 } from '@/components/data-table-cards/data-table-cards-layout';
 import { MarkItems } from '@/components/data-table/mark-items';
+import { NoResults } from '@/components/data-table/no-results';
 import { Button } from '@/components/ui/button';
 import type { AppRow } from '@/hooks/use-app-table';
 import { cn } from '@/lib/utils';
@@ -41,6 +42,8 @@ interface DataTableCardsRowsProps<TData extends RowData> {
   renderSubComponent?: (props: { row: AppRow<TData> }) => React.ReactElement;
   setMarkedOptions?: (marked: string) => LinkOptions;
   noResultsContent?: React.ReactNode;
+  filtersActive?: boolean;
+  onClearFilters?: () => void;
 }
 
 // The row actions stay in the layout, so they do not shift the row, and in the
@@ -59,6 +62,8 @@ export function DataTableCardsRows<TData extends RowData>({
   renderSubComponent,
   setMarkedOptions,
   noResultsContent,
+  filtersActive = false,
+  onClearFilters,
 }: DataTableCardsRowsProps<TData>) {
   // The rows keep their identity when a row is expanded or a column is hidden;
   // only their methods return the new state. React Compiler would reuse what
@@ -74,9 +79,10 @@ export function DataTableCardsRows<TData extends RowData>({
           className='flex min-h-24 items-center justify-center px-2 text-center'
         >
           {noResultsContent ?? (
-            <div className='text-muted-foreground text-[0.8125rem]'>
-              Nothing matches the current filters.
-            </div>
+            <NoResults
+              filtersActive={filtersActive}
+              onClearFilters={onClearFilters}
+            />
           )}
         </div>
       </div>

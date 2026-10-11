@@ -19,7 +19,10 @@
 
 import { expect, it } from 'vitest';
 
-import { defaultValues } from '@/routes/organizations/$orgId/products/$productId/repositories/$repoId/_repo-layout/create-run/-components/default-values';
+import {
+  defaultValues,
+  getRerunRevisions,
+} from '@/routes/organizations/$orgId/products/$productId/repositories/$repoId/_repo-layout/create-run/-components/default-values';
 import { createOrtRun, createPluginDescriptor } from '../fixtures/create-run';
 
 it('preserves multiple environment definitions from reruns', () => {
@@ -553,4 +556,100 @@ it('applies fixed plugin option precedence for advisor, scanner, and reporter re
       secrets: {},
     },
   });
+});
+
+it('keeps false booleans and empty values from reruns', () => {
+  const ortRun = createOrtRun({
+    path: '',
+    jobConfigContext: '',
+    jobConfigs: {
+      analyzer: {
+        allowDynamicVersions: false,
+        skipExcluded: false,
+        repositoryConfigPath: '',
+      },
+      advisor: { skipExcluded: false, advisors: [] },
+      scanner: { skipConcluded: false, skipExcluded: false },
+      reporter: { formats: [] },
+      notifier: { recipientAddresses: [] },
+    },
+  });
+
+  const defaults = defaultValues(ortRun, [], [], [], false, [], [], []);
+
+  expect(defaults.jobConfigs.analyzer.allowDynamicVersions).toBe(false);
+  expect(defaults.jobConfigs.analyzer.skipExcluded).toBe(false);
+  expect(defaults.jobConfigs.analyzer.repositoryConfigPath).toBe('');
+  expect(defaults.jobConfigs.advisor.skipExcluded).toBe(false);
+  expect(defaults.jobConfigs.advisor.advisors).toEqual([]);
+  expect(defaults.jobConfigs.scanner.skipConcluded).toBe(false);
+  expect(defaults.jobConfigs.scanner.skipExcluded).toBe(false);
+  expect(defaults.jobConfigs.reporter.formats).toEqual([]);
+  expect(defaults.jobConfigs.notifier.recipientAddresses).toEqual([]);
+  expect(defaults.jobConfigContext).toBe('');
+});
+
+it('falls back to the defaults for values missing from reruns', () => {
+  const defaults = defaultValues(
+    createOrtRun({ jobConfigs: { analyzer: {} } }),
+    [],
+    [],
+    [],
+    false,
+    [],
+    [],
+    []
+  );
+
+  expect(defaults.jobConfigs.analyzer.allowDynamicVersions).toBe(true);
+  expect(defaults.jobConfigs.analyzer.skipExcluded).toBe(true);
+  expect(defaults.jobConfigs.ruleSet).toBe('');
+});
+
+it('preserves the rule set from reruns', () => {
+  const defaults = defaultValues(
+    createOrtRun({ jobConfigs: { ruleSet: 'strict' } }),
+    [],
+    [],
+    [],
+    false,
+    [],
+    [],
+    []
+  );
+
+  expect(defaults.jobConfigs.ruleSet).toBe('strict');
+});
+
+it('reruns the requested revision unless the resolved revision is chosen', () => {
+  const ortRun = createOrtRun({
+    revision: 'main',
+    resolvedRevision: '0123abcd',
+  });
+
+  expect(getRerunRevisions(ortRun)).toEqual({
+    revision: 'main',
+    resolvedRevision: '0123abcd',
+  });
+  expect(defaultValues(ortRun, [], [], [], false, [], [], []).revision).toBe(
+    'main'
+  );
+  expect(
+    defaultValues(ortRun, [], [], [], false, [], [], [], {
+      revisionSource: 'resolvedRevision',
+    }).revision
+  ).toBe('0123abcd');
+  expect(
+    defaultValues(
+      createOrtRun({ revision: 'main' }),
+      [],
+      [],
+      [],
+      false,
+      [],
+      [],
+      [],
+      { revisionSource: 'resolvedRevision' }
+    ).revision
+  ).toBe('main');
 });

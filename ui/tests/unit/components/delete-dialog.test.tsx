@@ -77,4 +77,36 @@ describe('DeleteDialog', () => {
     await user.type(confirmationInput, 'repository-id');
     expect(deleteButton).toBeEnabled();
   });
+
+  it('names the item to delete when it has no confirmation ID', async () => {
+    const user = userEvent.setup();
+    render(
+      <DeleteDialog
+        thingName='template'
+        thingLabel='strict-scanner'
+        uiComponent={<button>Open dialog</button>}
+        onDelete={vi.fn()}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Open dialog' }));
+
+    expect(screen.getByText('strict-scanner')).toBeVisible();
+    expect(screen.getByText(/Delete the template/)).toBeVisible();
+  });
+
+  it('names the kind of item when there is no label', async () => {
+    const user = userEvent.setup();
+    render(
+      <DeleteDialog
+        thingName='resolution'
+        uiComponent={<button>Open dialog</button>}
+        onDelete={vi.fn()}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Open dialog' }));
+
+    expect(screen.getByText('Delete this resolution?')).toBeVisible();
+  });
 });

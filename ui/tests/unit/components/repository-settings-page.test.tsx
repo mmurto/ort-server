@@ -182,6 +182,7 @@ describe('RepositorySettingsPage', () => {
     expect(mocks.navigate).toHaveBeenCalledWith({
       to: '/organizations/$orgId/products/$productId',
       params: { orgId: '1', productId: '2' },
+      ignoreBlocker: true,
     });
   });
 

@@ -29,13 +29,13 @@ import {
 } from '@/api/@tanstack/react-query.gen';
 import { DataTable } from '@/components/data-table/data-table';
 import { ProductFavoriteButton } from '@/components/favorite-button';
+import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import {
   createAppColumnHelper,
   selectNoTableState,
   useAppTable,
 } from '@/hooks/use-app-table';
-import { toastError } from '@/lib/toast';
 import { useTablePrefsStore } from '@/store/table-prefs.store';
 import { LastJobStatus } from '../products/$productId/-components/last-job-status';
 import { LastRunDate } from '../products/$productId/-components/last-run-date';
@@ -305,8 +305,7 @@ export const OrganizationProductTable = () => {
   }
 
   if (prodIsError) {
-    toastError('Unable to load data', prodError);
-    return;
+    return <LoadError error={prodError} />;
   }
 
   return (

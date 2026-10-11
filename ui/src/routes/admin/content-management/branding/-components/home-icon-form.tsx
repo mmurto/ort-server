@@ -28,6 +28,7 @@ import {
   getServerSettingByKeyQueryKey,
   setServerSettingByKeyMutation,
 } from '@/api/@tanstack/react-query.gen';
+import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import {
@@ -154,8 +155,7 @@ export function HomeIconForm() {
   }
 
   if (isHomeIconError || isHomeIconDarkError) {
-    toastError('Unable to load data', homeIconError || homeIconDarkError);
-    return;
+    return <LoadError error={homeIconError || homeIconDarkError} />;
   }
 
   return (

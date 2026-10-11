@@ -30,6 +30,7 @@ import {
 import { BreakableString } from '@/components/breakable-string';
 import { DataTableCards } from '@/components/data-table-cards/data-table-cards';
 import { CopyableValue } from '@/components/data-table-cards/findings-cells';
+import { LoadError } from '@/components/load-error';
 import { SheetSection } from '@/components/page-header';
 import { Sha1Component } from '@/components/sha1-component';
 import {
@@ -42,7 +43,6 @@ import {
   selectNoTableState,
   useAppTable,
 } from '@/hooks/use-app-table';
-import { toastError } from '@/lib/toast';
 import { ProvenanceSnippetFindingsTable } from './provenance-snippet-findings-table';
 import {
   getSnippetFindingProvenancePageCount,
@@ -222,8 +222,7 @@ export const SnippetFindingsView = () => {
   );
 
   if (isError) {
-    toastError('Unable to load data', error);
-    return;
+    return <LoadError error={error} />;
   }
 
   const scannerWasIncludedInRun = ortRun.jobs.scanner != null;
@@ -304,6 +303,7 @@ export const SnippetFindingsView = () => {
             to: '.',
             search: {
               ...search,
+              page: 1,
               sortBy: updateColumnSorting(search.sortBy, sortBy),
             },
           };

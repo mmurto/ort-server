@@ -28,6 +28,7 @@ import {
   getServerSettingByKeyQueryKey,
   setServerSettingByKeyMutation,
 } from '@/api/@tanstack/react-query.gen';
+import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import {
@@ -118,8 +119,7 @@ export function FaviconForm() {
   }
 
   if (isFaviconError) {
-    toastError('Unable to load data', faviconError);
-    return;
+    return <LoadError error={faviconError} />;
   }
 
   return (

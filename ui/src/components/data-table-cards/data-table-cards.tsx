@@ -29,6 +29,10 @@ import {
 } from '@/components/data-table-cards/data-table-cards-layout';
 import { DataTableCardsRows } from '@/components/data-table-cards/data-table-cards-rows';
 import { DataTablePagination } from '@/components/data-table/data-table-pagination';
+import {
+  getClearFilters,
+  hasActiveFilters,
+} from '@/components/data-table/filter-state';
 import type {
   AppReactTable,
   AppRow,
@@ -70,6 +74,12 @@ interface DataTableCardsProps<
   layout?: DataTableCardsColumn[];
   renderSubComponent?: (props: { row: AppRow<TData> }) => React.ReactElement;
   noResultsContent?: React.ReactNode;
+  /**
+   * Clears every filter of the table. The default empty content offers it when
+   * the filters match nothing. Without it, the table's own column filter state
+   * is reset, which only has an effect when the table handles filter changes.
+   */
+  onClearFilters?: () => void;
   setCurrentPageOptions: (page: number) => LinkOptions;
   setPageSizeOptions: (pageSize: number) => LinkOptions;
   setSortingOptions?: (sorting: {
@@ -95,6 +105,7 @@ export function DataTableCards<TData extends RowData>({
   layout,
   renderSubComponent,
   noResultsContent,
+  onClearFilters,
   className,
   setCurrentPageOptions,
   setPageSizeOptions,
@@ -249,7 +260,7 @@ export function DataTableCards<TData extends RowData>({
           setSortingOptions={setSortingOptions}
         />
         <table.Subscribe selector={selectBodyState}>
-          {() => (
+          {({ columnFilters }) => (
             <DataTableCardsRows
               rows={table.getRowModel().rows}
               layout={columns}
@@ -260,6 +271,12 @@ export function DataTableCards<TData extends RowData>({
               renderSubComponent={renderSubComponent}
               setMarkedOptions={setMarkedOptions}
               noResultsContent={noResultsContent}
+              filtersActive={hasActiveFilters(columnFilters)}
+              onClearFilters={getClearFilters(
+                table,
+                columnFilters,
+                onClearFilters
+              )}
             />
           )}
         </table.Subscribe>

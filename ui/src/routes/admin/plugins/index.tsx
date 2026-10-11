@@ -19,6 +19,7 @@
 
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { useState } from 'react';
 
 import { PluginAvailability, PluginDescriptor } from '@/api';
 import {
@@ -28,6 +29,9 @@ import {
   getInstalledPluginsQueryKey,
   restrictPluginMutation,
 } from '@/api/@tanstack/react-query.gen';
+import { ConfirmDialog } from '@/components/confirm-dialog';
+import { LoadError } from '@/components/load-error';
+import { LoadingIndicator } from '@/components/loading-indicator';
 import { MarkdownRenderer } from '@/components/markdown-renderer';
 import { PageHeader } from '@/components/page-header';
 import { PluginAvailabilityToggle } from '@/components/plugin-availability-toggle';
@@ -40,6 +44,24 @@ import {
 import { ApiError } from '@/lib/api-error';
 import { queryClient } from '@/lib/query-client.ts';
 import { toast, toastError } from '@/lib/toast';
+
+const availabilityLabels: Record<PluginAvailability, string> = {
+  ENABLED: 'Enabled',
+  RESTRICTED: 'Restricted',
+  DISABLED: 'Disabled',
+};
+
+const availabilityConsequences: Record<PluginAvailability, string> = {
+  ENABLED: 'All organizations can use the plugin in their runs.',
+  RESTRICTED:
+    'Only organizations that have a template of the plugin assigned can use it in their runs.',
+  DISABLED: 'No organization can use the plugin in new runs.',
+};
+
+type AvailabilityChange = {
+  plugin: PluginDescriptor;
+  availability: PluginAvailability;
+};
 
 type PluginListProps = {
   value: string;
@@ -67,6 +89,8 @@ const PluginList = ({
   );
 
   const isMutating = isEnabling || isDisabling || isRestricting;
+  const [requestedChange, setRequestedChange] =
+    useState<AvailabilityChange | null>(null);
 
   const handleAvailabilityChange = (
     plugin: PluginDescriptor,
@@ -89,17 +113,17 @@ const PluginList = ({
     };
 
     if (availability === 'ENABLED') {
-      enablePlugin(
+      return enablePlugin(
         { path },
         { onSuccess: () => onSuccess('Enabled'), onError }
       );
     } else if (availability === 'RESTRICTED') {
-      restrictPlugin(
+      return restrictPlugin(
         { path },
         { onSuccess: () => onSuccess('Restricted'), onError }
       );
     } else {
-      disablePlugin(
+      return disablePlugin(
         { path },
         { onSuccess: () => onSuccess('Disabled'), onError }
       );
@@ -155,7 +179,7 @@ const PluginList = ({
                 <PluginAvailabilityToggle
                   availability={plugin.availability}
                   onAvailabilityChange={(availability) =>
-                    handleAvailabilityChange(plugin, availability)
+                    setRequestedChange({ plugin, availability })
                   }
                   disabled={isMutating}
                 />
@@ -163,13 +187,47 @@ const PluginList = ({
             ))}
           </ul>
         )}
+        <ConfirmDialog
+          open={requestedChange !== null}
+          onOpenChange={(open) => {
+            if (!open) setRequestedChange(null);
+          }}
+          title={
+            requestedChange &&
+            `Change ${requestedChange.plugin.displayName} from ${availabilityLabels[requestedChange.plugin.availability]} to ${availabilityLabels[requestedChange.availability]}?`
+          }
+          description={
+            requestedChange &&
+            availabilityConsequences[requestedChange.availability]
+          }
+          confirmLabel={
+            requestedChange
+              ? `Set to ${availabilityLabels[requestedChange.availability]}`
+              : 'Change'
+          }
+          destructive={requestedChange?.availability === 'DISABLED'}
+          onConfirm={() =>
+            requestedChange
+              ? handleAvailabilityChange(
+                  requestedChange.plugin,
+                  requestedChange.availability
+                ).then(() => undefined)
+              : undefined
+          }
+        />
       </AccordionContent>
     </AccordionItem>
   );
 };
 
 const PluginsComponent = () => {
-  const { data: plugins } = useQuery({
+  const {
+    data: plugins,
+    error: pluginsError,
+    isPending: pluginsIsPending,
+    isError: pluginsIsError,
+    refetch: refetchPlugins,
+  } = useQuery({
     ...getInstalledPluginsOptions(),
   });
 
@@ -193,44 +251,54 @@ const PluginsComponent = () => {
         title='Installed Plugins'
         description='Set which plugins are available for runs and manage their templates'
       />
-      <Accordion type='single' collapsible className='border-y'>
-        <PluginList
-          value='advisors'
-          title='Advisors'
-          description='Advisors integrate external vulnerability databases to get information about vulnerabilities in packages.'
-          plugins={advisors}
+      {pluginsIsError ? (
+        <LoadError
+          what='plugins'
+          error={pluginsError}
+          onRetry={() => refetchPlugins()}
         />
-        <PluginList
-          value='package-configuration-providers'
-          title='Package Configuration Providers'
-          description='Providers for package configurations which are used to set path excludes and license finding curations for packages.'
-          plugins={packageConfigurationProviders}
-        />
-        <PluginList
-          value='package-curation-providers'
-          title='Package Curation Providers'
-          description='Providers for package curations which are used to correct metadata of packages.'
-          plugins={packageCurationProviders}
-        />
-        <PluginList
-          value='package-managers'
-          title='Package Managers'
-          description='Package managers are used to detect packages and their dependencies.'
-          plugins={packageManagers}
-        />
-        <PluginList
-          value='reporters'
-          title='Reporters'
-          description='Reporters generate reports like SBOMs from the data collected in a run.'
-          plugins={reporters}
-        />
-        <PluginList
-          value='scanners'
-          title='Scanners'
-          description='Scanners scan packages for license and copyright information.'
-          plugins={scanners}
-        />
-      </Accordion>
+      ) : pluginsIsPending ? (
+        <LoadingIndicator />
+      ) : (
+        <Accordion type='single' collapsible className='border-y'>
+          <PluginList
+            value='advisors'
+            title='Advisors'
+            description='Advisors integrate external vulnerability databases to get information about vulnerabilities in packages.'
+            plugins={advisors}
+          />
+          <PluginList
+            value='package-configuration-providers'
+            title='Package Configuration Providers'
+            description='Providers for package configurations which are used to set path excludes and license finding curations for packages.'
+            plugins={packageConfigurationProviders}
+          />
+          <PluginList
+            value='package-curation-providers'
+            title='Package Curation Providers'
+            description='Providers for package curations which are used to correct metadata of packages.'
+            plugins={packageCurationProviders}
+          />
+          <PluginList
+            value='package-managers'
+            title='Package Managers'
+            description='Package managers are used to detect packages and their dependencies.'
+            plugins={packageManagers}
+          />
+          <PluginList
+            value='reporters'
+            title='Reporters'
+            description='Reporters generate reports like SBOMs from the data collected in a run.'
+            plugins={reporters}
+          />
+          <PluginList
+            value='scanners'
+            title='Scanners'
+            description='Scanners scan packages for license and copyright information.'
+            plugins={scanners}
+          />
+        </Accordion>
+      )}
     </div>
   );
 };

@@ -593,6 +593,11 @@ export function ResolutionCard({
               </Button>
               <DeleteDialog
                 thingName='resolution'
+                thingLabel={
+                  'externalId' in resolution
+                    ? `${resolution.reason} for ${resolution.externalId}`
+                    : resolution.reason
+                }
                 uiComponent={<DeleteIconButton />}
                 onDelete={onDelete}
               />

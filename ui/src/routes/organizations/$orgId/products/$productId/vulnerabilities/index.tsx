@@ -37,6 +37,7 @@ import {
   SeverityMark,
 } from '@/components/data-table-cards/findings-cells';
 import { FindingsFilterChips } from '@/components/data-table-cards/findings-filter-chips';
+import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { MarkdownRenderer } from '@/components/markdown-renderer';
 import { PageHeader, SheetSection } from '@/components/page-header';
@@ -67,7 +68,6 @@ import {
   useAppTable,
 } from '@/hooks/use-app-table';
 import type { AppRow } from '@/hooks/use-app-table';
-import { toastError } from '@/lib/toast';
 import {
   advisorSearchParameterSchema,
   externalIdSearchParameterSchema,
@@ -480,8 +480,7 @@ const ProductVulnerabilitiesComponent = () => {
   }
 
   if (isError || totIsError || advisorsIsError) {
-    toastError('Unable to load data', error || totError || advisorsError);
-    return;
+    return <LoadError error={error || totError || advisorsError} />;
   }
   const filtersInUse =
     totalVulnerabilities.pagination.totalCount !==
@@ -524,6 +523,18 @@ const ProductVulnerabilitiesComponent = () => {
           }}
         />
         <DataTableCards
+          onClearFilters={() =>
+            navigate({
+              search: {
+                ...search,
+                page: 1,
+                pkgId: undefined,
+                externalId: undefined,
+                rating: undefined,
+                advisor: undefined,
+              },
+            })
+          }
           table={table}
           aria-label='Vulnerabilities'
           layout={[

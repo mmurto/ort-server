@@ -26,6 +26,18 @@ import { describe, expect, it, vi } from 'vitest';
 import { EditRepositoryForm } from '@/routes/organizations/$orgId/products/$productId/repositories/$repoId/_repo-layout/settings/-components/edit-repository-form';
 import { isCompiledByReactCompiler } from '../fixtures/react-compiler';
 
+// The guard needs a router, which is not part of this test.
+vi.mock('@/components/unsaved-changes-guard', () => ({
+  UnsavedChangesGuard: () => null,
+}));
+
+const defaultValues = {
+  description: '',
+  name: '',
+  type: 'GIT' as const,
+  url: 'https://example.com/repository.git',
+};
+
 describe('EditRepositoryForm', () => {
   // The form reads `formState.isValid` during render, on the compiled form.
   it('is compiled with React Compiler', () => {
@@ -44,14 +56,13 @@ describe('EditRepositoryForm', () => {
           url: 'https://example.com/repository.git',
         }}
         isPending={false}
-        onCancel={vi.fn()}
         onSubmit={vi.fn()}
       />
     );
 
     const urlInput = screen.getByLabelText('URL');
     const typeInput = screen.getByLabelText('Type');
-    const submitButton = screen.getByRole('button', { name: 'Submit' });
+    const submitButton = screen.getByRole('button', { name: 'Save' });
     const urlField = urlInput.closest('[data-slot="form-item"]');
     const typeField = typeInput.closest('[data-slot="form-item"]');
 
@@ -71,5 +82,62 @@ describe('EditRepositoryForm', () => {
     await user.clear(urlInput);
     await user.type(urlInput, 'https://example.com/updated-repository.git');
     expect(submitButton).toBeEnabled();
+  });
+
+  it('resets the changes and stays on the form after saving', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <EditRepositoryForm
+        defaultValues={defaultValues}
+        isPending={false}
+        onSubmit={onSubmit}
+      />
+    );
+
+    const nameInput = screen.getByLabelText('Name');
+    const resetButton = screen.getByRole('button', { name: 'Reset' });
+
+    expect(resetButton).toBeDisabled();
+
+    await user.type(nameInput, 'Draft');
+    expect(resetButton).toBeEnabled();
+
+    await user.click(resetButton);
+    expect(nameInput).toHaveValue('');
+    expect(resetButton).toBeDisabled();
+
+    await user.type(nameInput, 'Saved name');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() =>
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'Saved name' })
+      )
+    );
+    await waitFor(() => expect(resetButton).toBeDisabled());
+    expect(nameInput).toHaveValue('Saved name');
+  });
+
+  it('keeps the changes when saving fails', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockRejectedValue(new Error('Failed.'));
+
+    render(
+      <EditRepositoryForm
+        defaultValues={defaultValues}
+        isPending={false}
+        onSubmit={onSubmit}
+      />
+    );
+
+    const nameInput = screen.getByLabelText('Name');
+    await user.type(nameInput, 'Unsaved name');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    expect(nameInput).toHaveValue('Unsaved name');
+    expect(screen.getByRole('button', { name: 'Reset' })).toBeEnabled();
   });
 });

@@ -41,6 +41,7 @@ import {
   LicensesAccordion,
   SpdxExpressionBadgeGroup,
 } from '@/components/licenses';
+import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { PackageCuration } from '@/components/package-curation';
 import { SheetSection } from '@/components/page-header';
@@ -74,7 +75,6 @@ import {
   useAppTable,
 } from '@/hooks/use-app-table';
 import type { AppRow } from '@/hooks/use-app-table';
-import { toastError } from '@/lib/toast';
 import { getRepositoryTypeLabel } from '@/lib/types';
 import {
   declaredLicenseSearchParameterSchema,
@@ -592,8 +592,7 @@ const PackagesComponent = () => {
   );
 
   if (isError) {
-    toastError('Unable to load data', error);
-    return;
+    return <LoadError error={error} />;
   }
   const filtersInUse =
     totalPackages.pagination.totalCount !== packages.pagination.totalCount;
@@ -613,6 +612,17 @@ const PackagesComponent = () => {
         {intro}
       </p>
       <DataTableCards
+        onClearFilters={() =>
+          navigate({
+            search: {
+              ...search,
+              page: 1,
+              isDirectDependency: undefined,
+              pkgId: undefined,
+              declaredLicense: undefined,
+            },
+          })
+        }
         table={table}
         aria-label='Packages'
         layout={[

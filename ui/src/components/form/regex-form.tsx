@@ -79,6 +79,7 @@ export function RegexForm({
               {label && <FormLabel>{label}</FormLabel>}
               <FormControl>
                 <Input
+                  aria-label={label ? undefined : 'Regular expression'}
                   placeholder={placeholder}
                   value={field.value}
                   onChange={field.onChange}

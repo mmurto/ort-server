@@ -25,10 +25,10 @@ import {
   getRunsOptions,
 } from '@/api/@tanstack/react-query.gen';
 import { zOrtRunStatus } from '@/api/zod.gen';
+import { LoadError } from '@/components/load-error';
 import { PageHeader } from '@/components/page-header';
 import { StatisticsCard, StatisticsRow } from '@/components/statistics-card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { toastError } from '@/lib/toast';
 
 const figure = (
   isLoading: boolean,
@@ -73,12 +73,7 @@ const OverviewContent = () => {
     }),
   });
 
-  if (orgIsError || runsIsError || activeRunsIsError) {
-    toastError(
-      'Unable to load data',
-      orgIsError || runsIsError || activeRunsIsError
-    );
-  }
+  const loadError = orgIsError || runsIsError || activeRunsIsError;
 
   return (
     <div className='flex flex-col gap-8'>
@@ -118,6 +113,7 @@ const OverviewContent = () => {
           />
         </Link>
       </StatisticsRow>
+      {loadError && <LoadError what='the figures' error={loadError} />}
     </div>
   );
 };

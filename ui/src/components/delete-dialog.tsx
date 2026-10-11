@@ -45,6 +45,13 @@ interface DeleteDialogProps {
   thingName: ReactNode;
 
   /**
+   * An optional display name of the specific item to delete, such as a username or a template
+   * name. It is shown in the dialog so that the user always sees what is about to be deleted.
+   * Without it, and without a {@link thingId}, the dialog only names the kind of thing.
+   */
+  thingLabel?: ReactNode;
+
+  /**
    * An optional ID for the thing to delete. If set, this is used to confirm the
    * deletion by the user by entering the ID.
    */
@@ -88,10 +95,16 @@ interface DeleteDialogProps {
    * When true, the uiComponent is rendered as disabled and the dialog cannot be opened.
    */
   disabled?: boolean;
+
+  /**
+   * Why the delete action is disabled, shown in the tooltip. Defaults to insufficient permissions.
+   */
+  disabledReason?: string;
 }
 
 export const DeleteDialog = ({
   thingName,
+  thingLabel,
   thingId,
   description,
   itemName,
@@ -100,6 +113,7 @@ export const DeleteDialog = ({
   tooltip,
   title,
   disabled,
+  disabledReason,
 }: DeleteDialogProps) => {
   const [input, setInput] = useState('');
   const [open, setOpen] = useState(false);
@@ -127,7 +141,7 @@ export const DeleteDialog = ({
       <Tooltip delayDuration={300}>
         <TooltipTrigger asChild>
           {disabled ? (
-            <span className='inline-flex cursor-not-allowed'>
+            <span className='inline-flex cursor-not-allowed' tabIndex={0}>
               {triggerElement}
             </span>
           ) : (
@@ -135,7 +149,9 @@ export const DeleteDialog = ({
           )}
         </TooltipTrigger>
         <TooltipContent>
-          {disabled ? 'Insufficient permissions.' : tooltip || 'Delete'}
+          {disabled
+            ? (disabledReason ?? 'Insufficient permissions.')
+            : tooltip || 'Delete'}
         </TooltipContent>
       </Tooltip>
       {/* Adding the preventDefault will prevent focusing on the trigger after closing the modal (which would cause the tooltip to show) */}
@@ -147,6 +163,19 @@ export const DeleteDialog = ({
           </div>
         </AlertDialogHeader>
         <div className='flex flex-col gap-2 overflow-auto wrap-break-word'>
+          {!thingId && (
+            <AlertDialogDescription className='text-foreground'>
+              {thingLabel ? (
+                <>
+                  Delete the {thingName}{' '}
+                  <span className='font-semibold'>{thingLabel}</span>
+                </>
+              ) : (
+                <>Delete this {thingName}</>
+              )}
+              {itemName ? ` from the ${itemName}` : ''}?
+            </AlertDialogDescription>
+          )}
           <AlertDialogDescription>
             {description ??
               'Note that deletion is irreversible and might have unwanted side effects.'}

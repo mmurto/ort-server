@@ -18,6 +18,7 @@
  */
 
 import {
+  keepPreviousData,
   useMutation,
   useQuery,
   useQueryClient,
@@ -36,6 +37,7 @@ import {
 import { DataTable } from '@/components/data-table/data-table';
 import { DeleteDialog } from '@/components/delete-dialog';
 import { DeleteIconButton } from '@/components/delete-icon-button';
+import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { PageHeader, SheetSection } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
@@ -98,6 +100,7 @@ const ActionCell = ({ row }: AppCellContext<Secret, unknown>) => {
       </Tooltip>
       <DeleteDialog
         thingName={'secret'}
+        thingLabel={row.original.name}
         uiComponent={<DeleteIconButton />}
         onDelete={async () =>
           await delSecret({
@@ -142,12 +145,7 @@ const OrganizationSecrets = () => {
   const pageIndex = search.page ? search.page - 1 : 0;
   const pageSize = search.pageSize ? search.pageSize : defaultPageSize;
 
-  const {
-    data: organization,
-    error: orgError,
-    isPending: orgIsPending,
-    isError: orgIsError,
-  } = useQuery({
+  const { data: organization } = useQuery({
     ...getOrganizationOptions({
       path: { organizationId: Number.parseInt(params.orgId) },
     }),
@@ -158,11 +156,13 @@ const OrganizationSecrets = () => {
     error: secretsError,
     isPending: secretsIsPending,
     isError: secretsIsError,
+    refetch: refetchSecrets,
   } = useQuery({
     ...getOrganizationSecretsOptions({
       path: { organizationId: Number.parseInt(params.orgId) },
       query: { limit: pageSize, offset: pageIndex * pageSize },
     }),
+    placeholderData: keepPreviousData,
   });
 
   const table = useAppTable(
@@ -181,20 +181,11 @@ const OrganizationSecrets = () => {
     selectNoTableState
   );
 
-  if (orgIsPending || secretsIsPending) {
-    return <LoadingIndicator />;
-  }
-
-  if (orgIsError || secretsIsError) {
-    toastError('Unable to load data', orgError || secretsError);
-    return;
-  }
-
   return (
     <div className='flex flex-col gap-8'>
       <PageHeader
         title='Secrets'
-        description={`Manage secrets for ${organization.name}`}
+        description={`Manage secrets for ${organization?.name ?? 'this organization'}`}
         actions={
           <Tooltip>
             <TooltipTrigger asChild>
@@ -216,23 +207,38 @@ const OrganizationSecrets = () => {
       />
       <SheetSection
         title='All secrets'
-        meta={`${secrets.pagination.totalCount} in total`}
+        meta={secrets ? `${secrets.pagination.totalCount} in total` : undefined}
       >
-        <DataTable
-          table={table}
-          setCurrentPageOptions={(currentPage) => {
-            return {
-              to: Route.to,
-              search: { ...search, page: currentPage },
-            };
-          }}
-          setPageSizeOptions={(size) => {
-            return {
-              to: Route.to,
-              search: { ...search, page: 1, pageSize: size },
-            };
-          }}
-        />
+        {secretsIsError ? (
+          <LoadError
+            what='secrets'
+            error={secretsError}
+            onRetry={() => refetchSecrets()}
+          />
+        ) : secretsIsPending ? (
+          <LoadingIndicator />
+        ) : (
+          <DataTable
+            table={table}
+            noResultsContent={
+              <div className='text-muted-foreground text-[0.8125rem]'>
+                No secrets yet.
+              </div>
+            }
+            setCurrentPageOptions={(currentPage) => {
+              return {
+                to: Route.to,
+                search: { ...search, page: currentPage },
+              };
+            }}
+            setPageSizeOptions={(size) => {
+              return {
+                to: Route.to,
+                search: { ...search, page: 1, pageSize: size },
+              };
+            }}
+          />
+        )}
       </SheetSection>
     </div>
   );

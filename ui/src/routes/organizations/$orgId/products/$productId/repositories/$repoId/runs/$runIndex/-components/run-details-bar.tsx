@@ -109,13 +109,16 @@ export const RunDetailsBar = ({ className }: RunDetailsBarProps) => {
   // Build a path to another run index while preserving the current sub-route.
   // E.g., if on .../runs/5/config, navigating to run 4 should go to
   // .../runs/4/config instead of /runs/4.
-  const buildRunPath = (runIndex: number) => {
-    const pathname = location.pathname.replace(
-      `/runs/${params.runIndex}`,
-      `/runs/${runIndex}`
-    );
-    return location.searchStr ? `${pathname}${location.searchStr}` : pathname;
-  };
+  const buildRunPath = (runIndex: number) =>
+    location.pathname.replace(`/runs/${params.runIndex}`, `/runs/${runIndex}`);
+
+  // The filters and sorting carry over to the other run, but the marked item
+  // and the page belong to the items of this run.
+  const runSearch = Object.fromEntries(
+    Object.entries(location.search).filter(
+      ([key]) => key !== 'marked' && key !== 'page'
+    )
+  );
 
   const isOverview = location.pathname
     .replace(/\/$/, '')
@@ -222,6 +225,11 @@ export const RunDetailsBar = ({ className }: RunDetailsBarProps) => {
             >
               <Link
                 to={hasPrevious ? buildRunPath(previousIndex!) : '#'}
+                search={hasPrevious ? runSearch : undefined}
+                // The loaders of the run routes write the breadcrumbs into the
+                // shared router context, so preloading another run would show
+                // its breadcrumbs on this one.
+                preload={false}
                 disabled={!hasPrevious}
                 aria-label='Previous run'
                 className='aria-disabled:opacity-40'
@@ -249,6 +257,8 @@ export const RunDetailsBar = ({ className }: RunDetailsBarProps) => {
             >
               <Link
                 to={hasNext ? buildRunPath(nextIndex!) : '#'}
+                search={hasNext ? runSearch : undefined}
+                preload={false}
                 disabled={!hasNext}
                 aria-label='Next run'
                 className='aria-disabled:opacity-40'
@@ -268,22 +278,27 @@ export const RunDetailsBar = ({ className }: RunDetailsBarProps) => {
           </Button>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button asChild disabled={canTriggerRun === false}>
-                <Link
-                  to='/organizations/$orgId/products/$productId/repositories/$repoId/create-run'
-                  params={{
-                    orgId: params.orgId,
-                    productId: params.productId,
-                    repoId: params.repoId,
-                  }}
-                  search={{
-                    rerunIndex: ortRun.index,
-                  }}
-                >
-                  <Repeat />
-                  Rerun
-                </Link>
-              </Button>
+              <span
+                className='inline-flex'
+                tabIndex={canTriggerRun === false ? 0 : undefined}
+              >
+                <Button asChild disabled={canTriggerRun === false}>
+                  <Link
+                    to='/organizations/$orgId/products/$productId/repositories/$repoId/create-run'
+                    params={{
+                      orgId: params.orgId,
+                      productId: params.productId,
+                      repoId: params.repoId,
+                    }}
+                    search={{
+                      rerunIndex: ortRun.index,
+                    }}
+                  >
+                    <Repeat />
+                    Rerun
+                  </Link>
+                </Button>
+              </span>
             </TooltipTrigger>
             {canTriggerRun === false && (
               <TooltipContent>Insufficient permissions.</TooltipContent>

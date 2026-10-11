@@ -17,7 +17,12 @@
  * License-Filename: LICENSE
  */
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { EditIcon, PlusIcon } from 'lucide-react';
 
@@ -31,6 +36,7 @@ import {
 import { DataTable } from '@/components/data-table/data-table';
 import { DeleteDialog } from '@/components/delete-dialog';
 import { DeleteIconButton } from '@/components/delete-icon-button';
+import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { PageHeader, SheetSection } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
@@ -94,6 +100,7 @@ const ActionCell = ({
 
       <DeleteDialog
         thingName={'infrastructure service'}
+        thingLabel={row.original.name}
         uiComponent={<DeleteIconButton />}
         onDelete={() =>
           delService({
@@ -114,12 +121,7 @@ const InfrastructureServices = () => {
   const pageIndex = search.page ? search.page - 1 : 0;
   const pageSize = search.pageSize ? search.pageSize : defaultPageSize;
 
-  const {
-    data: product,
-    error: productError,
-    isPending: productIsPending,
-    isError: productIsError,
-  } = useQuery({
+  const { data: product } = useQuery({
     ...getProductOptions({
       path: { productId: Number.parseInt(params.productId) },
     }),
@@ -130,11 +132,13 @@ const InfrastructureServices = () => {
     error: infraError,
     isPending: infraIsPending,
     isError: infraIsError,
+    refetch: refetchInfra,
   } = useQuery({
     ...getProductInfrastructureServicesOptions({
       path: { productId: Number.parseInt(params.productId) },
       query: { limit: pageSize, offset: pageIndex * pageSize },
     }),
+    placeholderData: keepPreviousData,
   });
 
   const columns: AppColumnDef<InfrastructureService>[] = [
@@ -212,20 +216,11 @@ const InfrastructureServices = () => {
     selectNoTableState
   );
 
-  if (productIsPending || infraIsPending) {
-    return <LoadingIndicator />;
-  }
-
-  if (productIsError || infraIsError) {
-    toastError('Unable to load data', productError || infraError);
-    return;
-  }
-
   return (
     <div className='flex flex-col gap-8'>
       <PageHeader
         title='Infrastructure Services'
-        description={`Manage infrastructure services for ${product.name}`}
+        description={`Manage infrastructure services for ${product?.name ?? 'this product'}`}
         actions={
           <Tooltip>
             <TooltipTrigger asChild>
@@ -247,23 +242,42 @@ const InfrastructureServices = () => {
       />
       <SheetSection
         title='All services'
-        meta={`${infraServices.pagination.totalCount} in total`}
+        meta={
+          infraServices
+            ? `${infraServices.pagination.totalCount} in total`
+            : undefined
+        }
       >
-        <DataTable
-          table={table}
-          setCurrentPageOptions={(currentPage) => {
-            return {
-              to: Route.to,
-              search: { ...search, page: currentPage },
-            };
-          }}
-          setPageSizeOptions={(size) => {
-            return {
-              to: Route.to,
-              search: { ...search, page: 1, pageSize: size },
-            };
-          }}
-        />
+        {infraIsError ? (
+          <LoadError
+            what='infrastructure services'
+            error={infraError}
+            onRetry={() => refetchInfra()}
+          />
+        ) : infraIsPending ? (
+          <LoadingIndicator />
+        ) : (
+          <DataTable
+            table={table}
+            noResultsContent={
+              <div className='text-muted-foreground text-[0.8125rem]'>
+                No infrastructure services yet.
+              </div>
+            }
+            setCurrentPageOptions={(currentPage) => {
+              return {
+                to: Route.to,
+                search: { ...search, page: currentPage },
+              };
+            }}
+            setPageSizeOptions={(size) => {
+              return {
+                to: Route.to,
+                search: { ...search, page: 1, pageSize: size },
+              };
+            }}
+          />
+        )}
       </SheetSection>
     </div>
   );

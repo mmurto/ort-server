@@ -40,6 +40,7 @@ import {
   getUsersQueryKey,
   putSuperuserMutation,
 } from '@/api/@tanstack/react-query.gen';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { DataTable } from '@/components/data-table/data-table';
 import { DeleteDialog } from '@/components/delete-dialog';
 import { DeleteIconButton } from '@/components/delete-icon-button';
@@ -63,6 +64,7 @@ import {
   selectNoTableState,
   useAppTable,
 } from '@/hooks/use-app-table';
+import { useUser } from '@/hooks/use-user';
 import { ApiError } from '@/lib/api-error';
 import { routePrefetchStaleTime } from '@/lib/query-client';
 import { toast, toastError } from '@/lib/toast';
@@ -90,6 +92,8 @@ const getUsersOptionsForSearch = ({
     },
   });
 };
+
+const ownAccountReason = "You can't change your own account here.";
 
 const columnHelper = createAppColumnHelper<UserWithSuperuserStatus>();
 
@@ -141,6 +145,8 @@ const columns = columnHelper.columns([
     size: 80,
     cell: function CellComponent({ row }) {
       const queryClient = useQueryClient();
+      const currentUsername = useUser().username;
+      const [isConfirmingSuperuser, setIsConfirmingSuperuser] = useState(false);
 
       const { mutateAsync: putSuperuser } = useMutation({
         ...putSuperuserMutation(),
@@ -187,55 +193,75 @@ const columns = columnHelper.columns([
         },
       });
 
+      const username = row.original.user.username;
+      const isSuperuser = row.original.isSuperuser;
+      const isSelf = username === currentUsername;
+
+      const toggleSuperuser = () =>
+        isSuperuser
+          ? deleteSuperuser({ path: { username } })
+          : putSuperuser({ path: { username } });
+
       return (
         <div className='flex justify-end gap-1'>
-          {row.original.isSuperuser ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {/* The wrapper keeps the tooltip reachable while the button is disabled. */}
+              <span
+                className={
+                  isSelf ? 'inline-flex cursor-not-allowed' : 'inline-flex'
+                }
+                tabIndex={isSelf ? 0 : undefined}
+              >
                 <Button
                   size='sm'
                   variant='outline'
                   className='h-8 px-2'
-                  onClick={() =>
-                    deleteSuperuser({
-                      path: { username: row.original.user.username },
-                    })
-                  }
+                  disabled={isSelf}
+                  onClick={() => setIsConfirmingSuperuser(true)}
                 >
-                  <span className='sr-only'>Remove superuser</span>
-                  <ShieldMinus />
+                  <span className='sr-only'>
+                    {isSuperuser ? 'Remove superuser' : 'Make superuser'}
+                  </span>
+                  {isSuperuser ? <ShieldMinus /> : <ShieldPlus />}
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent>Remove superuser role</TooltipContent>
-            </Tooltip>
-          ) : (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size='sm'
-                  variant='outline'
-                  className='h-8 px-2'
-                  onClick={() =>
-                    putSuperuser({
-                      path: { username: row.original.user.username },
-                    })
-                  }
-                >
-                  <span className='sr-only'>Make superuser</span>
-                  <ShieldPlus />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Add superuser role</TooltipContent>
-            </Tooltip>
-          )}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              {isSelf
+                ? ownAccountReason
+                : isSuperuser
+                  ? 'Remove superuser role'
+                  : 'Add superuser role'}
+            </TooltipContent>
+          </Tooltip>
+          <ConfirmDialog
+            open={isConfirmingSuperuser}
+            onOpenChange={setIsConfirmingSuperuser}
+            title={
+              isSuperuser
+                ? `Remove the superuser role from ${username}?`
+                : `Make ${username} a superuser?`
+            }
+            description={
+              isSuperuser
+                ? `${username} loses administrative access to the whole server immediately.`
+                : `${username} gets full administrative access across the server, including every organization, immediately.`
+            }
+            confirmLabel={
+              isSuperuser ? 'Remove superuser role' : 'Make superuser'
+            }
+            destructive={isSuperuser}
+            onConfirm={toggleSuperuser}
+          />
 
           <DeleteDialog
             thingName={'user'}
-            thingId={row.original.user.username}
+            thingId={username}
+            disabled={isSelf}
+            disabledReason={ownAccountReason}
             uiComponent={<DeleteIconButton />}
-            onDelete={() =>
-              delUser({ query: { username: row.original.user.username } })
-            }
+            onDelete={() => delUser({ query: { username } })}
           />
         </div>
       );

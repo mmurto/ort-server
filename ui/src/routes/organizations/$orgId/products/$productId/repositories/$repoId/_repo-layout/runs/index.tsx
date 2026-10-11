@@ -27,6 +27,7 @@ import {
 } from '@/api/@tanstack/react-query.gen';
 import { JobDurations } from '@/components/charts/job-durations';
 import { RepositoryFavoriteButton } from '@/components/favorite-button';
+import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { PageHeader, SheetSection } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
@@ -36,7 +37,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useRepositoryPermission } from '@/hooks/use-authorization';
-import { toastError } from '@/lib/toast';
 import { getRepositoryTypeLabel } from '@/lib/types';
 import { RepositoryRunsTable } from '@/routes/organizations/$orgId/products/$productId/repositories/$repoId/-components';
 import { paginationSearchParameterSchema } from '@/schemas';
@@ -75,8 +75,7 @@ const RepositoryRunsComponent = () => {
   }
 
   if (repoIsError) {
-    toastError('Unable to load data', repoError);
-    return;
+    return <LoadError error={repoError} />;
   }
 
   return (
@@ -137,19 +136,24 @@ const RepositoryRunsComponent = () => {
             )}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button asChild disabled={canTriggerRun === false}>
-                  <Link
-                    to='/organizations/$orgId/products/$productId/repositories/$repoId/create-run'
-                    params={{
-                      orgId: params.orgId,
-                      productId: params.productId,
-                      repoId: params.repoId,
-                    }}
-                  >
-                    <PlusIcon />
-                    New run
-                  </Link>
-                </Button>
+                <span
+                  className='inline-flex'
+                  tabIndex={canTriggerRun === false ? 0 : undefined}
+                >
+                  <Button asChild disabled={canTriggerRun === false}>
+                    <Link
+                      to='/organizations/$orgId/products/$productId/repositories/$repoId/create-run'
+                      params={{
+                        orgId: params.orgId,
+                        productId: params.productId,
+                        repoId: params.repoId,
+                      }}
+                    >
+                      <PlusIcon />
+                      New run
+                    </Link>
+                  </Button>
+                </span>
               </TooltipTrigger>
               {canTriggerRun === false && (
                 <TooltipContent>Insufficient permissions.</TooltipContent>

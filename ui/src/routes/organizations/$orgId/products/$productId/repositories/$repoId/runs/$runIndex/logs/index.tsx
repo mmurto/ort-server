@@ -104,10 +104,10 @@ const ReportComponent = () => {
   return (
     <SheetSection title='Logs'>
       <p className='text-muted-foreground -mt-2 max-w-[75ch] text-[0.8125rem]'>
-        Click the button to download. You can select different log levels for
-        downloading from the dropdown. Note that the log levels are additive,
-        eg. DEBUG logs include all the log levels, while WARN logs include only
-        errors and warnings.
+        Click the button to download. To download a different log level, choose
+        it from the dropdown. Note that the log levels are additive, eg. DEBUG
+        logs include all the log levels, while WARN logs include only errors and
+        warnings.
       </p>
       <div className='flex align-middle'>
         <Button
@@ -139,6 +139,7 @@ const ReportComponent = () => {
             <DropdownMenuItem
               onClick={() => {
                 setLevel('ERROR');
+                handleLevelChoice('ERROR');
               }}
             >
               Download ERROR level archive
@@ -146,6 +147,7 @@ const ReportComponent = () => {
             <DropdownMenuItem
               onClick={() => {
                 setLevel('WARN');
+                handleLevelChoice('WARN');
               }}
             >
               Download WARN level archive
@@ -153,6 +155,7 @@ const ReportComponent = () => {
             <DropdownMenuItem
               onClick={() => {
                 setLevel('INFO');
+                handleLevelChoice('INFO');
               }}
             >
               Download INFO level archive
@@ -160,6 +163,7 @@ const ReportComponent = () => {
             <DropdownMenuItem
               onClick={() => {
                 setLevel('DEBUG');
+                handleLevelChoice('DEBUG');
               }}
             >
               Download DEBUG level archive

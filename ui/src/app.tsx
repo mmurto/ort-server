@@ -23,6 +23,10 @@ import { hasAuthParams } from 'react-oidc-context';
 
 import { client } from '@/api/client.gen';
 import { CopyToClipboard } from '@/components/copy-to-clipboard.tsx';
+import {
+  ErrorComponent,
+  NotFoundComponent,
+} from '@/components/error-component';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { Button } from '@/components/ui/button.tsx';
 import { Textarea } from '@/components/ui/textarea.tsx';
@@ -82,6 +86,8 @@ const router = createRouter({
   },
   defaultPreload: 'intent',
   defaultPreloadStaleTime: 0,
+  defaultErrorComponent: ErrorComponent,
+  defaultNotFoundComponent: NotFoundComponent,
 });
 
 // Register the router instance for type safety

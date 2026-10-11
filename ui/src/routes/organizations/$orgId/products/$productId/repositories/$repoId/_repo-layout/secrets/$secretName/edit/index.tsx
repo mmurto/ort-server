@@ -103,7 +103,8 @@ const EditRepositorySecretPage = () => {
         secretName: secret.name,
       },
       body: {
-        value: values.value,
+        // An empty value keeps the current one.
+        value: values.value || undefined,
         description: values.description,
       },
     });
@@ -148,6 +149,9 @@ const EditRepositorySecretPage = () => {
                     <FormControl autoFocus>
                       <PasswordInput {...field} />
                     </FormControl>
+                    <FormDescription>
+                      Leave empty to keep the current value.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

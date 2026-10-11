@@ -270,6 +270,7 @@ export function formValuesToPayload(
       reporter: reporterConfig,
       notifier: notifierConfig,
       parameters,
+      ruleSet: values.jobConfigs.ruleSet || undefined,
     },
     labels,
     jobConfigContext: values.jobConfigContext,

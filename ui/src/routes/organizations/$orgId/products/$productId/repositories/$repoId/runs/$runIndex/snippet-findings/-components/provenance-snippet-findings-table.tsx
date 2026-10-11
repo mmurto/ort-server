@@ -27,6 +27,7 @@ import { SnippetFinding, SnippetFindingProvenance } from '@/api';
 import { getRunProvenanceSnippetFindingsOptions } from '@/api/@tanstack/react-query.gen';
 import { BreakableString } from '@/components/breakable-string';
 import { DataTable } from '@/components/data-table/data-table';
+import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { Button } from '@/components/ui/button';
 import {
@@ -39,7 +40,6 @@ import {
   selectNoTableState,
   useAppTable,
 } from '@/hooks/use-app-table';
-import { toastError } from '@/lib/toast';
 import { formatLineRange } from '@/lib/utils';
 import { SnippetFindingSnippetsTable } from './snippet-finding-snippets-table';
 
@@ -171,8 +171,7 @@ export const ProvenanceSnippetFindingsTable = ({
   }
 
   if (isError) {
-    toastError('Unable to load data', error);
-    return <></>;
+    return <LoadError error={error} />;
   }
 
   return (

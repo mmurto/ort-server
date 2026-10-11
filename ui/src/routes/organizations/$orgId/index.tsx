@@ -25,12 +25,12 @@ import z from 'zod';
 
 import { getOrganizationOptions } from '@/api/@tanstack/react-query.gen';
 import { OrganizationFavoriteButton } from '@/components/favorite-button';
+import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { PageHeader, SheetSection } from '@/components/page-header';
 import { QueryBoundary, QueryErrorFallback } from '@/components/query-boundary';
 import { StatisticsCard, StatisticsRow } from '@/components/statistics-card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { toastError } from '@/lib/toast';
 import {
   filterByNameSearchParameterSchema,
   paginationSearchParameterSchema,
@@ -96,8 +96,7 @@ const OrganizationComponent = () => {
   }
 
   if (orgIsError) {
-    toastError('Unable to load data', orgError);
-    return;
+    return <LoadError error={orgError} />;
   }
 
   return (

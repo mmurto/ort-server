@@ -32,6 +32,7 @@ import { getRunPackagesWithDetectedLicenseOptions } from '@/api/@tanstack/react-
 import { BreakableString } from '@/components/breakable-string';
 import { CopyToClipboard } from '@/components/copy-to-clipboard';
 import { DataTable } from '@/components/data-table/data-table';
+import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { Button } from '@/components/ui/button';
 import {
@@ -58,7 +59,6 @@ import {
   panelKey,
   scrollOpenedPanelIntoView,
 } from '@/lib/scroll';
-import { toastError } from '@/lib/toast';
 import {
   licensePackagesTableStateSchema,
   packageIdTypeSchema,
@@ -256,8 +256,7 @@ export const DetectedLicensePackagesTable = ({
   }
 
   if (isError) {
-    toastError('Unable to load data', error);
-    return <></>;
+    return <LoadError error={error} />;
   }
 
   const filtersInUse =

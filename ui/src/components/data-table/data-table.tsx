@@ -32,6 +32,7 @@ import { useTableSizing } from '@/hooks/use-table-sizing';
 import { cn } from '@/lib/utils';
 import { DataTableBody } from './data-table-body';
 import { DataTableHeader } from './data-table-header';
+import { getClearFilters, hasActiveFilters } from './filter-state';
 
 export const DEFAULT_PAGE = 1;
 export const DEFAULT_PAGE_SIZE = 10;
@@ -56,6 +57,12 @@ interface DataTableProps<
   table: AppReactTable<TData>;
   renderSubComponent?: (props: { row: AppRow<TData> }) => React.ReactElement;
   noResultsContent?: React.ReactNode;
+  /**
+   * Clears every filter of the table. The default empty content offers it when
+   * the filters match nothing. Without it, the table's own column filter state
+   * is reset, which only has an effect when the table handles filter changes.
+   */
+  onClearFilters?: () => void;
   setCurrentPageOptions: (page: number) => LinkOptions;
   setPageSizeOptions: (pageSize: number) => LinkOptions;
   /**
@@ -71,6 +78,7 @@ export function DataTable<TData extends RowData>({
   table,
   renderSubComponent,
   noResultsContent,
+  onClearFilters,
   className,
   setCurrentPageOptions,
   setPageSizeOptions,
@@ -92,7 +100,7 @@ export function DataTable<TData extends RowData>({
           columnSizing={columnSizing}
         />
         <table.Subscribe selector={selectBodyState}>
-          {() => {
+          {({ columnFilters }) => {
             const rows = table.getRowModel().rows;
 
             return (
@@ -102,6 +110,12 @@ export function DataTable<TData extends RowData>({
                 columnSizing={columnSizing}
                 columnCount={table.getVisibleLeafColumns().length}
                 noResultsContent={noResultsContent}
+                filtersActive={hasActiveFilters(columnFilters)}
+                onClearFilters={getClearFilters(
+                  table,
+                  columnFilters,
+                  onClearFilters
+                )}
               />
             );
           }}

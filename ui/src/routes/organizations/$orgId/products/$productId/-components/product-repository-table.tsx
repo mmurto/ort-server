@@ -28,13 +28,13 @@ import {
 } from '@/api/@tanstack/react-query.gen';
 import { DataTable } from '@/components/data-table/data-table';
 import { RepositoryFavoriteButton } from '@/components/favorite-button';
+import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import {
   createAppColumnHelper,
   selectNoTableState,
   useAppTable,
 } from '@/hooks/use-app-table';
-import { toastError } from '@/lib/toast';
 import { useTablePrefsStore } from '@/store/table-prefs.store';
 import { LastJobStatus } from './last-job-status';
 import { LastRunDate } from './last-run-date';
@@ -232,8 +232,7 @@ export const ProductRepositoryTable = () => {
   }
 
   if (reposIsError) {
-    toastError('Unable to load data', reposError);
-    return;
+    return <LoadError error={reposError} />;
   }
 
   return (

@@ -33,9 +33,32 @@ import type { CreateRunFormValues } from './run-schema';
 /** The ID of the legacy Gradle package manager, which is not enabled by default. */
 const LEGACY_GRADLE_ID = 'Gradle';
 
+/** Which revision of a previous run a rerun starts from. */
+export type RerunRevisionSource = 'revision' | 'resolvedRevision';
+
+/**
+ * Get the revisions a rerun of the given ORT run can start from: the requested revision (usually
+ * a branch, so a rerun picks up new commits) and the commit the run actually analyzed.
+ */
+export function getRerunRevisions(ortRun: OrtRun): {
+  revision: string;
+  resolvedRevision: string | undefined;
+} {
+  return {
+    revision: ortRun.revision,
+    resolvedRevision: ortRun.resolvedRevision ?? undefined,
+  };
+}
+
 /**
  * Get the default values for the create run form. The form can be provided with a previously run
  * ORT run, in which case the values from it are used as defaults. Otherwise uses base defaults.
+ *
+ * Values from the previous run are copied with `??`, so that `false`, empty strings and empty
+ * lists set in that run are kept instead of being replaced by the defaults.
+ *
+ * By default, a rerun starts from the requested revision of the previous run. Pass
+ * `revisionSource: 'resolvedRevision'` to pin the rerun to the commit that was analyzed.
  */
 export function defaultValues(
   ortRun: OrtRun | null,
@@ -45,7 +68,8 @@ export function defaultValues(
   isSuperuser: boolean,
   packageCurationProviderPlugins: PreconfiguredPluginDescriptor[],
   packageConfigurationProviderPlugins: PreconfiguredPluginDescriptor[],
-  packageManagerPlugins: PreconfiguredPluginDescriptor[]
+  packageManagerPlugins: PreconfiguredPluginDescriptor[],
+  { revisionSource = 'revision' }: { revisionSource?: RerunRevisionSource } = {}
 ): CreateRunFormValues {
   const advisorPluginDefaultValues = getPluginDefaultValues(advisorPlugins);
   const scannerPluginDefaultValues = getPluginDefaultValues(scannerPlugins);
@@ -144,6 +168,7 @@ export function defaultValues(
         recipientAddresses: [],
         keepAliveWorker: false,
       },
+      ruleSet: '',
     },
     labels: undefined,
     jobConfigContext: '',
@@ -169,19 +194,22 @@ export function defaultValues(
 
   return ortRun
     ? {
-        revision: ortRun.revision || baseDefaults.revision,
-        path: ortRun.path || baseDefaults.path,
+        revision:
+          (revisionSource === 'resolvedRevision'
+            ? getRerunRevisions(ortRun).resolvedRevision
+            : undefined) ?? ortRun.revision,
+        path: ortRun.path ?? baseDefaults.path,
         jobConfigs: {
           analyzer: {
             enabled: baseDefaults.jobConfigs.analyzer.enabled,
             repositoryConfigPath:
-              ortRun.jobConfigs.analyzer?.repositoryConfigPath ||
+              ortRun.jobConfigs.analyzer?.repositoryConfigPath ??
               baseDefaults.jobConfigs.analyzer.repositoryConfigPath,
             allowDynamicVersions:
-              ortRun.jobConfigs.analyzer?.allowDynamicVersions ||
+              ortRun.jobConfigs.analyzer?.allowDynamicVersions ??
               baseDefaults.jobConfigs.analyzer.allowDynamicVersions,
             skipExcluded:
-              ortRun.jobConfigs.analyzer?.skipExcluded ||
+              ortRun.jobConfigs.analyzer?.skipExcluded ??
               baseDefaults.jobConfigs.analyzer.skipExcluded,
             // The enabled package managers and their configuration are taken from the
             // previous run, falling back to the defaults if they are not set.
@@ -228,10 +256,10 @@ export function defaultValues(
               ortRun.jobConfigs.advisor !== undefined &&
               ortRun.jobConfigs.advisor !== null,
             skipExcluded:
-              ortRun.jobConfigs.advisor?.skipExcluded ||
+              ortRun.jobConfigs.advisor?.skipExcluded ??
               baseDefaults.jobConfigs.advisor.skipExcluded,
             advisors:
-              ortRun.jobConfigs.advisor?.advisors ||
+              ortRun.jobConfigs.advisor?.advisors ??
               baseDefaults.jobConfigs.advisor.advisors,
             config: mergePluginConfigs(
               ortRun.jobConfigs.advisor?.config,
@@ -247,10 +275,10 @@ export function defaultValues(
               ortRun.jobConfigs.scanner !== undefined &&
               ortRun.jobConfigs.scanner !== null,
             skipConcluded:
-              ortRun.jobConfigs.scanner?.skipConcluded ||
+              ortRun.jobConfigs.scanner?.skipConcluded ??
               baseDefaults.jobConfigs.scanner.skipConcluded,
             skipExcluded:
-              ortRun.jobConfigs.scanner?.skipExcluded ||
+              ortRun.jobConfigs.scanner?.skipExcluded ??
               baseDefaults.jobConfigs.scanner.skipExcluded,
             keepAliveWorker:
               (ortRun.jobConfigs.scanner?.keepAliveWorker && isSuperuser) ||
@@ -288,7 +316,7 @@ export function defaultValues(
             formats:
               ortRun.jobConfigs.reporter?.formats?.map((format) =>
                 format === 'CycloneDx' ? 'CycloneDX' : format
-              ) || baseDefaults.jobConfigs.reporter.formats,
+              ) ?? baseDefaults.jobConfigs.reporter.formats,
             config: mergePluginConfigs(
               ortRun.jobConfigs.reporter?.config,
               reporterPluginDefaultValues,
@@ -312,19 +340,19 @@ export function defaultValues(
             recipientAddresses:
               ortRun.jobConfigs.notifier?.recipientAddresses?.map((email) => ({
                 email,
-              })) || baseDefaults.jobConfigs.notifier.recipientAddresses,
+              })) ?? baseDefaults.jobConfigs.notifier.recipientAddresses,
             keepAliveWorker:
               (ortRun.jobConfigs.notifier?.keepAliveWorker && isSuperuser) ||
               baseDefaults.jobConfigs.notifier.keepAliveWorker,
           },
-          parameters: convertMapToArray(ortRun.jobConfigs.parameters || {}),
-          ruleSet: baseDefaults.jobConfigs.ruleSet,
+          parameters: convertMapToArray(ortRun.jobConfigs.parameters ?? {}),
+          ruleSet: ortRun.jobConfigs.ruleSet ?? baseDefaults.jobConfigs.ruleSet,
         },
         labels: convertMapToArray(ortRun.labels),
         jobConfigContext:
-          ortRun.jobConfigContext || baseDefaults.jobConfigContext,
+          ortRun.jobConfigContext ?? baseDefaults.jobConfigContext,
         environmentConfigPath:
-          ortRun.environmentConfigPath || baseDefaults.environmentConfigPath,
+          ortRun.environmentConfigPath ?? baseDefaults.environmentConfigPath,
       }
     : baseDefaults;
 }

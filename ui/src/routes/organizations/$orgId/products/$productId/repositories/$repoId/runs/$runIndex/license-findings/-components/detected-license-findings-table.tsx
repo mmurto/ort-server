@@ -27,6 +27,7 @@ import swhLogo from '@/assets/software-heritage-logo.svg';
 import { BreakableString } from '@/components/breakable-string';
 import { CopyToClipboard } from '@/components/copy-to-clipboard';
 import { DataTable } from '@/components/data-table/data-table';
+import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import {
   Tooltip,
@@ -45,7 +46,6 @@ import {
   scrollOpenedPanelIntoView,
 } from '@/lib/scroll';
 import { buildSwhBrowseUrl } from '@/lib/software-heritage';
-import { toastError } from '@/lib/toast';
 import { formatLineRange } from '@/lib/utils';
 import {
   getLicenseFindingsTableState,
@@ -208,8 +208,7 @@ export const DetectedLicenseFindingsTable = ({
   }
 
   if (isError) {
-    toastError('Unable to load data', error);
-    return <></>;
+    return <LoadError error={error} />;
   }
 
   return (

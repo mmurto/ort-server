@@ -42,7 +42,8 @@ import {
 } from '@/api/@tanstack/react-query.gen';
 import { PageLayout } from '@/components/page-layout';
 import { SidebarNavProps } from '@/components/sidebar';
-import { isJobFinished } from '@/helpers/job-helpers';
+import { config } from '@/config';
+import { isJobFinished, isRunFinished } from '@/helpers/job-helpers';
 import { RunDetailsBar } from './-components/run-details-bar';
 
 const Layout = () => {
@@ -62,6 +63,10 @@ const Layout = () => {
     enabled:
       ortRun !== undefined &&
       Object.values(ortRun.jobs).some((job) => isJobFinished(job?.status)),
+    // The counts grow while the run is still going.
+    refetchInterval: isRunFinished(ortRun?.status)
+      ? false
+      : config.pollInterval,
   });
 
   const sections: SidebarNavProps['sections'] = [

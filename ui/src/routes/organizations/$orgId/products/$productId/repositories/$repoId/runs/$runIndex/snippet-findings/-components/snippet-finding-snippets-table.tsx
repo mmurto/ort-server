@@ -26,6 +26,7 @@ import { BreakableString } from '@/components/breakable-string';
 import { DataTableCards } from '@/components/data-table-cards/data-table-cards';
 import { CopyableValue } from '@/components/data-table-cards/findings-cells';
 import { SpdxExpressionBadgeGroup } from '@/components/licenses';
+import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import {
   convertToBackendSorting,
@@ -37,7 +38,6 @@ import {
   selectNoTableState,
   useAppTable,
 } from '@/hooks/use-app-table';
-import { toastError } from '@/lib/toast';
 import { formatLineRange } from '@/lib/utils';
 
 const snippetColumnHelper = createAppColumnHelper<SnippetSource>();
@@ -209,8 +209,7 @@ export const SnippetFindingSnippetsTable = ({
   }
 
   if (isError) {
-    toastError('Unable to load data', error);
-    return <></>;
+    return <LoadError error={error} />;
   }
 
   return (

@@ -35,6 +35,7 @@ import {
   LicensesAccordion,
   SpdxExpressionBadgeGroup,
 } from '@/components/licenses';
+import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { SheetSection } from '@/components/page-header';
 import { RenderProperty } from '@/components/render-property';
@@ -51,7 +52,6 @@ import {
 } from '@/hooks/use-app-table';
 import type { AppRow } from '@/hooks/use-app-table';
 import { routePrefetchStaleTime } from '@/lib/query-client';
-import { toastError } from '@/lib/toast';
 import { getRepositoryTypeLabel } from '@/lib/types';
 import {
   declaredLicenseSearchParameterSchema,
@@ -430,8 +430,7 @@ const ProjectsComponent = () => {
   }
 
   if (isError || totalIsError || licensesIsError) {
-    toastError('Unable to load data', error || totalError || licensesError);
-    return;
+    return <LoadError error={error || totalError || licensesError} />;
   }
 
   const filtersInUse = columnFilters.length > 0;
@@ -446,6 +445,17 @@ const ProjectsComponent = () => {
         This view shows all projects.
       </p>
       <DataTableCards
+        onClearFilters={() =>
+          navigate({
+            search: {
+              ...search,
+              page: 1,
+              projectId: undefined,
+              definitionFilePath: undefined,
+              declaredLicense: undefined,
+            },
+          })
+        }
         table={table}
         aria-label='Projects'
         layout={[
@@ -501,6 +511,7 @@ const ProjectsComponent = () => {
             to: Route.to,
             search: {
               ...search,
+              page: 1,
               sortBy: updateColumnSorting(
                 search.sortBy?.filter((sort) =>
                   supportedSortColumns.has(sort.id)

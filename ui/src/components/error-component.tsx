@@ -17,45 +17,97 @@
  * License-Filename: LICENSE
  */
 
-import { ErrorComponentProps } from '@tanstack/react-router';
-import { TriangleAlert } from 'lucide-react';
+import { useQueryErrorResetBoundary } from '@tanstack/react-query';
+import {
+  ErrorComponentProps,
+  Link,
+  useCanGoBack,
+  useRouter,
+} from '@tanstack/react-router';
+import { ArrowLeft, House, RotateCw } from 'lucide-react';
+import type { ReactNode } from 'react';
 
-import { cn } from '@/lib/utils';
+import { PageHeader } from '@/components/page-header';
+import { Button } from '@/components/ui/button';
+import { getErrorMessage } from '@/lib/error-message';
 
-type Props = ErrorComponentProps & {
-  title?: string;
-  className?: string;
-  showStackTrace?: boolean;
-};
-
-export const ErrorComponent = ({
-  error,
-  title = 'Oops, something went wrong...',
-  className,
-  showStackTrace = false,
-}: Props) => {
-  const message = error instanceof Error ? error.message : String(error);
-  const stack = error instanceof Error ? error.stack : undefined;
+/** "Go back" and "Home": the ways out of a page that cannot be shown. */
+const WayOut = ({ children }: { children?: ReactNode }) => {
+  const router = useRouter();
+  const canGoBack = useCanGoBack();
 
   return (
-    <div
-      className={cn(
-        'border-err/40 flex h-full flex-col gap-1.5 rounded-xs border p-5',
-        className
+    <div className='flex flex-wrap items-center gap-2'>
+      {children}
+      {canGoBack && (
+        <Button
+          type='button'
+          variant='outline'
+          onClick={() => router.history.back()}
+        >
+          <ArrowLeft />
+          Go back
+        </Button>
       )}
-    >
-      <div className='flex items-center gap-2 text-[0.9375rem] font-semibold'>
-        <TriangleAlert className='text-err size-4 shrink-0' />
-        <div>{title}</div>
-      </div>
-      <p className='text-muted-foreground text-[0.8125rem] break-words'>{`Error: ${message}`}</p>
-      {showStackTrace && (
-        <div className='text-muted-foreground font-mono text-xs break-words'>
-          {stack?.split('\n').map((line, index) => (
-            <div key={index}>{line}</div>
-          ))}
-        </div>
-      )}
+      <Button asChild variant='outline'>
+        <Link to='/'>
+          <House />
+          Home
+        </Link>
+      </Button>
     </div>
   );
 };
+
+/** Shown where a route could not be loaded or rendered. */
+export const ErrorComponent = ({ error, reset }: ErrorComponentProps) => {
+  const router = useRouter();
+  const queryErrorResetBoundary = useQueryErrorResetBoundary();
+
+  return (
+    <div role='alert' className='flex flex-col gap-6'>
+      <PageHeader
+        title='Something went wrong'
+        description='This page could not be loaded. Try again, or go somewhere else.'
+      />
+      <pre className='bg-muted text-muted-foreground max-w-full overflow-auto rounded-xs px-3 py-2 font-mono text-xs break-words whitespace-pre-wrap'>
+        {getErrorMessage(error)}
+      </pre>
+      <WayOut>
+        <Button
+          type='button'
+          onClick={() => {
+            queryErrorResetBoundary.reset();
+            reset();
+            void router.invalidate();
+          }}
+        >
+          <RotateCw />
+          Try again
+        </Button>
+      </WayOut>
+    </div>
+  );
+};
+
+/** Shown for an address that matches no page. */
+export const NotFoundComponent = () => (
+  <div className='flex flex-col gap-6'>
+    <PageHeader
+      title='Page not found'
+      description='There is no page at this address. The link may be wrong, or the page may have moved.'
+    />
+    <WayOut />
+  </div>
+);
+
+/** Shown when the user lacks the permission to see a page. */
+export const ForbiddenComponent = () => (
+  <div className='flex flex-col gap-6'>
+    <PageHeader
+      title='No access'
+      description='You do not have permission to see this page. If you need access, ask an administrator to grant you a role.'
+    />
+    <WayOut />
+  </div>
+);

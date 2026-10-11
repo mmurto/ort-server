@@ -47,6 +47,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { UnsavedChangesGuard } from '@/components/unsaved-changes-guard';
 import { ApiError } from '@/lib/api-error';
 import { queryClient } from '@/lib/query-client';
 import { toast, toastError } from '@/lib/toast';
@@ -166,6 +167,7 @@ const CreateTemplate = () => {
 
   return (
     <div className='flex flex-col gap-8'>
+      <UnsavedChangesGuard control={form.control} />
       <PageHeader
         title='Create Template'
         description={

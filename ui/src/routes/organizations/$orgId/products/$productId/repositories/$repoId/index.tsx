@@ -21,8 +21,8 @@ import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 import { getRepositoryRunsOptions } from '@/api/@tanstack/react-query.gen';
+import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
-import { toastError } from '@/lib/toast';
 
 const RunRedirectComponent = () => {
   const params = Route.useParams();
@@ -51,8 +51,7 @@ const RunRedirectComponent = () => {
   }
 
   if (isError) {
-    toastError('Unable to load data', error);
-    return;
+    return <LoadError error={error} />;
   }
 
   const firstRun = runs.data[0];

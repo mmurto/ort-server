@@ -18,6 +18,7 @@
  */
 
 import {
+  keepPreviousData,
   useMutation,
   useQuery,
   useQueryClient,
@@ -40,6 +41,7 @@ import { zOrtRunStatus } from '@/api/zod.gen';
 import { DataTable } from '@/components/data-table/data-table';
 import { DeleteDialog } from '@/components/delete-dialog';
 import { DeleteIconButton } from '@/components/delete-icon-button';
+import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { OrtRunJobStatus } from '@/components/ort-run-job-status';
 import { PageHeader, SheetSection } from '@/components/page-header';
@@ -330,7 +332,7 @@ const RunsComponent = () => {
     refetchInterval: pollInterval,
   });
 
-  const { data, error } = useQuery({
+  const { data, error, isPending, refetch } = useQuery({
     ...getRunsOptions({
       query: {
         limit: pageSize,
@@ -339,6 +341,7 @@ const RunsComponent = () => {
       },
     }),
     refetchInterval: pollInterval,
+    placeholderData: keepPreviousData,
   });
 
   const table = useAppTable(
@@ -359,10 +362,6 @@ const RunsComponent = () => {
     selectNoTableState
   );
 
-  if (error) {
-    toastError('Unable to load data', error);
-    return;
-  }
   const totalRuns = runs?.pagination.totalCount;
   const filteredRuns = data?.pagination.totalCount;
   const filtersInUse = filteredRuns !== totalRuns;
@@ -378,21 +377,27 @@ const RunsComponent = () => {
         title='All runs'
         meta={`${totalRuns ?? 0} in total${filtersInUse ? matching : ''}`}
       >
-        <DataTable
-          table={table}
-          setCurrentPageOptions={(currentPage) => {
-            return {
-              to: Route.to,
-              search: { ...search, page: currentPage },
-            };
-          }}
-          setPageSizeOptions={(size) => {
-            return {
-              to: Route.to,
-              search: { ...search, page: 1, pageSize: size },
-            };
-          }}
-        />
+        {error ? (
+          <LoadError what='runs' error={error} onRetry={() => refetch()} />
+        ) : isPending ? (
+          <LoadingIndicator />
+        ) : (
+          <DataTable
+            table={table}
+            setCurrentPageOptions={(currentPage) => {
+              return {
+                to: Route.to,
+                search: { ...search, page: currentPage },
+              };
+            }}
+            setPageSizeOptions={(size) => {
+              return {
+                to: Route.to,
+                search: { ...search, page: 1, pageSize: size },
+              };
+            }}
+          />
+        )}
       </SheetSection>
     </div>
   );

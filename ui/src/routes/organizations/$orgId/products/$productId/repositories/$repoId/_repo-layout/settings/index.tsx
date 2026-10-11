@@ -72,29 +72,29 @@ export const RepositorySettingsPage = () => {
       });
       repositoryUpdated(queryClient, data);
       // The breadcrumb, and through it the document title, is written by the loader of the parent
-      // route, which navigating between its children does not re-run.
+      // route, which saving on this page does not re-run.
       await router.invalidate();
-      navigate({
-        to: '/organizations/$orgId/products/$productId/repositories/$repoId',
-        params: {
-          orgId: params.orgId,
-          productId: params.productId,
-          repoId: params.repoId,
-        },
-      });
     },
     onError(error: ApiError) {
       toastError(error.message, error);
     },
   });
 
-  async function onSubmit(values: RepositoryFormValues) {
-    await mutateAsync({
+  async function onSubmit(
+    values: RepositoryFormValues
+  ): Promise<RepositoryFormValues> {
+    const saved = await mutateAsync({
       path: {
         repositoryId: repository.id,
       },
       body: values,
     });
+    return {
+      description: saved.description || '',
+      name: saved.name || '',
+      url: saved.url,
+      type: saved.type,
+    };
   }
 
   async function handleDelete() {
@@ -158,6 +158,8 @@ export const RepositorySettingsPage = () => {
     navigate({
       to: '/organizations/$orgId/products/$productId',
       params: { orgId: params.orgId, productId: params.productId },
+      // The deletion has been confirmed, so unsaved changes in the form do not hold it up.
+      ignoreBlocker: true,
     });
   }
 
@@ -176,15 +178,6 @@ export const RepositorySettingsPage = () => {
             type: repository.type,
           }}
           isPending={isPending}
-          onCancel={() =>
-            navigate({
-              to:
-                '/organizations/' +
-                params.orgId +
-                '/products/' +
-                params.productId,
-            })
-          }
           onSubmit={onSubmit}
         />
       </SheetSection>

@@ -19,7 +19,7 @@
 
 // @vitest-environment jsdom
 
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -107,6 +107,45 @@ describe('UserRoleRowActions', () => {
       screen.getByRole('menuitem', { name: 'Assign WRITER role' })
     );
 
+    expect(onAssignWriterRole).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole('alertdialog', {
+        name: 'Give test-user the Writer role?',
+      })
+    ).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: 'Change role' }));
+
     expect(onAssignWriterRole).toHaveBeenCalledOnce();
+    await waitFor(() =>
+      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    );
+  });
+
+  it('names the current and the new role and assigns nothing when cancelled', async () => {
+    const user = userEvent.setup();
+    const onAssignAdminRole = vi.fn().mockResolvedValue(undefined);
+    render(
+      <UserRoleRowActionsHarness
+        groups={['READERS']}
+        onAssignAdminRole={onAssignAdminRole}
+      />
+    );
+
+    await user.click(screen.getByRole('button'));
+    await user.click(
+      screen.getByRole('menuitem', { name: 'Assign ADMIN role' })
+    );
+
+    expect(
+      screen.getByRole('alertdialog', {
+        name: "Change test-user's role from Reader to Admin?",
+      })
+    ).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(onAssignAdminRole).not.toHaveBeenCalled();
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
   });
 });

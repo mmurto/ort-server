@@ -40,6 +40,7 @@ import { DataTable } from '@/components/data-table/data-table';
 import { DeleteDialog } from '@/components/delete-dialog';
 import { DeleteIconButton } from '@/components/delete-icon-button';
 import { FavoriteButton } from '@/components/favorite-button';
+import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { OrtRunJobStatus } from '@/components/ort-run-job-status';
 import { RunDuration } from '@/components/run-duration';
@@ -62,6 +63,7 @@ import {
 } from '@/components/ui/tooltip';
 import { config } from '@/config';
 import { diffResolvedJobConfigs } from '@/helpers/config-diff';
+import { isRunFinished } from '@/helpers/job-helpers';
 import {
   createAppColumnHelper,
   selectNoTableState,
@@ -572,7 +574,11 @@ export const RepositoryRunsTable = ({
       },
       query: { limit: pageSize, offset: pageIndex * pageSize, sort: '-index' },
     }),
-    refetchInterval: pollInterval,
+    // Poll only while a listed run can still change.
+    refetchInterval: (query) =>
+      query.state.data?.data.some((run) => !isRunFinished(run.status))
+        ? pollInterval
+        : false,
   });
 
   const table = useAppTable(
@@ -603,8 +609,7 @@ export const RepositoryRunsTable = ({
   }
 
   if (runsIsError) {
-    toastError('Unable to load data', runsError);
-    return;
+    return <LoadError error={runsError} />;
   }
 
   const selectedBaseRun = comparisonSelection.baseRun;

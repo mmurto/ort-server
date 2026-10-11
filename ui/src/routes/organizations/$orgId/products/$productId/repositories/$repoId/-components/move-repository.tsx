@@ -105,6 +105,8 @@ export const MoveRepository = ({ repoUrl }: MoveRepositoryProps) => {
           productId: String(selectedProduct?.id),
           repoId: params.repoId!,
         },
+        // The move has been confirmed, so unsaved changes on the page do not hold it up.
+        ignoreBlocker: true,
       });
     },
     onError(error: ApiError) {

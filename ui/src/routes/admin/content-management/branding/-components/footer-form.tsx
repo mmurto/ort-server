@@ -28,6 +28,7 @@ import {
   getServerSettingByKeyQueryKey,
   setServerSettingByKeyMutation,
 } from '@/api/@tanstack/react-query.gen';
+import { LoadError } from '@/components/load-error';
 import { LoadingIndicator } from '@/components/loading-indicator.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import {
@@ -110,8 +111,7 @@ export function FooterForm() {
   }
 
   if (isError) {
-    toastError('Unable to load data', error);
-    return;
+    return <LoadError error={error} />;
   }
 
   return (

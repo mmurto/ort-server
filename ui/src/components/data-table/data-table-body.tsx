@@ -22,6 +22,7 @@ import React, { Fragment } from 'react';
 
 import { TableBody, TableCell, TableRow } from '@/components/ui/table';
 import type { AppRow } from '@/hooks/use-app-table';
+import { NoResults } from './no-results';
 
 interface DataTableBodyProps<TData extends RowData> {
   rows: AppRow<TData>[];
@@ -29,6 +30,8 @@ interface DataTableBodyProps<TData extends RowData> {
   columnSizing?: Record<string, number>;
   columnCount: number;
   noResultsContent?: React.ReactNode;
+  filtersActive?: boolean;
+  onClearFilters?: () => void;
 }
 
 export function DataTableBody<TData extends RowData>({
@@ -37,6 +40,8 @@ export function DataTableBody<TData extends RowData>({
   columnSizing,
   columnCount,
   noResultsContent,
+  filtersActive = false,
+  onClearFilters,
 }: DataTableBodyProps<TData>) {
   // The rows keep their identity when a row is expanded or a column is hidden;
   // only their methods return the new state. React Compiler would reuse what
@@ -82,9 +87,10 @@ export function DataTableBody<TData extends RowData>({
         <TableRow>
           <TableCell colSpan={columnCount || 1} className='h-24 text-center'>
             {noResultsContent ?? (
-              <div className='text-muted-foreground text-[0.8125rem]'>
-                Nothing matches the current filters.
-              </div>
+              <NoResults
+                filtersActive={filtersActive}
+                onClearFilters={onClearFilters}
+              />
             )}
           </TableCell>
         </TableRow>

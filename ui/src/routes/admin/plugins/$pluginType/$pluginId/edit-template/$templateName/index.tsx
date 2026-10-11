@@ -42,6 +42,7 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Form } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { UnsavedChangesGuard } from '@/components/unsaved-changes-guard';
 import { ApiError } from '@/lib/api-error';
 import { queryClient } from '@/lib/query-client';
 import { toast, toastError } from '@/lib/toast';
@@ -171,6 +172,7 @@ const EditTemplate = () => {
 
   return (
     <div className='flex flex-col gap-8'>
+      <UnsavedChangesGuard control={form.control} />
       <PageHeader
         title='Edit Template'
         description={

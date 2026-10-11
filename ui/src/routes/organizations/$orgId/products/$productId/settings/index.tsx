@@ -50,6 +50,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { UnsavedChangesGuard } from '@/components/unsaved-changes-guard';
 import { ApiError } from '@/lib/api-error';
 import { productDeleted, productUpdated } from '@/lib/entity-cache';
 import { toast, toastError } from '@/lib/toast';
@@ -83,12 +84,8 @@ const ProductSettingsPage = () => {
       });
       productUpdated(queryClient, data);
       // The breadcrumb, and through it the document title, is written by the loader of the parent
-      // route, which navigating between its children does not re-run.
+      // route, which saving on this page does not re-run.
       await router.invalidate();
-      navigate({
-        to: '/organizations/$orgId/products/$productId',
-        params: { orgId: params.orgId, productId: params.productId },
-      });
     },
     onError(error: ApiError) {
       toastError(error.message, error);
@@ -104,7 +101,7 @@ const ProductSettingsPage = () => {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    await mutateAsync({
+    const saved = await mutateAsync({
       path: {
         productId: product.id,
       },
@@ -112,7 +109,11 @@ const ProductSettingsPage = () => {
         name: values.name,
         description: values.description,
       },
-    });
+    }).catch(() => undefined);
+    // The mutation has reported the error. The changes stay in the form to be saved again.
+    if (!saved) return;
+    // Stay on the page with the saved values as the new starting point of the form.
+    form.reset({ name: saved.name, description: saved.description || '' });
   }
 
   const { mutateAsync: deleteProduct } = useMutation({
@@ -125,6 +126,8 @@ const ProductSettingsPage = () => {
       navigate({
         to: '/organizations/$orgId',
         params: { orgId: params.orgId },
+        // The deletion has been confirmed, so unsaved changes in the form do not hold it up.
+        ignoreBlocker: true,
       });
     },
     onError(error: ApiError) {
@@ -142,11 +145,12 @@ const ProductSettingsPage = () => {
 
   return (
     <div className='flex flex-col gap-8'>
+      <UnsavedChangesGuard control={form.control} />
       <PageHeader
         title='Settings'
         description={`Edit the details of ${product.name} or delete it.`}
       />
-      <SheetSection title='Edit Product'>
+      <SheetSection title='Edit product'>
         <Card className='max-w-2xl'>
           <Form {...form}>
             <form
@@ -189,40 +193,40 @@ const ProductSettingsPage = () => {
                       <Loader2 size={16} className='mx-3 animate-spin' />
                     </>
                   ) : (
-                    'Submit'
+                    'Save'
                   )}
                 </Button>
                 <Button
                   type='button'
                   variant='outline'
-                  onClick={() =>
-                    navigate({
-                      to: '/organizations/' + params.orgId,
-                    })
-                  }
-                  disabled={isPending}
+                  onClick={() => form.reset()}
+                  disabled={isPending || !form.formState.isDirty}
                 >
-                  Cancel
+                  Reset
                 </Button>
               </CardFooter>
             </form>
           </Form>
         </Card>
       </SheetSection>
-      <SheetSection title='Danger Zone'>
-        <div className='border-err/40 flex max-w-2xl items-center justify-between gap-4 rounded-sm border px-5 py-4'>
-          <div className='flex flex-col gap-0.5'>
-            <div className='font-medium'>Delete this product</div>
-            <div className='text-muted-foreground text-[0.8125rem]'>
-              This cannot be undone.
+      <SheetSection title='Danger zone'>
+        <div className='border-err/30 flex max-w-2xl flex-col divide-y border'>
+          <div className='flex flex-wrap items-center justify-between gap-4 p-4'>
+            <div className='flex flex-col gap-0.5'>
+              <div className='font-medium'>Delete this product</div>
+              <p className='text-muted-foreground text-[0.8125rem]'>
+                This cannot be undone.
+              </p>
             </div>
+            <DeleteDialog
+              thingName={'product'}
+              thingId={product.name}
+              uiComponent={
+                <Button variant='destructive'>Delete product</Button>
+              }
+              onDelete={handleDelete}
+            />
           </div>
-          <DeleteDialog
-            thingName={'product'}
-            thingId={product.name}
-            uiComponent={<Button variant='destructive'>Delete product</Button>}
-            onDelete={handleDelete}
-          />
         </div>
       </SheetSection>
     </div>

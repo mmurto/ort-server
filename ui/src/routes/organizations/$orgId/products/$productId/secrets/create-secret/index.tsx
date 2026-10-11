@@ -43,7 +43,7 @@ import { toast, toastError } from '@/lib/toast';
 
 const formSchema = z.object({
   name: z.string().trim().min(1),
-  value: z.string(),
+  value: z.string().min(1, 'Enter the secret value.'),
   description: z.string().optional(),
 });
 
