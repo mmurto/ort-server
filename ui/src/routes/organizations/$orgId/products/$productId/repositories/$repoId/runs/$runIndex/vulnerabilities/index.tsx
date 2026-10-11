@@ -679,19 +679,19 @@ const VulnerabilitiesComponent = () => {
           },
           {
             id: 'vulnerabilityId',
-            width: 'minmax(0,1.1fr)',
+            width: 'max-content',
             sortBy: 'externalId',
             filters: ['externalId'],
             mobile: 'main',
           },
           {
             id: 'package',
-            width: 'minmax(0,1.8fr)',
+            width: 'minmax(0,2.4fr)',
             sortBy: columnId,
             filters: [columnId],
             mobile: 'sub',
           },
-          { id: 'summaryText', width: 'minmax(0,2.2fr)', mobile: 'hidden' },
+          { id: 'summaryText', width: 'minmax(0,2fr)', mobile: 'hidden' },
           {
             id: 'advisor',
             width: 'minmax(0,0.7fr)',
