@@ -24,19 +24,19 @@ import { formatDuration, formatElapsed } from '@/helpers/format-elapsed';
 import { RUN_JOBS, type RunJobKey } from '@/helpers/run-jobs';
 import { cn } from '@/lib/utils';
 
-export type FlightPlanEvent = {
+export type RunTimelineEvent = {
   job: RunJobKey;
   content: React.ReactNode;
   /** Marks the event as something that needs attention. */
   alert?: boolean;
 };
 
-type FlightPlanProps = {
+type RunTimelineProps = {
   createdAt: string;
   finishedAt?: string | null;
   status: OrtRunStatus;
   jobs: JobSummaries;
-  events?: FlightPlanEvent[];
+  events?: RunTimelineEvent[];
   /** The jobs configured for the run; jobs missing from it are shown as not included. */
   included?: RunJobKey[];
   className?: string;
@@ -46,7 +46,7 @@ const ACTIVE_JOB_STATUSES: JobStatus[] = ['CREATED', 'SCHEDULED', 'RUNNING'];
 
 const STATUS_LABELS: Record<OrtRunStatus, string> = {
   CREATED: 'Created',
-  ACTIVE: 'In flight',
+  ACTIVE: 'Running',
   FINISHED: 'Finished',
   FINISHED_WITH_ISSUES: 'Finished with issues',
   FAILED: 'Failed',
@@ -75,11 +75,11 @@ const useNow = (ticking: boolean) => {
 };
 
 /**
- * The run's flight plan: a timed trajectory from creation to completion. Each job is a segment
+ * The run's timeline from creation to completion. Each job is a segment
  * in its ORT colour, placed and sized by when it ran; findings hang below the job that produced
- * them, and while the run is in flight a crimson marker shows the current position.
+ * them, and while the run is active a crimson marker shows the current position.
  */
-export const FlightPlan = ({
+export const RunTimeline = ({
   createdAt,
   finishedAt,
   status,
@@ -87,9 +87,9 @@ export const FlightPlan = ({
   events = [],
   included,
   className,
-}: FlightPlanProps) => {
-  const inFlight = !finishedAt && status !== 'FAILED';
-  const now = useNow(inFlight);
+}: RunTimelineProps) => {
+  const isActive = !finishedAt && status !== 'FAILED';
+  const now = useNow(isActive);
 
   const start = Date.parse(createdAt);
   const end = finishedAt ? Date.parse(finishedAt) : now;
@@ -164,11 +164,11 @@ export const FlightPlan = ({
   });
 
   return (
-    <section aria-label='Flight plan' className={className}>
+    <section aria-label='Run timeline' className={className}>
       <div className='border-foreground border-t pt-2'>
         <div className='flex h-4 items-center justify-between gap-4'>
           <span className='label-caps'>
-            Flight plan · {plannedCount} {plannedCount === 1 ? 'job' : 'jobs'}
+            Run timeline · {plannedCount} {plannedCount === 1 ? 'job' : 'jobs'}
             {notIncluded.length > 0 && (
               <span className='tracking-normal normal-case'>
                 {' '}
@@ -190,7 +190,7 @@ export const FlightPlan = ({
               aria-hidden
               className={cn(
                 'h-3 w-0.5',
-                inFlight ? 'bg-brand animate-pulse' : 'bg-foreground'
+                isActive ? 'bg-brand animate-pulse' : 'bg-foreground'
               )}
             />
           </span>
@@ -233,7 +233,7 @@ export const FlightPlan = ({
           ))}
         </div>
 
-        {/* Trajectory */}
+        {/* Job segments */}
         <div
           className='relative'
           style={{ height: `${laneCount * 6 + (laneCount - 1) * 2}px` }}
@@ -254,7 +254,7 @@ export const FlightPlan = ({
               key={segment.key}
               title={`${segment.label}: ${segment.status}`}
               className={cn(
-                'animate-flight-draw absolute h-1.5 origin-left',
+                'animate-draw-x absolute h-1.5 origin-left',
                 segment.status === 'FAILED' &&
                   'bg-[repeating-linear-gradient(135deg,var(--err)_0_3px,transparent_3px_6px)]',
                 segment.running && 'animate-pulse'
@@ -269,7 +269,7 @@ export const FlightPlan = ({
               }}
             />
           ))}
-          {inFlight && (
+          {isActive && (
             <div
               aria-hidden
               className='bg-brand absolute -top-3 -bottom-3 w-0.5 -translate-x-full'

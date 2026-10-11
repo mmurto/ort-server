@@ -59,7 +59,7 @@ const STATUS_FONT_COLOR: { [K in Exclude<Status, undefined>]: string } = {
   FINISHED_WITH_ISSUES: 'text-warn',
 } as const;
 
-// Job statuses are drawn as short flat segments of a run's trajectory.
+// Job statuses are drawn as short flat segments of a run's timeline.
 const STATUS_CLASS: {
   [K in Exclude<Status, undefined>]: string;
 } = {

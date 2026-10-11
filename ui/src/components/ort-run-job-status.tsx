@@ -55,7 +55,7 @@ const durationOf = (
     : 0;
 
 /**
- * The jobs of a run as a compact trajectory, the flight plan in miniature: one flat segment per
+ * The jobs of a run as a compact timeline: one flat segment per
  * job in pipeline order, its length proportional to how long the job ran and its colour its
  * status.
  */

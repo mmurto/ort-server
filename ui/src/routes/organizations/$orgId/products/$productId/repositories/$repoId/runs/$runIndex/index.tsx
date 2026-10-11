@@ -29,9 +29,9 @@ import {
   getRunStatisticsOptions,
   getRunVulnerabilitiesOptions,
 } from '@/api/@tanstack/react-query.gen';
-import { FlightPlan, type FlightPlanEvent } from '@/components/flight-plan';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { QueryBoundary, QueryErrorFallback } from '@/components/query-boundary';
+import { RunTimeline, type RunTimelineEvent } from '@/components/run-timeline';
 import { StatisticsCard, StatisticsRow } from '@/components/statistics-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { config } from '@/config';
@@ -102,8 +102,8 @@ export const RunStatisticsFallback = ({
 const plural = (count: number, word: string) =>
   `${count} ${count === 1 ? word : `${word}s`}`;
 
-/** The flight plan with findings hung below the jobs that produced them. */
-const RunFlightPlan = ({ ortRun }: { ortRun: OrtRun }) => {
+/** The run timeline with findings hung below the jobs that produced them. */
+const RunTimelineWithFindings = ({ ortRun }: { ortRun: OrtRun }) => {
   const anyJobFinished = Object.values(ortRun.jobs).some((job) =>
     isJobFinished(job?.status)
   );
@@ -112,7 +112,7 @@ const RunFlightPlan = ({ ortRun }: { ortRun: OrtRun }) => {
     enabled: anyJobFinished,
   });
 
-  const events: FlightPlanEvent[] = [];
+  const events: RunTimelineEvent[] = [];
   if (statistics) {
     if (statistics.packagesCount != null)
       events.push({
@@ -137,7 +137,7 @@ const RunFlightPlan = ({ ortRun }: { ortRun: OrtRun }) => {
   }
 
   return (
-    <FlightPlan
+    <RunTimeline
       createdAt={ortRun.createdAt}
       finishedAt={ortRun.finishedAt}
       status={ortRun.status}
@@ -387,7 +387,7 @@ const RunComponent = () => {
 
   return (
     <div className='flex flex-col gap-8'>
-      <RunFlightPlan ortRun={ortRun} />
+      <RunTimelineWithFindings ortRun={ortRun} />
       <QueryBoundary
         fallback={
           <RunStatisticsFallback

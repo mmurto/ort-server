@@ -97,7 +97,7 @@ const layoutRun = (run: OrtRunSummary, withInfrastructure: boolean) => {
 };
 
 /**
- * The repository's flight log: every run's jobs as a trajectory on one shared time scale, so runs
+ * The durations of the repository's runs: every run's jobs on one shared time scale, so runs
  * that took longer read longer. Selecting a run opens it.
  */
 export const JobDurations = ({
@@ -113,7 +113,7 @@ export const JobDurations = ({
     nRuns: DEFAULT_RUNS,
   });
 
-  // Whether the time between jobs, spent on infrastructure, is part of the trajectories.
+  // Whether the time between jobs, spent on infrastructure, is part of the timelines.
   const [showInfrastructure, setShowInfrastructure] = useState(false);
 
   // Compute query params from applied values.
@@ -231,7 +231,7 @@ export const JobDurations = ({
                     <span
                       key={segment.key}
                       title={`${segment.label}: ${formatDuration(segment.duration)}`}
-                      className='animate-flight-draw absolute h-1.5 origin-left'
+                      className='animate-draw-x absolute h-1.5 origin-left'
                       style={{
                         left: `${(segment.start / scale) * 100}%`,
                         width: `max(${(segment.duration / scale) * 100}%, 2px)`,

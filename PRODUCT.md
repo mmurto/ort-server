@@ -48,3 +48,5 @@ One designed theme with light and dark modes replaces the current theme switcher
 
 - Local development has seed data only: runs stay in `CREATED`, so screens with real run results cannot be seen with real data locally.
 - Accessibility: keyboard navigation and screen-reader labels already exist in components and must not regress; aim for WCAG 2.2 AA contrast in both modes.
+- Copy and formats use the product's own terms. A visual direction may borrow a look, but the UI never names or mimics its source (no metaphor labels such as "flight plan", no mission-clock "T+" times, no skeuomorphic controls).
+- The organization is chosen and shown in the rail's switcher; the breadcrumb starts at the product.

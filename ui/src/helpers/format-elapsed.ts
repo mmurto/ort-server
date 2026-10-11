@@ -17,7 +17,7 @@
  * License-Filename: LICENSE
  */
 
-/** Formats elapsed milliseconds as mission elapsed time, e.g. "T+11:35" or "T+1:02:09". */
+/** Formats elapsed milliseconds as a clock, e.g. "11:35" or "1:02:09". */
 export const formatElapsed = (ms: number) => {
   const total = Math.max(0, Math.round(ms / 1000));
   const hours = Math.floor(total / 3600);
@@ -25,8 +25,8 @@ export const formatElapsed = (ms: number) => {
   const seconds = total % 60;
   const ss = String(seconds).padStart(2, '0');
   return hours > 0
-    ? `T+${hours}:${String(minutes).padStart(2, '0')}:${ss}`
-    : `T+${minutes}:${ss}`;
+    ? `${hours}:${String(minutes).padStart(2, '0')}:${ss}`
+    : `${minutes}:${ss}`;
 };
 
 /** Formats a job duration in milliseconds, e.g. "6m 52s" or "41s". */

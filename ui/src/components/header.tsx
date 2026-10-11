@@ -187,26 +187,13 @@ export const Header = () => {
         </Button>
         <Breadcrumb className='min-w-0 overflow-hidden'>
           <BreadcrumbList>
-            {organizationMatch?.context &&
-              organizationMatch.context.breadcrumbs.organization !==
-                undefined && (
-                <Siblings
-                  entity='organization'
-                  pathName={organizationMatch.pathname}
-                />
-              )}
+            {/* The organization is shown and switched in the rail, so the trail starts below it. */}
             {productMatch?.context && (
-              <>
-                {organizationMatch?.context.breadcrumbs.organization !==
-                  undefined && <BreadcrumbSeparator />}
-                <Siblings entity='product' pathName={productMatch.pathname} />
-              </>
+              <Siblings entity='product' pathName={productMatch.pathname} />
             )}
             {repoMatch?.context && (
               <>
-                {(organizationMatch?.context.breadcrumbs.organization !==
-                  undefined ||
-                  productMatch?.context.breadcrumbs.product !== undefined) && (
+                {productMatch?.context.breadcrumbs.product !== undefined && (
                   <BreadcrumbSeparator />
                 )}
                 <Siblings

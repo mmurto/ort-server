@@ -36,7 +36,7 @@ const MARK_LABEL: Record<Status, string> = {
   CREATED: 'Created',
   SCHEDULED: 'Scheduled',
   RUNNING: 'Running',
-  ACTIVE: 'In flight',
+  ACTIVE: 'Running',
   FAILED: 'Failed',
   FINISHED: 'Finished',
   FINISHED_WITH_ISSUES: 'Finished with issues',

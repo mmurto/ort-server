@@ -27,7 +27,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
- * Mission Manual: one theme, light and dark.
+ * One theme, light and dark.
  * White work sheets on a pale ground, an ink rail for navigation, 1px hairlines,
  * near-zero radius. Crimson marks only the brand and the current position.
  */
@@ -306,8 +306,8 @@
 }
 
 @theme {
-  --animate-flight-draw: flight-draw 700ms var(--ease-out-expo) both;
-  @keyframes flight-draw {
+  --animate-draw-x: draw-x 700ms var(--ease-out-expo) both;
+  @keyframes draw-x {
     from {
       transform: scaleX(0);
     }
