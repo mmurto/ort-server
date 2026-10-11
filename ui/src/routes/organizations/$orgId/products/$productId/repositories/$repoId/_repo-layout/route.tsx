@@ -52,7 +52,7 @@ const RepoLayout = () => {
       ],
     },
     {
-      label: 'Repository',
+      label: 'Manage',
       items: [
         {
           title: 'Secrets',

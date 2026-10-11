@@ -81,7 +81,7 @@ const Layout = () => {
       ],
     },
     {
-      label: 'Organization',
+      label: 'Manage',
       items: [
         {
           title: 'Secrets',

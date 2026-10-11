@@ -61,9 +61,9 @@ function PanelToolbar({
   onCopyLink,
 }: Omit<FindingPanelProps, 'title' | 'meta' | 'children'>) {
   return (
-    <div className='flex items-center gap-0.5'>
+    <div className='flex shrink-0 items-center gap-0.5'>
       {position && (
-        <span className='text-muted-foreground mr-1 text-xs tabular-nums'>
+        <span className='text-muted-foreground mr-1 text-xs whitespace-nowrap tabular-nums'>
           {position}
         </span>
       )}

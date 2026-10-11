@@ -313,7 +313,7 @@ const createColumns = (
     columnHelper.display({
       id: 'actions',
       header: 'Actions',
-      size: 156,
+      size: 184,
       cell: function Row({ row }) {
         const queryClient = useQueryClient();
 

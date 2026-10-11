@@ -80,7 +80,7 @@ const Layout = () => {
       ],
     },
     {
-      label: 'Product',
+      label: 'Manage',
       items: [
         {
           title: 'Secrets',
