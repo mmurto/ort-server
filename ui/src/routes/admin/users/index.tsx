@@ -126,7 +126,10 @@ const columns = columnHelper.columns([
     cell: ({ row }) => (
       <>
         {row.original.isSuperuser ? (
-          <ShieldCheck className='text-brand size-4' aria-label='Superuser' />
+          <ShieldCheck
+            className='text-foreground size-4'
+            aria-label='Superuser'
+          />
         ) : null}
       </>
     ),

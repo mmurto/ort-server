@@ -1,0 +1,823 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-11T16:00:34.490481+00:00",
+  "title": "Design System: ORT Server",
+  "extensions": {
+    "colorMeta": {
+      "ground": {
+        "role": "neutral",
+        "displayName": "Pale Ground",
+        "canonical": "#f3f3f1",
+        "tonalRamp": [
+          "oklch(15% 0.003 106.4)",
+          "oklch(26% 0.003 106.4)",
+          "oklch(37% 0.003 106.4)",
+          "oklch(48% 0.003 106.4)",
+          "oklch(59% 0.003 106.4)",
+          "oklch(70% 0.003 106.4)",
+          "oklch(82% 0.003 106.4)",
+          "oklch(95% 0.003 106.4)"
+        ]
+      },
+      "sheet": {
+        "role": "neutral",
+        "displayName": "White Sheet",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "oklch(15% 0.000 89.9)",
+          "oklch(26% 0.000 89.9)",
+          "oklch(37% 0.000 89.9)",
+          "oklch(48% 0.000 89.9)",
+          "oklch(59% 0.000 89.9)",
+          "oklch(70% 0.000 89.9)",
+          "oklch(82% 0.000 89.9)",
+          "oklch(95% 0.000 89.9)"
+        ]
+      },
+      "ink": {
+        "role": "primary",
+        "displayName": "Ink",
+        "canonical": "#16171b",
+        "tonalRamp": [
+          "oklch(15% 0.008 274.5)",
+          "oklch(26% 0.008 274.5)",
+          "oklch(37% 0.008 274.5)",
+          "oklch(48% 0.008 274.5)",
+          "oklch(59% 0.008 274.5)",
+          "oklch(70% 0.008 274.5)",
+          "oklch(82% 0.008 274.5)",
+          "oklch(95% 0.008 274.5)"
+        ]
+      },
+      "muted-text": {
+        "role": "neutral",
+        "displayName": "Muted Text",
+        "canonical": "#62646b",
+        "tonalRamp": [
+          "oklch(15% 0.011 273.2)",
+          "oklch(26% 0.011 273.2)",
+          "oklch(37% 0.011 273.2)",
+          "oklch(48% 0.011 273.2)",
+          "oklch(59% 0.011 273.2)",
+          "oklch(70% 0.011 273.2)",
+          "oklch(82% 0.011 273.2)",
+          "oklch(95% 0.011 273.2)"
+        ]
+      },
+      "hover-tint": {
+        "role": "neutral",
+        "displayName": "Hover Tint",
+        "canonical": "#ededea",
+        "tonalRamp": [
+          "oklch(15% 0.004 106.5)",
+          "oklch(26% 0.004 106.5)",
+          "oklch(37% 0.004 106.5)",
+          "oklch(48% 0.004 106.5)",
+          "oklch(59% 0.004 106.5)",
+          "oklch(70% 0.004 106.5)",
+          "oklch(82% 0.004 106.5)",
+          "oklch(95% 0.004 106.5)"
+        ]
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#e4e4e0",
+        "tonalRamp": [
+          "oklch(15% 0.005 106.5)",
+          "oklch(26% 0.005 106.5)",
+          "oklch(37% 0.005 106.5)",
+          "oklch(48% 0.005 106.5)",
+          "oklch(59% 0.005 106.5)",
+          "oklch(70% 0.005 106.5)",
+          "oklch(82% 0.005 106.5)",
+          "oklch(95% 0.005 106.5)"
+        ]
+      },
+      "field-stroke": {
+        "role": "neutral",
+        "displayName": "Field Stroke",
+        "canonical": "#cfcfc9",
+        "tonalRamp": [
+          "oklch(15% 0.008 106.6)",
+          "oklch(26% 0.008 106.6)",
+          "oklch(37% 0.008 106.6)",
+          "oklch(48% 0.008 106.6)",
+          "oklch(59% 0.008 106.6)",
+          "oklch(70% 0.008 106.6)",
+          "oklch(82% 0.008 106.6)",
+          "oklch(95% 0.008 106.6)"
+        ]
+      },
+      "brand-crimson": {
+        "role": "primary",
+        "displayName": "Brand Crimson",
+        "canonical": "#a72145",
+        "tonalRamp": [
+          "oklch(15% 0.062 11.5)",
+          "oklch(26% 0.093 11.5)",
+          "oklch(37% 0.124 11.5)",
+          "oklch(48% 0.155 11.5)",
+          "oklch(59% 0.169 11.5)",
+          "oklch(70% 0.161 11.5)",
+          "oklch(82% 0.127 11.5)",
+          "oklch(95% 0.090 11.5)"
+        ]
+      },
+      "rail": {
+        "role": "neutral",
+        "displayName": "Ink Rail",
+        "canonical": "#16171b",
+        "tonalRamp": [
+          "oklch(15% 0.008 274.5)",
+          "oklch(26% 0.008 274.5)",
+          "oklch(37% 0.008 274.5)",
+          "oklch(48% 0.008 274.5)",
+          "oklch(59% 0.008 274.5)",
+          "oklch(70% 0.008 274.5)",
+          "oklch(82% 0.008 274.5)",
+          "oklch(95% 0.008 274.5)"
+        ]
+      },
+      "rail-text": {
+        "role": "neutral",
+        "displayName": "Rail Text",
+        "canonical": "#b6b8bf",
+        "tonalRamp": [
+          "oklch(15% 0.010 273.3)",
+          "oklch(26% 0.010 273.3)",
+          "oklch(37% 0.010 273.3)",
+          "oklch(48% 0.010 273.3)",
+          "oklch(59% 0.010 273.3)",
+          "oklch(70% 0.010 273.3)",
+          "oklch(82% 0.010 273.3)",
+          "oklch(95% 0.010 273.3)"
+        ]
+      },
+      "rail-muted": {
+        "role": "neutral",
+        "displayName": "Rail Muted",
+        "canonical": "#80838c",
+        "tonalRamp": [
+          "oklch(15% 0.014 271.2)",
+          "oklch(26% 0.014 271.2)",
+          "oklch(37% 0.014 271.2)",
+          "oklch(48% 0.014 271.2)",
+          "oklch(59% 0.014 271.2)",
+          "oklch(70% 0.014 271.2)",
+          "oklch(82% 0.014 271.2)",
+          "oklch(95% 0.014 271.2)"
+        ]
+      },
+      "rail-active": {
+        "role": "neutral",
+        "displayName": "Rail Active",
+        "canonical": "#24262c",
+        "tonalRamp": [
+          "oklch(15% 0.012 271.0)",
+          "oklch(26% 0.012 271.0)",
+          "oklch(37% 0.012 271.0)",
+          "oklch(48% 0.012 271.0)",
+          "oklch(59% 0.012 271.0)",
+          "oklch(70% 0.012 271.0)",
+          "oklch(82% 0.012 271.0)",
+          "oklch(95% 0.012 271.0)"
+        ]
+      },
+      "rail-hairline": {
+        "role": "neutral",
+        "displayName": "Rail Hairline",
+        "canonical": "#2a2c32",
+        "tonalRamp": [
+          "oklch(15% 0.011 271.0)",
+          "oklch(26% 0.011 271.0)",
+          "oklch(37% 0.011 271.0)",
+          "oklch(48% 0.011 271.0)",
+          "oklch(59% 0.011 271.0)",
+          "oklch(70% 0.011 271.0)",
+          "oklch(82% 0.011 271.0)",
+          "oklch(95% 0.011 271.0)"
+        ]
+      },
+      "ok": {
+        "role": "tertiary",
+        "displayName": "OK Green",
+        "canonical": "#067647",
+        "tonalRamp": [
+          "oklch(15% 0.049 157.1)",
+          "oklch(26% 0.071 157.1)",
+          "oklch(37% 0.092 157.1)",
+          "oklch(48% 0.113 157.1)",
+          "oklch(59% 0.117 157.1)",
+          "oklch(70% 0.117 157.1)",
+          "oklch(82% 0.094 157.1)",
+          "oklch(95% 0.069 157.1)"
+        ]
+      },
+      "ok-soft": {
+        "role": "tertiary",
+        "displayName": "OK Tint",
+        "canonical": "#dcfae6",
+        "tonalRamp": [
+          "oklch(15% 0.030 156.4)",
+          "oklch(26% 0.038 156.4)",
+          "oklch(37% 0.041 156.4)",
+          "oklch(48% 0.041 156.4)",
+          "oklch(59% 0.041 156.4)",
+          "oklch(70% 0.041 156.4)",
+          "oklch(82% 0.041 156.4)",
+          "oklch(95% 0.037 156.4)"
+        ]
+      },
+      "warn": {
+        "role": "tertiary",
+        "displayName": "Warning Amber",
+        "canonical": "#b54708",
+        "tonalRamp": [
+          "oklch(15% 0.059 43.0)",
+          "oklch(26% 0.088 43.0)",
+          "oklch(37% 0.116 43.0)",
+          "oklch(48% 0.145 43.0)",
+          "oklch(59% 0.156 43.0)",
+          "oklch(70% 0.150 43.0)",
+          "oklch(82% 0.119 43.0)",
+          "oklch(95% 0.085 43.0)"
+        ]
+      },
+      "warn-soft": {
+        "role": "tertiary",
+        "displayName": "Warning Tint",
+        "canonical": "#fef0c7",
+        "tonalRamp": [
+          "oklch(15% 0.034 91.4)",
+          "oklch(26% 0.044 91.4)",
+          "oklch(37% 0.054 91.4)",
+          "oklch(48% 0.055 91.4)",
+          "oklch(59% 0.055 91.4)",
+          "oklch(70% 0.055 91.4)",
+          "oklch(82% 0.055 91.4)",
+          "oklch(95% 0.043 91.4)"
+        ]
+      },
+      "err": {
+        "role": "tertiary",
+        "displayName": "Error Red",
+        "canonical": "#c4321f",
+        "tonalRamp": [
+          "oklch(15% 0.066 30.9)",
+          "oklch(26% 0.100 30.9)",
+          "oklch(37% 0.134 30.9)",
+          "oklch(48% 0.169 30.9)",
+          "oklch(59% 0.186 30.9)",
+          "oklch(70% 0.175 30.9)",
+          "oklch(82% 0.138 30.9)",
+          "oklch(95% 0.097 30.9)"
+        ]
+      },
+      "err-soft": {
+        "role": "tertiary",
+        "displayName": "Error Tint",
+        "canonical": "#fee4e2",
+        "tonalRamp": [
+          "oklch(15% 0.027 23.0)",
+          "oklch(26% 0.029 23.0)",
+          "oklch(37% 0.029 23.0)",
+          "oklch(48% 0.029 23.0)",
+          "oklch(59% 0.029 23.0)",
+          "oklch(70% 0.029 23.0)",
+          "oklch(82% 0.029 23.0)",
+          "oklch(95% 0.029 23.0)"
+        ]
+      },
+      "sev-critical": {
+        "role": "tertiary",
+        "displayName": "Critical Oxblood",
+        "canonical": "#8f1d2c",
+        "tonalRamp": [
+          "oklch(15% 0.057 19.6)",
+          "oklch(26% 0.084 19.6)",
+          "oklch(37% 0.111 19.6)",
+          "oklch(48% 0.139 19.6)",
+          "oklch(59% 0.148 19.6)",
+          "oklch(70% 0.144 19.6)",
+          "oklch(82% 0.114 19.6)",
+          "oklch(95% 0.082 19.6)"
+        ]
+      },
+      "sev-high": {
+        "role": "tertiary",
+        "displayName": "High Vermilion",
+        "canonical": "#d4421e",
+        "tonalRamp": [
+          "oklch(15% 0.067 34.5)",
+          "oklch(26% 0.102 34.5)",
+          "oklch(37% 0.136 34.5)",
+          "oklch(48% 0.171 34.5)",
+          "oklch(59% 0.189 34.5)",
+          "oklch(70% 0.177 34.5)",
+          "oklch(82% 0.139 34.5)",
+          "oklch(95% 0.099 34.5)"
+        ]
+      },
+      "sev-medium": {
+        "role": "tertiary",
+        "displayName": "Medium Ochre",
+        "canonical": "#d99a06",
+        "tonalRamp": [
+          "oklch(15% 0.058 79.1)",
+          "oklch(26% 0.085 79.1)",
+          "oklch(37% 0.113 79.1)",
+          "oklch(48% 0.140 79.1)",
+          "oklch(59% 0.150 79.1)",
+          "oklch(70% 0.145 79.1)",
+          "oklch(82% 0.115 79.1)",
+          "oklch(95% 0.083 79.1)"
+        ]
+      },
+      "sev-low": {
+        "role": "tertiary",
+        "displayName": "Low Grey",
+        "canonical": "#8a8d94",
+        "tonalRamp": [
+          "oklch(15% 0.011 267.3)",
+          "oklch(26% 0.011 267.3)",
+          "oklch(37% 0.011 267.3)",
+          "oklch(48% 0.011 267.3)",
+          "oklch(59% 0.011 267.3)",
+          "oklch(70% 0.011 267.3)",
+          "oklch(82% 0.011 267.3)",
+          "oklch(95% 0.011 267.3)"
+        ]
+      },
+      "job-analyzer": {
+        "role": "secondary",
+        "displayName": "Analyzer Teal",
+        "canonical": "oklch(68.1% 0.117 191.2)",
+        "tonalRamp": [
+          "oklch(15% 0.049 191.2)",
+          "oklch(26% 0.071 191.2)",
+          "oklch(37% 0.092 191.2)",
+          "oklch(48% 0.114 191.2)",
+          "oklch(59% 0.117 191.2)",
+          "oklch(70% 0.117 191.2)",
+          "oklch(82% 0.094 191.2)",
+          "oklch(95% 0.069 191.2)"
+        ]
+      },
+      "job-advisor": {
+        "role": "secondary",
+        "displayName": "Advisor Violet",
+        "canonical": "oklch(63.4% 0.094 306.8)",
+        "tonalRamp": [
+          "oklch(15% 0.043 306.8)",
+          "oklch(26% 0.061 306.8)",
+          "oklch(37% 0.078 306.8)",
+          "oklch(48% 0.094 306.8)",
+          "oklch(59% 0.094 306.8)",
+          "oklch(70% 0.094 306.8)",
+          "oklch(82% 0.079 306.8)",
+          "oklch(95% 0.059 306.8)"
+        ]
+      },
+      "job-scanner": {
+        "role": "secondary",
+        "displayName": "Scanner Rose",
+        "canonical": "oklch(60.4% 0.165 15.4)",
+        "tonalRamp": [
+          "oklch(15% 0.061 15.4)",
+          "oklch(26% 0.092 15.4)",
+          "oklch(37% 0.122 15.4)",
+          "oklch(48% 0.152 15.4)",
+          "oklch(59% 0.165 15.4)",
+          "oklch(70% 0.158 15.4)",
+          "oklch(82% 0.125 15.4)",
+          "oklch(95% 0.089 15.4)"
+        ]
+      },
+      "job-evaluator": {
+        "role": "secondary",
+        "displayName": "Evaluator Blue",
+        "canonical": "oklch(64.8% 0.119 235.0)",
+        "tonalRamp": [
+          "oklch(15% 0.050 235.0)",
+          "oklch(26% 0.071 235.0)",
+          "oklch(37% 0.093 235.0)",
+          "oklch(48% 0.115 235.0)",
+          "oklch(59% 0.119 235.0)",
+          "oklch(70% 0.119 235.0)",
+          "oklch(82% 0.095 235.0)",
+          "oklch(95% 0.069 235.0)"
+        ]
+      },
+      "job-reporter": {
+        "role": "secondary",
+        "displayName": "Reporter Orange",
+        "canonical": "oklch(74.6% 0.140 49.9)",
+        "tonalRamp": [
+          "oklch(15% 0.055 49.9)",
+          "oklch(26% 0.081 49.9)",
+          "oklch(37% 0.106 49.9)",
+          "oklch(48% 0.132 49.9)",
+          "oklch(59% 0.140 49.9)",
+          "oklch(70% 0.136 49.9)",
+          "oklch(82% 0.108 49.9)",
+          "oklch(95% 0.078 49.9)"
+        ]
+      },
+      "job-notifier": {
+        "role": "secondary",
+        "displayName": "Notifier Grey",
+        "canonical": "#80838c",
+        "tonalRamp": [
+          "oklch(15% 0.014 271.2)",
+          "oklch(26% 0.014 271.2)",
+          "oklch(37% 0.014 271.2)",
+          "oklch(48% 0.014 271.2)",
+          "oklch(59% 0.014 271.2)",
+          "oklch(70% 0.014 271.2)",
+          "oklch(82% 0.014 271.2)",
+          "oklch(95% 0.014 271.2)"
+        ]
+      },
+      "dark-ground": {
+        "role": "neutral",
+        "displayName": "Pale Ground (dark mode)",
+        "canonical": "#0b0c0e",
+        "tonalRamp": [
+          "oklch(15% 0.005 264.4)",
+          "oklch(26% 0.005 264.4)",
+          "oklch(37% 0.005 264.4)",
+          "oklch(48% 0.005 264.4)",
+          "oklch(59% 0.005 264.4)",
+          "oklch(70% 0.005 264.4)",
+          "oklch(82% 0.005 264.4)",
+          "oklch(95% 0.005 264.4)"
+        ]
+      },
+      "dark-sheet": {
+        "role": "neutral",
+        "displayName": "White Sheet (dark mode)",
+        "canonical": "#17181d",
+        "tonalRamp": [
+          "oklch(15% 0.010 276.6)",
+          "oklch(26% 0.010 276.6)",
+          "oklch(37% 0.010 276.6)",
+          "oklch(48% 0.010 276.6)",
+          "oklch(59% 0.010 276.6)",
+          "oklch(70% 0.010 276.6)",
+          "oklch(82% 0.010 276.6)",
+          "oklch(95% 0.010 276.6)"
+        ]
+      },
+      "dark-ink": {
+        "role": "primary",
+        "displayName": "Ink (dark mode)",
+        "canonical": "#e9e9e6",
+        "tonalRamp": [
+          "oklch(15% 0.004 106.5)",
+          "oklch(26% 0.004 106.5)",
+          "oklch(37% 0.004 106.5)",
+          "oklch(48% 0.004 106.5)",
+          "oklch(59% 0.004 106.5)",
+          "oklch(70% 0.004 106.5)",
+          "oklch(82% 0.004 106.5)",
+          "oklch(95% 0.004 106.5)"
+        ]
+      },
+      "dark-muted-text": {
+        "role": "neutral",
+        "displayName": "Muted Text (dark mode)",
+        "canonical": "#9c9ea5",
+        "tonalRamp": [
+          "oklch(15% 0.010 273.3)",
+          "oklch(26% 0.010 273.3)",
+          "oklch(37% 0.010 273.3)",
+          "oklch(48% 0.010 273.3)",
+          "oklch(59% 0.010 273.3)",
+          "oklch(70% 0.010 273.3)",
+          "oklch(82% 0.010 273.3)",
+          "oklch(95% 0.010 273.3)"
+        ]
+      },
+      "dark-hairline": {
+        "role": "neutral",
+        "displayName": "Hairline (dark mode)",
+        "canonical": "#2d2f36",
+        "tonalRamp": [
+          "oklch(15% 0.013 273.0)",
+          "oklch(26% 0.013 273.0)",
+          "oklch(37% 0.013 273.0)",
+          "oklch(48% 0.013 273.0)",
+          "oklch(59% 0.013 273.0)",
+          "oklch(70% 0.013 273.0)",
+          "oklch(82% 0.013 273.0)",
+          "oklch(95% 0.013 273.0)"
+        ]
+      },
+      "dark-brand-crimson": {
+        "role": "primary",
+        "displayName": "Brand Crimson (dark mode)",
+        "canonical": "#e0577b",
+        "tonalRamp": [
+          "oklch(15% 0.063 7.1)",
+          "oklch(26% 0.095 7.1)",
+          "oklch(37% 0.127 7.1)",
+          "oklch(48% 0.158 7.1)",
+          "oklch(59% 0.173 7.1)",
+          "oklch(70% 0.164 7.1)",
+          "oklch(82% 0.129 7.1)",
+          "oklch(95% 0.092 7.1)"
+        ]
+      },
+      "dark-rail": {
+        "role": "neutral",
+        "displayName": "Ink Rail (dark mode)",
+        "canonical": "#0a0a0c",
+        "tonalRamp": [
+          "oklch(15% 0.004 285.9)",
+          "oklch(26% 0.004 285.9)",
+          "oklch(37% 0.004 285.9)",
+          "oklch(48% 0.004 285.9)",
+          "oklch(59% 0.004 285.9)",
+          "oklch(70% 0.004 285.9)",
+          "oklch(82% 0.004 285.9)",
+          "oklch(95% 0.004 285.9)"
+        ]
+      },
+      "dark-ok": {
+        "role": "tertiary",
+        "displayName": "OK Green (dark mode)",
+        "canonical": "#47cd89",
+        "tonalRamp": [
+          "oklch(15% 0.058 157.2)",
+          "oklch(26% 0.086 157.2)",
+          "oklch(37% 0.114 157.2)",
+          "oklch(48% 0.142 157.2)",
+          "oklch(59% 0.153 157.2)",
+          "oklch(70% 0.147 157.2)",
+          "oklch(82% 0.117 157.2)",
+          "oklch(95% 0.084 157.2)"
+        ]
+      },
+      "dark-warn": {
+        "role": "tertiary",
+        "displayName": "Warning Amber (dark mode)",
+        "canonical": "#f5b041",
+        "tonalRamp": [
+          "oklch(15% 0.056 75.3)",
+          "oklch(26% 0.083 75.3)",
+          "oklch(37% 0.110 75.3)",
+          "oklch(48% 0.137 75.3)",
+          "oklch(59% 0.146 75.3)",
+          "oklch(70% 0.142 75.3)",
+          "oklch(82% 0.112 75.3)",
+          "oklch(95% 0.081 75.3)"
+        ]
+      },
+      "dark-err": {
+        "role": "tertiary",
+        "displayName": "Error Red (dark mode)",
+        "canonical": "#f0644f",
+        "tonalRamp": [
+          "oklch(15% 0.064 30.8)",
+          "oklch(26% 0.097 30.8)",
+          "oklch(37% 0.129 30.8)",
+          "oklch(48% 0.162 30.8)",
+          "oklch(59% 0.177 30.8)",
+          "oklch(70% 0.167 30.8)",
+          "oklch(82% 0.132 30.8)",
+          "oklch(95% 0.094 30.8)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "The one page title on a work sheet, followed by its status mark."
+      },
+      "figure": {
+        "displayName": "Figure",
+        "purpose": "The large number of a summary figure."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section headings on a sheet and card titles."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Default text, table cells and meta lines; 13px with tabular figures."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Uppercase captions naming columns, figures, fields and rail groups; never eyebrows above headings."
+      },
+      "mark": {
+        "displayName": "Mark",
+        "purpose": "Status marks, severity words and the resolved mark."
+      },
+      "identifier": {
+        "displayName": "Identifier",
+        "purpose": "Rule names, package IDs, CVE IDs and revisions in JetBrains Mono."
+      }
+    },
+    "shadows": [
+      {
+        "name": "float",
+        "value": "0 8px 24px -12px rgb(0 0 0 / 0.18)",
+        "purpose": "Popovers, dropdown menus and comboboxes."
+      },
+      {
+        "name": "float-high",
+        "value": "0 16px 40px -16px rgb(0 0 0 / 0.22)",
+        "purpose": "Dialogs, side sheets and toasts."
+      },
+      {
+        "name": "selected-row",
+        "value": "inset 2px 0 0 var(--brand)",
+        "purpose": "Position bar on the selected table or findings row."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Rail drawer slide (300ms) and run timeline segments drawing in."
+      },
+      {
+        "name": "draw-x",
+        "value": "draw-x 700ms var(--ease-out-expo) both",
+        "purpose": "Timeline and job-duration segments scale in from the left, staggered by position."
+      },
+      {
+        "name": "state-change",
+        "value": "150ms ease-out",
+        "purpose": "Colour transitions on buttons, inputs, chips and tabs; 100ms on rail items and rows."
+      },
+      {
+        "name": "press",
+        "value": "scale(0.98)",
+        "purpose": "Button press feedback."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "0.01ms",
+        "purpose": "All animations and transitions collapse under prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      },
+      {
+        "name": "content-max",
+        "value": "1680px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Ink-filled main action of a sheet, such as Rerun.",
+      "html": "<button class=\"ds-btn-primary\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m17 2 4 4-4 4\"/><path d=\"M3 11v-1a4 4 0 0 1 4-4h14\"/><path d=\"m7 22-4-4 4-4\"/><path d=\"M21 13v1a4 4 0 0 1-4 4H3\"/></svg>Rerun</button>",
+      "css": ".ds-btn-primary{font-family:'Hanken Grotesk Variable',ui-sans-serif,system-ui,sans-serif;font-variant-numeric:tabular-nums;display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border:0;border-radius:2px;background:var(--primary,#16171b);color:var(--primary-foreground,#fff);font-size:13px;font-weight:500;cursor:pointer;transition:background-color 150ms ease-out,transform 150ms ease-out}.ds-btn-primary:hover{background:color-mix(in srgb,var(--primary,#16171b) 85%,transparent)}.ds-btn-primary:active{transform:scale(.98)}.ds-btn-primary:focus-visible{outline:2px solid var(--ring,#a72145);outline-offset:2px}"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary actions such as Download reports and the run pager.",
+      "html": "<button class=\"ds-btn-outline\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"/><path d=\"m7 10 5 5 5-5\"/><path d=\"M12 15V3\"/></svg>Download reports</button>",
+      "css": ".ds-btn-outline{font-family:'Hanken Grotesk Variable',ui-sans-serif,system-ui,sans-serif;font-variant-numeric:tabular-nums;display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border:1px solid var(--input,#cfcfc9);border-radius:2px;background:var(--background,#fff);color:var(--foreground,#16171b);font-size:13px;font-weight:500;cursor:pointer;transition:background-color 150ms ease-out,transform 150ms ease-out}.ds-btn-outline:hover{background:var(--accent,#ededea)}.ds-btn-outline:active{transform:scale(.98)}.ds-btn-outline:focus-visible{outline:2px solid var(--ring,#a72145);outline-offset:2px}"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost-hover",
+      "description": "Low-emphasis controls: icon buttons, row expanders, the mode toggle.",
+      "html": "<button class=\"ds-btn-ghost\" aria-label=\"Expand row\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\"/></svg></button>",
+      "css": ".ds-btn-ghost{display:inline-grid;place-items:center;width:32px;height:32px;border:0;border-radius:2px;background:transparent;color:var(--foreground,#16171b);cursor:pointer;transition:background-color 150ms ease-out}.ds-btn-ghost:hover{background:var(--accent,#ededea)}.ds-btn-ghost:focus-visible{outline:2px solid var(--ring,#a72145);outline-offset:2px}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "32px field with field-stroke border; crimson border and soft ring on focus.",
+      "html": "<input class=\"ds-input\" placeholder=\"Go to run ID\" />",
+      "css": ".ds-input{font-family:'Hanken Grotesk Variable',ui-sans-serif,system-ui,sans-serif;font-variant-numeric:tabular-nums;height:32px;width:160px;padding:4px 10px;border:1px solid var(--input,#cfcfc9);border-radius:2px;background:var(--background,#fff);color:var(--foreground,#16171b);font-size:13px;caret-color:var(--brand,#a72145);outline:none;transition:border-color 150ms,box-shadow 150ms}.ds-input::placeholder{color:var(--muted-foreground,#62646b)}.ds-input:hover{border-color:color-mix(in srgb,var(--muted-foreground,#62646b) 60%,transparent)}.ds-input:focus-visible{border-color:var(--ring,#a72145);box-shadow:0 0 0 3px color-mix(in srgb,var(--ring,#a72145) 15%,transparent)}"
+    },
+    {
+      "name": "Rail Navigation",
+      "kind": "nav",
+      "refersTo": "rail-item",
+      "description": "Ink rail with uppercase section labels, counts, and a crimson bar on the current item.",
+      "html": "<nav class=\"ds-rail\"><div class=\"ds-rail-label\">Compliance</div><a class=\"ds-rail-item ds-rail-current\" href=\"#\"><span>Rule Violations</span><span class=\"ds-rail-count\">14</span></a><a class=\"ds-rail-item\" href=\"#\"><span>Detected Licenses</span></a><a class=\"ds-rail-item\" href=\"#\"><span>Vulnerabilities</span><span class=\"ds-rail-count\">12</span></a></nav>",
+      "css": ".ds-rail{font-family:'Hanken Grotesk Variable',ui-sans-serif,system-ui,sans-serif;font-variant-numeric:tabular-nums;width:232px;background:var(--rail,#16171b);padding-bottom:12px}.ds-rail-label{padding:20px 20px 6px;font-size:11px;line-height:16px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--rail-muted,#80838c)}.ds-rail-item{position:relative;display:flex;align-items:center;gap:8px;height:32px;padding:0 20px;font-size:13px;color:var(--rail-foreground,#b6b8bf);text-decoration:none;transition:background-color 100ms,color 100ms}.ds-rail-item span:first-child{flex:1}.ds-rail-item:hover{background:var(--rail-active,#24262c);color:#fff}.ds-rail-item:focus-visible{outline:2px solid var(--ring,#a72145);outline-offset:-2px}.ds-rail-current{background:var(--rail-active,#24262c);color:#fff;font-weight:500}.ds-rail-current::before{content:'';position:absolute;inset:0 auto 0 0;width:2px;background:var(--brand,#a72145)}.ds-rail-count{font-size:12px;color:var(--rail-muted,#80838c)}"
+    },
+    {
+      "name": "Status Marks",
+      "kind": "chip",
+      "refersTo": "status-mark-finished",
+      "description": "Flat uppercase marks for run and job status.",
+      "html": "<div class=\"ds-marks\"><span class=\"ds-mark ds-ok\">Finished</span><span class=\"ds-mark ds-warn\">Finished with issues</span><span class=\"ds-mark ds-err\">Failed</span><span class=\"ds-mark ds-run\">Running</span><span class=\"ds-mark ds-created\">Created</span></div>",
+      "css": ".ds-marks{display:flex;flex-wrap:wrap;gap:8px}.ds-mark{font-family:'Hanken Grotesk Variable',ui-sans-serif,system-ui,sans-serif;font-variant-numeric:tabular-nums;display:inline-flex;align-items:center;height:20px;padding:0 6px;border-radius:1px;font-size:11px;line-height:16px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}.ds-ok{background:var(--ok-soft,#dcfae6);color:var(--ok,#067647)}.ds-warn{background:var(--warn-soft,#fef0c7);color:var(--warn,#b54708)}.ds-err{background:var(--err-soft,#fee4e2);color:var(--err,#c4321f)}.ds-run{background:var(--brand,#a72145);color:var(--brand-foreground,#fff)}.ds-created{background:var(--neutral-soft,#ededea);color:var(--muted-foreground,#62646b)}"
+    },
+    {
+      "name": "Severity Filter Chips",
+      "kind": "chip",
+      "refersTo": "filter-chip",
+      "description": "Text chips with severity squares and counts that filter a findings table.",
+      "html": "<div class=\"ds-chips\" role=\"group\"><button class=\"ds-chip\" aria-pressed=\"true\">All <span>14</span></button><span aria-hidden=\"true\">·</span><button class=\"ds-chip\" aria-pressed=\"false\"><i class=\"ds-sq\" style=\"background:var(--err,#c4321f)\"></i>Error <span>3</span></button><span aria-hidden=\"true\">·</span><button class=\"ds-chip\" aria-pressed=\"false\"><i class=\"ds-sq\" style=\"background:var(--warn,#b54708)\"></i>Warning <span>9</span></button><span aria-hidden=\"true\">·</span><button class=\"ds-chip\" aria-pressed=\"false\"><i class=\"ds-sq\" style=\"background:var(--muted-foreground,#62646b)\"></i>Hint <span>2</span></button></div>",
+      "css": ".ds-chips{font-family:'Hanken Grotesk Variable',ui-sans-serif,system-ui,sans-serif;font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:2px;font-size:13px;color:var(--muted-foreground,#62646b)}.ds-chip{display:flex;align-items:center;gap:6px;height:24px;padding:0 6px;border:0;border-radius:1px;background:transparent;color:inherit;font:inherit;cursor:pointer;transition:color 150ms,background-color 150ms}.ds-chip:hover{color:var(--foreground,#16171b)}.ds-chip[aria-pressed=true]{background:var(--muted,#f3f3f1);color:var(--foreground,#16171b);font-weight:500}.ds-chip:focus-visible{outline:2px solid var(--ring,#a72145);outline-offset:1px}.ds-sq{display:inline-block;width:8px;height:8px}"
+    },
+    {
+      "name": "Findings Table",
+      "kind": "custom",
+      "refersTo": "table-head",
+      "description": "Ink-ruled findings grid with severity marks, mono identifiers, struck-through resolved rows and a crimson selected-row bar.",
+      "html": "<div class=\"ds-grid\" role=\"grid\"><div class=\"ds-gh\" role=\"row\"><span>Severity</span><span>Rule</span><span>Package</span></div><div class=\"ds-gr\" role=\"row\"><span class=\"ds-sev\"><i style=\"background:var(--err,#c4321f)\"></i>Error</span><span class=\"ds-mono\">COPYLEFT_IN_SOURCE</span><span class=\"ds-mono\">Maven:ee.ria.misp2:misp2-web:2.6.0</span></div><div class=\"ds-gr ds-sel\" role=\"row\" aria-selected=\"true\"><span class=\"ds-sev\"><i style=\"background:var(--warn,#b54708)\"></i>Warning</span><span class=\"ds-mono\">COPYLEFT_LIMITED_IN_DEPS</span><span class=\"ds-mono\">Maven:org.mariadb…mariadb-java-client:2.7.4</span></div><div class=\"ds-gr\" role=\"row\"><span class=\"ds-res\">Resolved</span><span class=\"ds-mono ds-struck\">DEPRECATED_LICENSE</span><span class=\"ds-mono\">Maven:javax.servlet:javax.servlet-api:3.1.0</span></div></div>",
+      "css": ".ds-grid{font-family:'Hanken Grotesk Variable',ui-sans-serif,system-ui,sans-serif;font-variant-numeric:tabular-nums;display:grid;grid-template-columns:110px 1fr 1.4fr;column-gap:16px;font-size:13px;color:var(--foreground,#16171b)}.ds-gh,.ds-gr{display:grid;grid-template-columns:subgrid;grid-column:1/-1;align-items:center;padding:0 8px}.ds-gh{min-height:36px;border-top:1px solid var(--foreground,#16171b);border-bottom:1px solid var(--border,#e4e4e0);font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-foreground,#62646b)}.ds-gr{min-height:36px;border-bottom:1px solid var(--border,#e4e4e0);transition:background-color 150ms}.ds-gr:hover{background:color-mix(in srgb,var(--muted,#f3f3f1) 60%,transparent)}.ds-sel{background:var(--muted,#f3f3f1);box-shadow:inset 2px 0 0 var(--brand,#a72145)}.ds-sev{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}.ds-sev i{width:8px;height:8px}.ds-res{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ok,#067647)}.ds-mono{font-family:'JetBrains Mono Variable',ui-monospace,Menlo,monospace;font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ds-struck{color:var(--muted-foreground,#62646b);text-decoration:line-through}"
+    },
+    {
+      "name": "Run Timeline",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "The run's jobs as ORT-coloured segments on one time axis under an ink rule.",
+      "html": "<section class=\"ds-tl\" aria-label=\"Run timeline\"><div class=\"ds-tl-top\"><span class=\"ds-tl-cap\">Run timeline · 5 jobs</span><span class=\"ds-tl-st\"><b>11:35</b> Finished with issues</span></div><div class=\"ds-tl-labels\"><span style=\"left:1%\"><b>Analyzer</b> 2m 04s</span><span style=\"left:21%\"><b>Scanner</b> 6m 52s</span><span style=\"left:82%\"><b>Evaluator</b> 18s</span></div><div class=\"ds-tl-track\"><i style=\"left:1%;width:18%;background:var(--analyzer,rgb(0,175,170))\"></i><i style=\"left:21%;width:6%;background:var(--advisor,rgb(153,123,183))\"></i><i style=\"left:27%;width:55%;background:var(--scanner,rgb(209,78,96))\"></i><i style=\"left:82%;width:3%;background:var(--evaluator,rgb(51,153,204))\"></i><i style=\"left:86%;width:13%;background:var(--reporter,rgb(242,144,86))\"></i></div><div class=\"ds-tl-axis\"><span>0:00</span><span>11:35</span></div></section>",
+      "css": ".ds-tl{font-family:'Hanken Grotesk Variable',ui-sans-serif,system-ui,sans-serif;font-variant-numeric:tabular-nums;width:560px;border-top:1px solid var(--foreground,#16171b);padding-top:8px;color:var(--foreground,#16171b)}.ds-tl-top{display:flex;justify-content:space-between;font-size:11px;line-height:16px;font-weight:500;letter-spacing:.06em;text-transform:uppercase}.ds-tl-cap{color:var(--muted-foreground,#62646b)}.ds-tl-st{color:var(--warn,#b54708);font-weight:600}.ds-tl-st b{color:var(--foreground,#16171b);margin-right:6px}.ds-tl-labels{position:relative;height:36px;margin-top:8px;font-size:12px;line-height:16px}.ds-tl-labels span{position:absolute;bottom:0;height:36px;display:flex;align-items:flex-end;gap:6px;padding-left:6px;border-left:1px solid var(--foreground,#16171b);white-space:nowrap;color:var(--muted-foreground,#62646b)}.ds-tl-labels b{color:var(--foreground,#16171b);font-weight:600}.ds-tl-track{position:relative;height:6px;background:var(--border,#e4e4e0)}.ds-tl-track i{position:absolute;top:0;height:6px;transform-origin:left;animation:ds-draw 700ms cubic-bezier(.16,1,.3,1) both}.ds-tl-axis{display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:var(--muted-foreground,#62646b)}.ds-tl-axis span:last-child{color:var(--foreground,#16171b);font-weight:500}@keyframes ds-draw{from{transform:scaleX(0)}}@media (prefers-reduced-motion:reduce){.ds-tl-track i{animation:none}}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Work Sheet",
+    "overview": "Every screen is a white work sheet laid on a pale ground, set beside a full-height ink rail that carries navigation. The sheet is printed matter more than an app surface: 1px hairlines separate everything, corners are near-square, nothing floats at rest, and numbers are set in tabular figures so columns of counts and durations line up. The tool is built for long desk sessions over large tables of findings, so density is high and ornament is absent; colour is reserved for meaning.\n\nColour has strict owners. Crimson belongs to the brand and to \"where you are now\". The five ORT job colours belong to jobs. Green, amber and red belong to run and job status. A separate severity ramp belongs to findings. Ecosystems get ink tones so they never borrow a meaning. Links are ink, not blue.\n\nThe system replaced the earlier shadcn look outright. It rejects the admin-template vocabulary of stat-card tiles, card grids and blue links: summary figures stand in a row divided by hairlines, and lists are tables, not cards.",
+    "keyCharacteristics": [
+      "White sheet on a warm pale ground; ink navigation rail in both modes.",
+      "1px hairlines and a heavier ink rule heading timelines and tables; 2px corners at most on working surfaces.",
+      "Flat at rest; soft shadows only on floating layers (menus, popovers, dialogs, toasts).",
+      "Hanken Grotesk with tabular figures throughout; JetBrains Mono for identifiers.",
+      "Colour is semantic: crimson for position, job colours for jobs, status and severity ramps for state.",
+      "States are printed marks: flat uppercase status marks, small severity squares, resolved findings struck through."
+    ],
+    "rules": [
+      {
+        "name": "The One Crimson Rule",
+        "body": "Crimson marks the brand, the current position and the live state. It never fills a button, never colours a link, never decorates a heading.",
+        "section": "colors"
+      },
+      {
+        "name": "The Owned Colour Rule",
+        "body": "Every hue has one owner: job colours mark jobs, the status family marks status, the severity ramp marks severity. Ecosystems are set in ink tones (ink at 100/60/40/25%) so no meaningful colour is spent on them.",
+        "section": "colors"
+      },
+      {
+        "name": "The Ink Link Rule",
+        "body": "Entity links are ink at medium weight with no underline; a 1px underline at 45% ink arrives on hover, 3px below the baseline.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Figures Rule",
+        "body": "Figures are tabular everywhere (set on the body). Counts sit right next to their labels, never inside pills.",
+        "section": "typography"
+      },
+      {
+        "name": "The Label Earns Its Caps Rule",
+        "body": "Uppercase small labels name a column, a figure, a field or a group. They are not decorative eyebrows above page headings.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Sheet Rule",
+        "body": "Nothing on the sheet casts a shadow at rest or on hover. If it doesn't float over the sheet, it's flat.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** set every page on a white sheet over the ground (#f3f3f1) with the ink rail beside it, in both light and dark mode.",
+      "**Do** keep crimson to the brand, the current position (active rail item, active tab, selected row) and live state.",
+      "**Do** colour jobs only with their ORT job colours, and use the status family and severity ramp only for status and severity.",
+      "**Do** separate with 1px hairlines and head data blocks with an ink rule.",
+      "**Do** keep corners at 2px (1px for marks and chips).",
+      "**Do** set identifiers in JetBrains Mono and truncate long package IDs in the middle.",
+      "**Do** strike through resolved findings and leave unresolved ones unmarked.",
+      "**Do** use the product's own terms in labels: run, job, run timeline, rule violations, vulnerabilities."
+    ],
+    "donts": [
+      "**Don't** put summary figures in stat-card tiles or lay content out as card grids.",
+      "**Don't** colour links blue or underline them at rest.",
+      "**Don't** add shadows to anything that sits on the sheet; shadows belong to menus, popovers, dialogs and toasts.",
+      "**Don't** spend a job, status or severity colour on decoration or on ecosystems.",
+      "**Don't** use pill shapes or rounded corners above 4px.",
+      "**Don't** put uppercase eyebrow labels above page headings.",
+      "**Don't** name or mimic a visual metaphor in copy (no mission or flight terms, no \"T+\" clocks, no skeuomorphic controls)."
+    ]
+  }
+}
