@@ -19,7 +19,7 @@
 
 // @vitest-environment jsdom
 
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { Suspense } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -28,11 +28,12 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { RepositoryRunsTable } from '@/routes/organizations/$orgId/products/$productId/repositories/$repoId/-components/repository-runs-table';
 import { renderInteractiveWithRouter } from '../fixtures/render-interactive';
 
-type DiffDialogProps = {
+type ComparisonDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  baseRunIndex: number;
-  comparedRunIndex: number;
+  baseRunIndex?: number;
+  comparedRunIndex?: number;
+  knownRuns?: OrtRunSummary[];
 };
 
 const mocks = vi.hoisted(() => ({
@@ -86,21 +87,35 @@ vi.mock('@/components/ort-run-job-status', () => ({
 
 vi.mock(
   '@/routes/organizations/$orgId/products/$productId/repositories/$repoId/-components/run-item-counts',
-  () => ({ RunItemCounts: () => null })
+  () => ({
+    RunItemCounts: ({
+      summary,
+      previous,
+    }: {
+      summary: OrtRunSummary;
+      previous?: OrtRunSummary;
+    }) => (
+      <span>
+        Counts of run {summary.index} since run {previous?.index ?? 'none'}
+      </span>
+    ),
+  })
 );
 
 vi.mock(
-  '@/routes/organizations/$orgId/products/$productId/repositories/$repoId/-components/run-configuration-diff-dialog',
+  '@/routes/organizations/$orgId/products/$productId/repositories/$repoId/-components/run-comparison-dialog',
   () => ({
-    RunConfigurationDiffDialog: ({
+    RunComparisonDialog: ({
       open,
       onOpenChange,
       baseRunIndex,
       comparedRunIndex,
-    }: DiffDialogProps) =>
+      knownRuns,
+    }: ComparisonDialogProps) =>
       open ? (
         <div role='dialog'>
-          Comparing run {baseRunIndex} with run {comparedRunIndex}
+          Comparing run {baseRunIndex ?? 'none'} with run {comparedRunIndex} of{' '}
+          {knownRuns?.map((run) => run.index).join(',')}
           <button type='button' onClick={() => onOpenChange(false)}>
             Close
           </button>
@@ -108,10 +123,6 @@ vi.mock(
       ) : null,
   })
 );
-
-const selectedLabel = 'Selected for comparison';
-const selectBaseLabel = 'Select the base run for comparison';
-const selectComparedLabel = 'Select the run to compare against the base run';
 
 const createRun = (
   index: number,
@@ -136,7 +147,7 @@ const runs = (...summaries: OrtRunSummary[]) => ({
   },
 });
 
-const renderTable = () =>
+const renderTable = (pageSize = 10) =>
   renderInteractiveWithRouter(
     <Suspense>
       <TooltipProvider>
@@ -145,7 +156,7 @@ const renderTable = () =>
           productId='2'
           repoId='3'
           pageIndex={0}
-          pageSize={10}
+          pageSize={pageSize}
           search={{}}
         />
       </TooltipProvider>
@@ -156,15 +167,6 @@ const renderTable = () =>
       withQueryClient: true,
     }
   );
-
-// Find the comparison toggle in the row of the run with the given index.
-const findToggle = async (runIndex: number) => {
-  const link = await screen.findByRole('link', { name: `${runIndex}` });
-
-  return within(link.closest('tr')!).getByRole('button', {
-    name: /comparison|compare/,
-  });
-};
 
 describe('RepositoryRunsTable', () => {
   beforeEach(() => {
@@ -199,60 +201,62 @@ describe('RepositoryRunsTable', () => {
     );
   });
 
-  it('marks the base run and offers the other runs for comparison', async () => {
-    const { user } = renderTable();
+  it('loads one run more than the page shows to show the change of the last row', async () => {
+    renderTable(2);
 
-    for (const runIndex of [1, 2, 3]) {
-      expect(await findToggle(runIndex)).toHaveAccessibleName(selectBaseLabel);
-    }
-
-    await user.click(await findToggle(2));
-
-    await waitFor(async () =>
-      expect(await findToggle(2)).toHaveAccessibleName(selectedLabel)
+    expect(
+      await screen.findByText('Counts of run 3 since run 2')
+    ).toBeVisible();
+    expect(screen.getByText('Counts of run 2 since run 1')).toBeVisible();
+    expect(screen.queryByRole('link', { name: '1' })).not.toBeInTheDocument();
+    expect(mocks.runs).toHaveBeenCalledWith(
+      expect.objectContaining({
+        query: { limit: 3, offset: 0, sort: '-index' },
+      })
     );
-    expect(await findToggle(2)).toHaveAttribute('aria-pressed', 'true');
-    for (const runIndex of [1, 3]) {
-      const toggle = await findToggle(runIndex);
-
-      expect(toggle).toHaveAccessibleName(selectComparedLabel);
-      expect(toggle).toHaveAttribute('aria-pressed', 'false');
-    }
   });
 
-  it('compares two selected runs and clears the selection afterwards', async () => {
+  it('has no change for the oldest run', async () => {
+    renderTable();
+
+    expect(
+      await screen.findByText('Counts of run 1 since run none')
+    ).toBeVisible();
+  });
+
+  it('compares a run with the run before it', async () => {
     const { user } = renderTable();
 
-    await user.click(await findToggle(1));
-    await user.click(await findToggle(3));
+    await user.click(
+      await screen.findByRole('button', { name: 'Compare run 2…' })
+    );
 
     expect(await screen.findByRole('dialog')).toHaveTextContent(
-      'Comparing run 1 with run 3'
+      'Comparing run 1 with run 2 of 3,2,1'
     );
-    for (const runIndex of [1, 3]) {
-      expect(await findToggle(runIndex)).toHaveAttribute(
-        'aria-pressed',
-        'true'
-      );
-    }
 
     await user.click(screen.getByRole('button', { name: 'Close' }));
 
     await waitFor(() =>
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     );
-    for (const runIndex of [1, 2, 3]) {
-      const toggle = await findToggle(runIndex);
-
-      expect(toggle).toHaveAccessibleName(selectBaseLabel);
-      expect(toggle).toHaveAttribute('aria-pressed', 'false');
-    }
   });
 
-  it('shows polled data and keeps the selection', async () => {
+  it('leaves the run before open for the oldest run', async () => {
     const { user } = renderTable();
 
-    await user.click(await findToggle(2));
+    await user.click(
+      await screen.findByRole('button', { name: 'Compare run 1…' })
+    );
+
+    expect(await screen.findByRole('dialog')).toHaveTextContent(
+      'Comparing run none with run 1'
+    );
+  });
+
+  it('shows polled data', async () => {
+    renderTable();
+
     expect(await screen.findByText('Running')).toBeVisible();
 
     mocks.runs.mockResolvedValue(
@@ -265,9 +269,6 @@ describe('RepositoryRunsTable', () => {
 
     expect(await screen.findByText('Failed')).toBeVisible();
     expect(screen.queryByText('Running')).not.toBeInTheDocument();
-    expect(await findToggle(2)).toHaveAccessibleName(selectedLabel);
-    expect(await findToggle(2)).toHaveAttribute('aria-pressed', 'true');
-    expect(await findToggle(3)).toHaveAccessibleName(selectComparedLabel);
   });
 
   it('offers to rerun each run', async () => {

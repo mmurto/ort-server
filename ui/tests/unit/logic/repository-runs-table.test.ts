@@ -21,52 +21,46 @@ import { describe, expect, it } from 'vitest';
 
 import type { OrtRunSummary } from '@/api';
 import {
+  compareWithPreviousRun,
   emptyRunComparisonSelection,
-  resetRunComparisonSelection,
-  selectRunForComparison,
+  getPreviousRun,
 } from '@/routes/organizations/$orgId/products/$productId/repositories/$repoId/-components/repository-runs-table-utils';
 
 const runSummary = (index: number) => ({ index }) as OrtRunSummary;
 
-describe('resetRunComparisonSelection', () => {
-  it('clears selected runs and closes the dialog', () => {
-    expect(resetRunComparisonSelection()).toEqual({
-      isDialogOpen: false,
-    });
+// Sorted like the runs table, newest first; run 3 was deleted.
+const runs = [runSummary(5), runSummary(4), runSummary(2)];
+
+describe('getPreviousRun', () => {
+  it('returns the run listed after the given one', () => {
+    expect(getPreviousRun(runs, 5)).toBe(runs[1]);
+    expect(getPreviousRun(runs, 4)).toBe(runs[2]);
+  });
+
+  it('returns nothing for the last listed run or an unknown run', () => {
+    expect(getPreviousRun(runs, 2)).toBeUndefined();
+    expect(getPreviousRun(runs, 9)).toBeUndefined();
   });
 });
 
-describe('selectRunForComparison', () => {
-  it('clears the selection when selecting the base run again', () => {
-    expect(
-      selectRunForComparison(
-        { baseRun: runSummary(1), isDialogOpen: false },
-        runSummary(1)
-      )
-    ).toEqual({
-      isDialogOpen: false,
-    });
-  });
-
-  it('selects the first run as the base run', () => {
-    expect(
-      selectRunForComparison(emptyRunComparisonSelection, runSummary(1))
-    ).toEqual({
-      baseRun: runSummary(1),
-      isDialogOpen: false,
-    });
-  });
-
-  it('selects the second run and opens the dialog', () => {
-    expect(
-      selectRunForComparison(
-        { baseRun: runSummary(1), isDialogOpen: false },
-        runSummary(2)
-      )
-    ).toEqual({
-      baseRun: runSummary(1),
-      comparedRun: runSummary(2),
+describe('compareWithPreviousRun', () => {
+  it('compares a run with the run before it and opens the dialog', () => {
+    expect(compareWithPreviousRun(runs, 4)).toEqual({
+      baseRunIndex: 2,
+      comparedRunIndex: 4,
       isDialogOpen: true,
     });
+  });
+
+  it('leaves the base run open when there is no run before it', () => {
+    expect(compareWithPreviousRun(runs, 2)).toEqual({
+      baseRunIndex: undefined,
+      comparedRunIndex: 2,
+      isDialogOpen: true,
+    });
+  });
+
+  it('starts closed without runs', () => {
+    expect(emptyRunComparisonSelection).toEqual({ isDialogOpen: false });
   });
 });

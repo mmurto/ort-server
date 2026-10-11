@@ -17,6 +17,8 @@
  * License-Filename: LICENSE
  */
 
+// @vitest-environment jsdom
+
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -52,8 +54,10 @@ const mocks = vi.hoisted(() => ({
   suspend: false,
   itemCountsProps: undefined as ItemCountsProps | undefined,
   skeletonWide: undefined as boolean | undefined,
+  previousStatistics: undefined as Statistics | undefined,
   pendingPromise: new Promise<never>(() => undefined),
   useSuspenseQuery: vi.fn(),
+  useQuery: vi.fn(),
 }));
 
 vi.mock('@tanstack/react-query', async (importOriginal) => {
@@ -62,6 +66,7 @@ vi.mock('@tanstack/react-query', async (importOriginal) => {
   return {
     ...actual,
     useSuspenseQuery: mocks.useSuspenseQuery,
+    useQuery: mocks.useQuery,
   };
 });
 
@@ -89,8 +94,34 @@ const runSummary = {
   },
 } as OrtRunSummary;
 
-const renderItemCounts = (summary: OrtRunSummary = runSummary) =>
-  renderToStaticMarkup(<RunItemCounts summary={summary} />);
+const previousRun = {
+  ...runSummary,
+  id: 10,
+  index: 6,
+} as OrtRunSummary;
+
+const renderItemCounts = (
+  summary: OrtRunSummary = runSummary,
+  previous?: OrtRunSummary
+) =>
+  renderToStaticMarkup(<RunItemCounts summary={summary} previous={previous} />);
+
+// The visible delta and its description of the given category.
+const delta = (markup: string, key: string) => {
+  const container = document.createElement('div');
+  container.innerHTML = markup;
+  const element = container.querySelector(
+    `[data-testid="run-item-delta-${key}"]`
+  );
+
+  return (
+    element && {
+      text: element.querySelector('[aria-hidden]')?.textContent,
+      className: element.querySelector('[aria-hidden]')?.className,
+      description: element.querySelector('.sr-only')?.textContent,
+    }
+  );
+};
 
 describe('RunItemCounts', () => {
   beforeEach(() => {
@@ -103,6 +134,11 @@ describe('RunItemCounts', () => {
 
       return { data: mocks.statistics };
     });
+    mocks.previousStatistics = undefined;
+    mocks.useQuery.mockReset();
+    mocks.useQuery.mockImplementation(({ enabled }: { enabled: boolean }) => ({
+      data: enabled ? mocks.previousStatistics : undefined,
+    }));
   });
 
   it('renders wide item-count badges linked to the run findings', () => {
@@ -164,5 +200,68 @@ describe('RunItemCounts', () => {
       showVulnerabilities: false,
       showRuleViolations: false,
     });
+  });
+
+  it('shows no change without a previous run', () => {
+    const markup = renderItemCounts();
+
+    expect(markup).not.toContain('run-item-delta');
+    expect(mocks.useQuery).toHaveBeenCalledWith(
+      expect.objectContaining({ enabled: false })
+    );
+  });
+
+  it('shows the change of each count since the previous run', () => {
+    mocks.previousStatistics = {
+      issuesCount: 1,
+      vulnerabilitiesCount: 7,
+      ruleViolationsCount: 7,
+    };
+
+    const markup = renderItemCounts(runSummary, previousRun);
+
+    expect(delta(markup, 'issues')).toEqual({
+      text: '+2',
+      className: 'text-err',
+      description: '2 more than run 6',
+    });
+    expect(delta(markup, 'vulnerabilities')).toEqual({
+      text: '\u22122',
+      className: 'text-ok',
+      description: '2 fewer than run 6',
+    });
+    expect(delta(markup, 'ruleViolations')).toEqual({
+      text: '\u00b10',
+      className: 'text-muted-foreground',
+      description: 'Same as run 6',
+    });
+  });
+
+  it('shows no change for a job that has not finished in either run', () => {
+    mocks.previousStatistics = {
+      issuesCount: 1,
+      vulnerabilitiesCount: 7,
+      ruleViolationsCount: 7,
+    };
+
+    const markup = renderItemCounts(runSummary, {
+      ...previousRun,
+      jobs: {
+        ...previousRun.jobs,
+        advisor: { ...previousRun.jobs.advisor!, status: 'FAILED' },
+        evaluator: null,
+      },
+    });
+
+    expect(delta(markup, 'issues')?.text).toBe('+2');
+    expect(delta(markup, 'vulnerabilities')?.text).toBe('\u22122');
+    expect(delta(markup, 'ruleViolations')).toBeNull();
+  });
+
+  it('waits for the statistics of the previous run', () => {
+    const markup = renderItemCounts(runSummary, previousRun);
+
+    expect(markup).toContain('Item counts');
+    expect(markup).not.toContain('run-item-delta');
   });
 });

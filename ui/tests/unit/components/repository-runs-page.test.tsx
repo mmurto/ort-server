@@ -121,4 +121,44 @@ describe('repository runs page', () => {
       screen.queryByRole('link', { name: /Latest run/ })
     ).not.toBeInTheDocument();
   });
+
+  it('offers to compare runs once there are two', async () => {
+    renderPage([9, 8]);
+
+    expect(
+      await screen.findByRole('button', { name: 'Compare runs' })
+    ).toBeVisible();
+  });
+
+  it('offers no comparison with a single run', async () => {
+    renderPage([9]);
+
+    expect(
+      await screen.findByRole('link', { name: /Latest run/ })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Compare runs' })
+    ).not.toBeInTheDocument();
+  });
+
+  it('loads one run more than a page in the loader', async () => {
+    const queryClient = { prefetchQuery: vi.fn() };
+    const loader = Route.options.loader as (context: unknown) => Promise<void>;
+
+    await loader({
+      context: { queryClient },
+      params: { repoId: '3' },
+      deps: { page: 2, pageSize: 20 },
+    });
+
+    expect(queryClient.prefetchQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        queryKey: [
+          expect.objectContaining({
+            query: { limit: 21, offset: 20, sort: '-index' },
+          }),
+        ],
+      })
+    );
+  });
 });

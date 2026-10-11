@@ -39,6 +39,7 @@ import {
 import { useRepositoryPermission } from '@/hooks/use-authorization';
 import { getRepositoryTypeLabel } from '@/lib/types';
 import { RepositoryRunsTable } from '@/routes/organizations/$orgId/products/$productId/repositories/$repoId/-components';
+import { CompareRunsButton } from '@/routes/organizations/$orgId/products/$productId/repositories/$repoId/-components/run-comparison-dialog';
 import { paginationSearchParameterSchema } from '@/schemas';
 import { useTablePrefsStore } from '@/store/table-prefs.store';
 
@@ -78,6 +79,7 @@ const RepositoryRunsComponent = () => {
     }),
   });
   const latestRun = latestRuns?.data[0];
+  const canCompareRuns = (latestRuns?.pagination.totalCount ?? 0) >= 2;
 
   if (repoIsPending) {
     return <LoadingIndicator />;
@@ -195,7 +197,14 @@ const RepositoryRunsComponent = () => {
         pageIndex={pageIndex}
         pageSize={pageSize}
       />
-      <SheetSection title='Runs'>
+      <SheetSection
+        title='Runs'
+        actions={
+          canCompareRuns && (
+            <CompareRunsButton repositoryId={Number.parseInt(params.repoId)} />
+          )
+        }
+      >
         <RepositoryRunsTable
           orgId={params.orgId}
           productId={params.productId}
@@ -228,8 +237,9 @@ export const Route = createFileRoute(
       queryClient.prefetchQuery({
         ...getRepositoryRunsOptions({
           path: { repositoryId: Number.parseInt(params.repoId) },
+          // The table loads one row more than it shows; see `RepositoryRunsTable`.
           query: {
-            limit: pageSize || defaultPageSize,
+            limit: (pageSize || defaultPageSize) + 1,
             offset: page ? (page - 1) * (pageSize || defaultPageSize) : 0,
             sort: '-index',
           },

@@ -17,18 +17,6 @@
  * License-Filename: LICENSE
  */
 
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Separator } from '@/components/ui/separator';
 import type {
   RunConfigurationDiff,
   RunConfigurationDiffEntry,
@@ -40,11 +28,7 @@ import {
   formatRunConfigurationDiffValue,
 } from './run-configuration-diff-dialog-utils';
 
-type RunConfigurationDiffDialogProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  baseRunIndex: number;
-  comparedRunIndex: number;
+type RunConfigurationDiffViewProps = {
   diff?: RunConfigurationDiff;
   isLoading?: boolean;
   isError?: boolean;
@@ -155,13 +139,10 @@ const RunConfigurationDiffContent = ({
   isLoading,
   isError,
   isConfigurationMissing,
-}: Pick<
-  RunConfigurationDiffDialogProps,
-  'diff' | 'isLoading' | 'isError' | 'isConfigurationMissing'
->) => {
+}: RunConfigurationDiffViewProps) => {
   if (isLoading) {
     return (
-      <p className='text-muted-foreground text-sm'>
+      <p className='text-muted-foreground text-[0.8125rem]'>
         Loading run configurations...
       </p>
     );
@@ -169,7 +150,7 @@ const RunConfigurationDiffContent = ({
 
   if (isError) {
     return (
-      <p className='text-destructive text-sm'>
+      <p className='text-err text-[0.8125rem]'>
         Unable to load one or both selected runs.
       </p>
     );
@@ -177,7 +158,7 @@ const RunConfigurationDiffContent = ({
 
   if (isConfigurationMissing) {
     return (
-      <p className='text-muted-foreground text-sm'>
+      <p className='text-muted-foreground text-[0.8125rem]'>
         Resolved job configuration is not available for one of the selected
         runs.
       </p>
@@ -186,7 +167,7 @@ const RunConfigurationDiffContent = ({
 
   if (!diff) {
     return (
-      <p className='text-muted-foreground text-sm'>
+      <p className='text-muted-foreground text-[0.8125rem]'>
         Select two runs to compare.
       </p>
     );
@@ -194,7 +175,7 @@ const RunConfigurationDiffContent = ({
 
   if (diff.counts.total === 0) {
     return (
-      <p className='text-muted-foreground text-sm'>
+      <p className='text-muted-foreground text-[0.8125rem]'>
         The resolved job configurations are identical.
       </p>
     );
@@ -221,55 +202,31 @@ const RunConfigurationDiffContent = ({
   );
 };
 
-export function RunConfigurationDiffDialog({
-  open,
-  onOpenChange,
-  baseRunIndex,
-  comparedRunIndex,
+/**
+ * The changes in the resolved job configurations between two runs, grouped into added, removed and
+ * modified settings, with a one-line summary above.
+ */
+export function RunConfigurationDiffView({
   diff,
   isLoading,
   isError,
   isConfigurationMissing,
-}: RunConfigurationDiffDialogProps) {
+}: RunConfigurationDiffViewProps) {
+  const showSummary = diff && !isLoading && !isError && !isConfigurationMissing;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='grid max-h-[min(calc(100vh-4rem),48rem)] grid-rows-[auto_auto_minmax(0,1fr)_auto] overflow-hidden sm:max-w-4xl'>
-        <DialogHeader>
-          <DialogTitle>
-            Compare run #{baseRunIndex} (before) with run #{comparedRunIndex}{' '}
-            (after)
-          </DialogTitle>
-          <DialogDescription>
-            Changes in the resolved job configurations for the selected runs.
-          </DialogDescription>
-          {diff && !isLoading && !isError && !isConfigurationMissing && (
-            <div className='flex flex-wrap gap-2 text-sm'>
-              <Badge variant='secondary'>
-                {formatRunConfigurationDiffSummary(diff)}
-              </Badge>
-            </div>
-          )}
-        </DialogHeader>
-
-        <Separator />
-
-        <div className='min-h-0 overflow-y-auto overscroll-contain pr-2'>
-          <RunConfigurationDiffContent
-            diff={diff}
-            isLoading={isLoading}
-            isError={isError}
-            isConfigurationMissing={isConfigurationMissing}
-          />
-        </div>
-
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button type='button' variant='outline'>
-              Close
-            </Button>
-          </DialogClose>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <div className='flex flex-col gap-3'>
+      {showSummary && (
+        <p className='text-muted-foreground text-[0.8125rem] tabular-nums'>
+          {formatRunConfigurationDiffSummary(diff)}
+        </p>
+      )}
+      <RunConfigurationDiffContent
+        diff={diff}
+        isLoading={isLoading}
+        isError={isError}
+        isConfigurationMissing={isConfigurationMissing}
+      />
+    </div>
   );
 }

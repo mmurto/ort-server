@@ -19,9 +19,10 @@
 
 import type { OrtRunSummary } from '@/api';
 
+/** The runs picked for a comparison, by index. Either may still be unset. */
 export type RunComparisonSelection = {
-  baseRun?: OrtRunSummary;
-  comparedRun?: OrtRunSummary;
+  baseRunIndex?: number;
+  comparedRunIndex?: number;
   isDialogOpen: boolean;
 };
 
@@ -29,29 +30,28 @@ export const emptyRunComparisonSelection: RunComparisonSelection = {
   isDialogOpen: false,
 };
 
-export const resetRunComparisonSelection = (): RunComparisonSelection => ({
-  isDialogOpen: false,
-});
+/**
+ * The run listed after the given one in a list sorted by descending index, which is the run before
+ * it. Returns undefined when the run is the last one of the list.
+ */
+export const getPreviousRun = (
+  runs: readonly OrtRunSummary[],
+  runIndex: number
+): OrtRunSummary | undefined => {
+  const position = runs.findIndex((run) => run.index === runIndex);
 
-export const selectRunForComparison = (
-  selection: RunComparisonSelection,
-  summary: OrtRunSummary
-): RunComparisonSelection => {
-  if (!selection.baseRun) {
-    return { baseRun: summary, isDialogOpen: false };
-  }
-
-  if (selection.baseRun.index === summary.index) {
-    return resetRunComparisonSelection();
-  }
-
-  if (!selection.comparedRun) {
-    return {
-      baseRun: selection.baseRun,
-      comparedRun: summary,
-      isDialogOpen: true,
-    };
-  }
-
-  return selection;
+  return position === -1 ? undefined : runs[position + 1];
 };
+
+/**
+ * Open a comparison of a run with the run before it: the previous run is the base ("before") and
+ * the run itself the compared one ("after").
+ */
+export const compareWithPreviousRun = (
+  runs: readonly OrtRunSummary[],
+  runIndex: number
+): RunComparisonSelection => ({
+  baseRunIndex: getPreviousRun(runs, runIndex)?.index,
+  comparedRunIndex: runIndex,
+  isDialogOpen: true,
+});

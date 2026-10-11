@@ -33,7 +33,6 @@ import {
   getOrganizationOptions,
   getProductOptions,
   getRepositoryOptions,
-  getRepositoryRunOptions,
   getRepositoryRunsOptions,
 } from '@/api/@tanstack/react-query.gen';
 import { DataTable } from '@/components/data-table/data-table';
@@ -55,14 +54,12 @@ import {
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Toggle } from '@/components/ui/toggle';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { config } from '@/config';
-import { diffResolvedJobConfigs } from '@/helpers/config-diff';
 import { isRunFinished } from '@/helpers/job-helpers';
 import {
   createAppColumnHelper,
@@ -76,13 +73,12 @@ import { toast, toastError } from '@/lib/toast';
 import { buildRunFavorite } from '@/providers/home-data';
 import { useTablePrefsStore } from '@/store/table-prefs.store';
 import {
+  compareWithPreviousRun,
   emptyRunComparisonSelection,
-  resetRunComparisonSelection,
-  selectRunForComparison,
-  type RunComparisonSelection,
+  getPreviousRun,
 } from './repository-runs-table-utils';
 import { RerunButton } from './rerun-button';
-import { RunConfigurationDiffDialog } from './run-configuration-diff-dialog';
+import { RunComparisonDialog } from './run-comparison-dialog';
 import { RunItemCounts } from './run-item-counts';
 
 type RepositoryTableProps = {
@@ -98,66 +94,17 @@ type RepositoryTableProps = {
 };
 
 type RunComparisonContext = {
-  selection: RunComparisonSelection;
-  onSelectRun: (summary: OrtRunSummary) => void;
+  /** The run before the given one, from the rows of the page and the row after them. */
+  getPreviousRun: (runIndex: number) => OrtRunSummary | undefined;
+  onCompare: (runIndex: number) => void;
 };
 
 const pollInterval = config.pollInterval;
 
 const columnHelper = createAppColumnHelper<OrtRunSummary>();
 
-const RunComparisonToggle = ({
-  summary,
-  comparison,
-}: {
-  summary: OrtRunSummary;
-  comparison: RunComparisonContext;
-}) => {
-  const isSelectedForComparison =
-    comparison.selection.baseRun?.index === summary.index ||
-    comparison.selection.comparedRun?.index === summary.index;
-
-  const comparisonTooltip = isSelectedForComparison
-    ? 'Selected for comparison'
-    : comparison.selection.baseRun
-      ? 'Select the run to compare against the base run'
-      : 'Select the base run for comparison';
-
-  const handleComparisonPressedChange = () => {
-    comparison.onSelectRun(summary);
-  };
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Toggle
-          aria-label={comparisonTooltip}
-          className={
-            isSelectedForComparison
-              ? 'border-brand text-brand data-[state=on]:text-brand'
-              : undefined
-          }
-          pressed={isSelectedForComparison}
-          variant='outline'
-          size='xs'
-          onPressedChange={handleComparisonPressedChange}
-        >
-          <GitCompare className='size-3.5' />
-        </Toggle>
-      </TooltipTrigger>
-      <TooltipContent>{comparisonTooltip}</TooltipContent>
-    </Tooltip>
-  );
-};
-
 /** The revision of a run, with its configuration context and labels folded below. */
-const RevisionCell = ({
-  summary,
-  comparison,
-}: {
-  summary: OrtRunSummary;
-  comparison: RunComparisonContext;
-}) => {
+const RevisionCell = ({ summary }: { summary: OrtRunSummary }) => {
   const hasLabels = Object.keys(summary.labels).length > 0;
 
   return (
@@ -174,9 +121,6 @@ const RevisionCell = ({
           <AccordionTrigger
             className='text-muted-foreground hover:text-foreground flex-none items-center gap-1 py-0 text-[0.8125rem] font-normal hover:no-underline [&>svg]:size-3.5 [&>svg]:translate-y-0'
             headerClassName='items-center gap-2'
-            beforeTrigger={
-              <RunComparisonToggle summary={summary} comparison={comparison} />
-            }
           >
             Configuration
           </AccordionTrigger>
@@ -327,16 +271,19 @@ const createColumns = (
       id: 'findings',
       header: 'Findings',
       size: 190,
-      cell: ({ row }) => <RunItemCounts summary={row.original} />,
+      cell: ({ row }) => (
+        <RunItemCounts
+          summary={row.original}
+          previous={comparison.getPreviousRun(row.original.index)}
+        />
+      ),
       enableColumnFilter: false,
     }),
     columnHelper.display({
       id: 'revision',
       header: 'Revision',
       minSize: 220,
-      cell: ({ row }) => (
-        <RevisionCell summary={row.original} comparison={comparison} />
-      ),
+      cell: ({ row }) => <RevisionCell summary={row.original} />,
       meta: {
         isGrow: true,
       },
@@ -366,7 +313,7 @@ const createColumns = (
     columnHelper.display({
       id: 'actions',
       header: 'Actions',
-      size: 124,
+      size: 156,
       cell: function Row({ row }) {
         const queryClient = useQueryClient();
 
@@ -436,6 +383,21 @@ const createColumns = (
               </TooltipTrigger>
               <TooltipContent>View the details of this run</TooltipContent>
             </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant='outline'
+                  size='icon'
+                  aria-label={`Compare run ${row.original.index}…`}
+                  onClick={() => comparison.onCompare(row.original.index)}
+                >
+                  <GitCompare />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                Compare findings and configuration with another run
+              </TooltipContent>
+            </Tooltip>
             <RerunButton
               orgId={row.original.organizationId.toString()}
               productId={row.original.productId.toString()}
@@ -478,16 +440,11 @@ export const RepositoryRunsTable = ({
     emptyRunComparisonSelection
   );
 
-  const handleSelectRunForComparison = (summary: OrtRunSummary) => {
-    setComparisonSelection((selection) =>
-      selectRunForComparison(selection, summary)
-    );
-  };
-
   const handleComparisonDialogOpenChange = (open: boolean) => {
-    if (!open) {
-      setComparisonSelection(resetRunComparisonSelection());
-    }
+    setComparisonSelection((selection) => ({
+      ...selection,
+      isDialogOpen: open,
+    }));
   };
 
   const { data: organization } = useQuery({
@@ -508,40 +465,6 @@ export const RepositoryRunsTable = ({
     }),
   });
 
-  const selectedBaseRunIndex = comparisonSelection.baseRun?.index;
-  const selectedComparedRunIndex = comparisonSelection.comparedRun?.index;
-  const hasSelectedRunPair =
-    selectedBaseRunIndex !== undefined &&
-    selectedComparedRunIndex !== undefined;
-
-  const baseRunQuery = useQuery({
-    ...getRepositoryRunOptions({
-      path: {
-        repositoryId,
-        ortRunIndex: selectedBaseRunIndex ?? 0,
-      },
-    }),
-    enabled: hasSelectedRunPair,
-  });
-
-  const comparedRunQuery = useQuery({
-    ...getRepositoryRunOptions({
-      path: {
-        repositoryId,
-        ortRunIndex: selectedComparedRunIndex ?? 0,
-      },
-    }),
-    enabled: hasSelectedRunPair,
-  });
-
-  const columns = createColumns(
-    { organization, product, repository },
-    {
-      selection: comparisonSelection,
-      onSelectRun: handleSelectRunForComparison,
-    }
-  );
-
   const {
     data: runs,
     error: runsError,
@@ -552,7 +475,13 @@ export const RepositoryRunsTable = ({
       path: {
         repositoryId,
       },
-      query: { limit: pageSize, offset: pageIndex * pageSize, sort: '-index' },
+      // One row more than the page shows, so that the last row can show the change since the
+      // run before it.
+      query: {
+        limit: pageSize + 1,
+        offset: pageIndex * pageSize,
+        sort: '-index',
+      },
     }),
     // Poll only while a listed run can still change.
     refetchInterval: (query) =>
@@ -561,9 +490,21 @@ export const RepositoryRunsTable = ({
         : false,
   });
 
+  const loadedRuns = runs?.data ?? [];
+  const pageRuns = loadedRuns.slice(0, pageSize);
+
+  const columns = createColumns(
+    { organization, product, repository },
+    {
+      getPreviousRun: (runIndex) => getPreviousRun(loadedRuns, runIndex),
+      onCompare: (runIndex) =>
+        setComparisonSelection(compareWithPreviousRun(loadedRuns, runIndex)),
+    }
+  );
+
   const table = useAppTable(
     {
-      data: runs?.data || [],
+      data: pageRuns,
       columns,
       pageCount: Math.ceil((runs?.pagination.totalCount ?? 0) / pageSize),
       state: {
@@ -577,13 +518,6 @@ export const RepositoryRunsTable = ({
     selectNoTableState
   );
 
-  const baseConfig = baseRunQuery.data?.resolvedJobConfigs;
-  const comparedConfig = comparedRunQuery.data?.resolvedJobConfigs;
-  const comparisonDiff =
-    baseConfig && comparedConfig
-      ? diffResolvedJobConfigs(baseConfig, comparedConfig)
-      : undefined;
-
   if (runsIsPending) {
     return <LoadingIndicator />;
   }
@@ -591,18 +525,6 @@ export const RepositoryRunsTable = ({
   if (runsIsError) {
     return <LoadError error={runsError} />;
   }
-
-  const selectedBaseRun = comparisonSelection.baseRun;
-  const selectedComparedRun = comparisonSelection.comparedRun;
-  const canRenderComparisonDialog =
-    selectedBaseRun !== undefined && selectedComparedRun !== undefined;
-
-  const isComparisonConfigurationMissing = Boolean(
-    baseRunQuery.data &&
-    comparedRunQuery.data &&
-    (!baseRunQuery.data.resolvedJobConfigs ||
-      !comparedRunQuery.data.resolvedJobConfigs)
-  );
 
   return (
     <>
@@ -620,18 +542,14 @@ export const RepositoryRunsTable = ({
           };
         }}
       />
-      {canRenderComparisonDialog && (
-        <RunConfigurationDiffDialog
-          open={comparisonSelection.isDialogOpen}
-          onOpenChange={handleComparisonDialogOpenChange}
-          baseRunIndex={selectedBaseRun.index}
-          comparedRunIndex={selectedComparedRun.index}
-          diff={comparisonDiff}
-          isLoading={baseRunQuery.isPending || comparedRunQuery.isPending}
-          isError={baseRunQuery.isError || comparedRunQuery.isError}
-          isConfigurationMissing={isComparisonConfigurationMissing}
-        />
-      )}
+      <RunComparisonDialog
+        repositoryId={repositoryId}
+        open={comparisonSelection.isDialogOpen}
+        onOpenChange={handleComparisonDialogOpenChange}
+        baseRunIndex={comparisonSelection.baseRunIndex}
+        comparedRunIndex={comparisonSelection.comparedRunIndex}
+        knownRuns={loadedRuns}
+      />
     </>
   );
 };
