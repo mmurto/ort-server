@@ -328,7 +328,8 @@ export const EnvironmentDefinitionsFields = ({
               <Button
                 type='button'
                 variant='outline'
-                size='sm'
+                size='icon'
+                aria-label={`Remove ${card.schema.label} #${card.index + 1}`}
                 onClick={() => {
                   removeEnvironmentDefinition(card.schema.key, card.index);
                 }}

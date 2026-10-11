@@ -17,29 +17,20 @@
  * License-Filename: LICENSE
  */
 
-import { UseFormReturn } from 'react-hook-form';
+import { UseFormReturn, useWatch } from 'react-hook-form';
 
 import { PreconfiguredPluginDescriptor, Secret } from '@/api';
 import { PluginMultiSelectField } from '@/components/form/plugin-multi-select-field';
-import {
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import {
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-} from '@/components/ui/form';
-import { Switch } from '@/components/ui/switch';
 import { CreateRunFormValues } from '@/routes/organizations/$orgId/products/$productId/repositories/$repoId/_repo-layout/create-run/-components';
+import {
+  JobSection,
+  SwitchField,
+} from '@/routes/organizations/$orgId/products/$productId/repositories/$repoId/_repo-layout/create-run/-components/form-section';
+import { KEEP_ALIVE_DESCRIPTION } from '@/routes/organizations/$orgId/products/$productId/repositories/$repoId/_repo-layout/create-run/-components/form-sections';
+import { summarizePlugins } from '@/routes/organizations/$orgId/products/$productId/repositories/$repoId/_repo-layout/create-run/-components/section-summaries';
 
 type AdvisorFieldsProps = {
   form: UseFormReturn<CreateRunFormValues>;
-  value: string;
-  onToggle: () => void;
   advisorPlugins: PreconfiguredPluginDescriptor[];
   secrets: Secret[];
   isSuperuser: boolean;
@@ -47,96 +38,48 @@ type AdvisorFieldsProps = {
 
 export const AdvisorFields = ({
   form,
-  value,
-  onToggle,
   advisorPlugins,
   secrets,
   isSuperuser,
 }: AdvisorFieldsProps) => {
+  const advisors = useWatch({
+    control: form.control,
+    name: 'jobConfigs.advisor.advisors',
+  });
+
   return (
-    <div className='flex flex-row items-start gap-4 border-t'>
-      <FormField
+    <JobSection
+      control={form.control}
+      job='advisor'
+      summary={summarizePlugins(
+        advisors,
+        advisorPlugins,
+        'No advisors selected'
+      )}
+    >
+      <SwitchField
         control={form.control}
-        name='jobConfigs.advisor.enabled'
-        render={({ field }) => (
-          <FormItem>
-            <FormControl>
-              <Switch
-                className='mt-3.5'
-                checked={field.value}
-                onCheckedChange={field.onChange}
-              />
-            </FormControl>
-          </FormItem>
-        )}
+        name='jobConfigs.advisor.skipExcluded'
+        label='Skip excluded'
+        description='Skip the scopes and paths that are excluded.'
       />
-      <AccordionItem value={value} className='min-w-0 flex-1 border-b-0'>
-        <AccordionTrigger
-          onClick={onToggle}
-          className='items-center py-3 text-[0.9375rem] font-semibold hover:no-underline'
-        >
-          <span className='flex items-center gap-2'>
-            <span aria-hidden className='bg-advisor size-2 shrink-0' />
-            Advisor
-          </span>
-        </AccordionTrigger>
-        <AccordionContent className='flex flex-col gap-6'>
-          <FormField
-            control={form.control}
-            name='jobConfigs.advisor.skipExcluded'
-            render={({ field }) => (
-              <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
-                <div className='space-y-2'>
-                  <FormLabel>Skip excluded</FormLabel>
-                  <FormDescription>
-                    A flag to control whether excluded scopes and paths should
-                    be skipped by the advisor.
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <PluginMultiSelectField
-            form={form}
-            name='jobConfigs.advisor.advisors'
-            configName='jobConfigs.advisor.config'
-            label='Enabled advisors'
-            description={<>Select the advisors enabled for this run.</>}
-            plugins={advisorPlugins}
-            secrets={secrets}
-          />
-          {isSuperuser && (
-            <FormField
-              control={form.control}
-              name='jobConfigs.advisor.keepAliveWorker'
-              render={({ field }) => (
-                <FormItem className='mb-4 flex flex-row items-center justify-between rounded-lg border p-4'>
-                  <div className='space-y-0.5'>
-                    <FormLabel>Keep worker alive</FormLabel>
-                    <FormDescription>
-                      A flag to control whether the worker is kept alive for
-                      debugging purposes. This flag only has an effect if the
-                      ORT Server is deployed on Kubernetes.
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          )}
-        </AccordionContent>
-      </AccordionItem>
-    </div>
+      <PluginMultiSelectField
+        form={form}
+        name='jobConfigs.advisor.advisors'
+        configName='jobConfigs.advisor.config'
+        label='Enabled advisors'
+        description={<>Select the advisors enabled for this run.</>}
+        plugins={advisorPlugins}
+        secrets={secrets}
+      />
+      {isSuperuser && (
+        <SwitchField
+          control={form.control}
+          name='jobConfigs.advisor.keepAliveWorker'
+          label='Keep worker alive'
+          description={KEEP_ALIVE_DESCRIPTION}
+        />
+      )}
+    </JobSection>
   );
 };

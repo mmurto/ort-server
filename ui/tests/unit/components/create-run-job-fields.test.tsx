@@ -19,13 +19,12 @@
 
 // @vitest-environment jsdom
 
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { FormProvider, useForm, type UseFormReturn } from 'react-hook-form';
 import { describe, expect, it } from 'vitest';
 
-import { Accordion } from '@/components/ui/accordion';
 import {
   defaultValues,
   type CreateRunFormValues,
@@ -104,68 +103,72 @@ const formDefaultValues = defaultValues(
   packageConfigurationProviderPlugins,
   packageManagerPlugins
 );
-const onToggle = () => {};
 
 type JobFieldsTestCase = {
   name: string;
-  sectionValue: string;
-  trigger: string;
+  title: string;
+  summary: string;
   contentLabel: string;
   render: (form: UseFormReturn<CreateRunFormValues>) => ReactNode;
 };
+
+const renderAnalyzerFields = (form: UseFormReturn<CreateRunFormValues>) => (
+  <AnalyzerFields
+    form={form}
+    isSuperuser
+    packageCurationProviderPlugins={packageCurationProviderPlugins}
+    packageManagerPlugins={packageManagerPlugins}
+    pluginSecrets={secrets}
+    isRerun={false}
+    permissions={permissions}
+  />
+);
 
 const AnalyzerFieldsHarness = () => {
   const form = useForm<CreateRunFormValues>({
     defaultValues: formDefaultValues,
   });
 
-  return (
-    <FormProvider {...form}>
-      <Accordion type='multiple' defaultValue={['analyzer']}>
-        <AnalyzerFields
-          form={form}
-          value='analyzer'
-          onToggle={onToggle}
-          isSuperuser
-          packageCurationProviderPlugins={packageCurationProviderPlugins}
-          packageManagerPlugins={packageManagerPlugins}
-          pluginSecrets={secrets}
-          isRerun={false}
-          permissions={permissions}
-        />
-      </Accordion>
-    </FormProvider>
-  );
+  return <FormProvider {...form}>{renderAnalyzerFields(form)}</FormProvider>;
 };
 
-const expectOpenJobFields = (
-  markup: string,
-  trigger: string,
-  contentLabel: string
-) => {
-  const triggerIndex = markup.indexOf(`>${trigger}<`);
-  const switchIndexes = [...markup.matchAll(/role="switch"/g)].map(
-    (match) => match.index
-  );
+const analyzerRoute = {
+  path: '/organizations/1/products/2/repositories/3',
+  routes: [
+    {
+      path: '/organizations/$orgId/products/$productId/repositories/$repoId',
+    },
+  ],
+};
 
-  expect(triggerIndex).toBeGreaterThan(-1);
-  expect(markup).toContain('data-state="open"');
-  expect(markup).toContain(contentLabel);
-  expect(switchIndexes.some((index) => index < triggerIndex)).toBe(true);
-  expect(switchIndexes.some((index) => index > triggerIndex)).toBe(true);
+/** Render a form harness with the analyzer fields inside a router, as they need the route params. */
+const renderInteractiveAnalyzer = async (
+  values: CreateRunFormValues = formDefaultValues
+) => {
+  const user = userEvent.setup();
+  const { StableFormHarness, getForm } = createStableFormHarness(
+    renderAnalyzerFields,
+    { defaultValues: values }
+  );
+  const router = createTestRouter({
+    ...analyzerRoute,
+    routes: [{ ...analyzerRoute.routes[0]!, component: StableFormHarness }],
+  });
+  await router.load();
+  render(<RouterTestProvider router={router} />);
+  await screen.findByRole('heading', { name: 'Analyzer' });
+  return { user, getForm };
 };
 
 const testCases: JobFieldsTestCase[] = [
   {
     name: 'advisor',
-    sectionValue: 'advisor',
-    trigger: 'Advisor',
+    title: 'Advisor',
+    summary: 'OSV, VulnerableCode',
     contentLabel: 'Skip excluded',
     render: (form) => (
       <AdvisorFields
         form={form}
-        value='advisor'
-        onToggle={onToggle}
         advisorPlugins={advisorPlugins}
         secrets={secrets}
         isSuperuser
@@ -174,14 +177,12 @@ const testCases: JobFieldsTestCase[] = [
   },
   {
     name: 'evaluator',
-    sectionValue: 'evaluator',
-    trigger: 'Evaluator',
+    title: 'Evaluator',
+    summary: 'No package configuration providers',
     contentLabel: 'Package configuration providers',
     render: (form) => (
       <EvaluatorFields
         form={form}
-        value='evaluator'
-        onToggle={onToggle}
         isSuperuser
         packageConfigurationProviderPlugins={
           packageConfigurationProviderPlugins
@@ -192,29 +193,13 @@ const testCases: JobFieldsTestCase[] = [
     ),
   },
   {
-    name: 'notifier',
-    sectionValue: 'notifier',
-    trigger: 'Notifier',
-    contentLabel: 'Recipient addresses',
-    render: (form) => (
-      <NotifierFields
-        form={form}
-        value='notifier'
-        onToggle={onToggle}
-        isSuperuser
-      />
-    ),
-  },
-  {
     name: 'reporter',
-    sectionValue: 'reporter',
-    trigger: 'Reporter',
+    title: 'Reporter',
+    summary: 'CycloneDX, SpdxDocument, WebApp',
     contentLabel: 'Report formats',
     render: (form) => (
       <ReporterFields
         form={form}
-        value='reporter'
-        onToggle={onToggle}
         reporterPlugins={reporterPlugins}
         isSuperuser
         packageConfigurationProviderPlugins={
@@ -227,14 +212,12 @@ const testCases: JobFieldsTestCase[] = [
   },
   {
     name: 'scanner',
-    sectionValue: 'scanner',
-    trigger: 'Scanner',
+    title: 'Scanner',
+    summary: 'ScanCode',
     contentLabel: 'Skip concluded',
     render: (form) => (
       <ScannerFields
         form={form}
-        value='scanner'
-        onToggle={onToggle}
         scannerPlugins={scannerPlugins}
         secrets={secrets}
         isSuperuser
@@ -243,67 +226,141 @@ const testCases: JobFieldsTestCase[] = [
   },
 ];
 
+const renderNotifier = (form: UseFormReturn<CreateRunFormValues>) => (
+  <NotifierFields form={form} isSuperuser />
+);
+
+const withJobEnabled = (
+  job: 'advisor' | 'notifier',
+  enabled: boolean
+): CreateRunFormValues => ({
+  ...formDefaultValues,
+  jobConfigs: {
+    ...formDefaultValues.jobConfigs,
+    [job]: { ...formDefaultValues.jobConfigs[job], enabled },
+  },
+});
+
 describe('create run job fields', () => {
   it.each(testCases)(
-    'renders the $name controls inside an open accordion',
-    ({ sectionValue, trigger, contentLabel, render }) => {
+    'renders the enabled $name section with its switch, summary and settings',
+    ({ title, summary, contentLabel, render }) => {
       const markup = renderWithForm(render, {
         defaultValues: formDefaultValues,
-        openAccordion: sectionValue,
       });
 
-      expectOpenJobFields(markup, trigger, contentLabel);
+      expect(markup).toContain(`>${title}</h2>`);
+      expect(markup).toContain(summary);
+      expect(markup).toContain(contentLabel);
+      // The switch in the header is named by the section heading.
+      expect(markup).toMatch(
+        new RegExp(
+          `role="switch"[^>]*aria-checked="true"[^>]*aria-labelledby="create-run-${title.toLowerCase()}-title"|aria-labelledby="create-run-${title.toLowerCase()}-title"[^>]*role="switch"`
+        )
+      );
     }
   );
 
-  it('renders the analyzer controls inside an open accordion', async () => {
-    const markup = await renderStaticWithRouter(<AnalyzerFieldsHarness />, {
-      path: '/organizations/1/products/2/repositories/3',
-      routes: [
-        {
-          path: '/organizations/$orgId/products/$productId/repositories/$repoId',
-        },
-      ],
-    });
+  it('renders the analyzer section with its package managers and a summary', async () => {
+    const markup = await renderStaticWithRouter(
+      <AnalyzerFieldsHarness />,
+      analyzerRoute
+    );
 
-    expectOpenJobFields(markup, 'Analyzer', 'Repository configuration path');
-  });
-
-  it('renders the generated package manager plugin fields', async () => {
-    const markup = await renderStaticWithRouter(<AnalyzerFieldsHarness />, {
-      path: '/organizations/1/products/2/repositories/3',
-      routes: [
-        {
-          path: '/organizations/$orgId/products/$productId/repositories/$repoId',
-        },
-      ],
-    });
-
+    expect(markup).toContain('>Analyzer</h2>');
+    expect(markup).toContain('2 package managers');
     expect(markup).toContain('Enabled package managers');
     expect(markup).toContain('Maven');
     expect(markup).toContain('NPM');
     // The package managers start collapsed, so their settings are not rendered.
     expect(markup).toContain('Expand all');
     expect(markup).not.toContain('Must run after');
+    // The less common settings are behind "More options".
+    expect(markup).toContain('More options');
+    expect(markup).not.toContain('Repository configuration path');
+  });
+
+  it('collapses a disabled job to its header and shows its settings on request', async () => {
+    const user = userEvent.setup();
+    renderWithStableForm(renderNotifier, {
+      defaultValues: withJobEnabled('notifier', false),
+    });
+
+    const section = screen.getByRole('region', { name: 'Notifier' });
+    expect(within(section).getByText('Not included in this run')).toBeVisible();
+    expect(within(section).queryByText('Recipient addresses')).toBeNull();
+    expect(screen.getByRole('switch', { name: 'Notifier' })).not.toBeChecked();
+
+    await user.click(screen.getByRole('button', { name: 'Show settings' }));
+    expect(within(section).getByText('Recipient addresses')).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: 'Hide settings' })
+    ).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('expands a job when it is enabled and updates its summary', async () => {
+    const user = userEvent.setup();
+    renderWithStableForm(renderNotifier, {
+      defaultValues: withJobEnabled('notifier', false),
+    });
+
+    await user.click(screen.getByRole('switch', { name: 'Notifier' }));
+
+    expect(screen.getByText('No recipients')).toBeVisible();
+    await user.click(
+      screen.getByRole('button', { name: 'Add recipient address' })
+    );
+    await user.type(
+      screen.getByLabelText('E-mail address'),
+      'team@example.com'
+    );
+    expect(screen.getByText('team@example.com')).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: 'Show settings' })
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows the settings of a disabled job while they have errors', () => {
+    const { form } = renderWithStableForm(
+      (form) => (
+        <AdvisorFields
+          form={form}
+          advisorPlugins={advisorPlugins}
+          secrets={secrets}
+          isSuperuser={false}
+        />
+      ),
+      { defaultValues: withJobEnabled('advisor', false) }
+    );
+
+    expect(screen.queryByText('Enabled advisors')).toBeNull();
+
+    act(() => {
+      form.setError('jobConfigs.advisor.advisors', {
+        type: 'custom',
+        message: 'Select an advisor.',
+      });
+    });
+
+    expect(screen.getByText('Enabled advisors')).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: 'Show settings' })
+    ).not.toBeInTheDocument();
   });
 
   it('hides the reporter package configuration providers once the evaluator is enabled', () => {
     const { form } = renderWithStableForm(
       (form) => (
-        <Accordion type='multiple' defaultValue={['reporter']}>
-          <ReporterFields
-            form={form}
-            value='reporter'
-            onToggle={onToggle}
-            reporterPlugins={reporterPlugins}
-            isSuperuser
-            packageConfigurationProviderPlugins={
-              packageConfigurationProviderPlugins
-            }
-            secrets={secrets}
-            isRerun={false}
-          />
-        </Accordion>
+        <ReporterFields
+          form={form}
+          reporterPlugins={reporterPlugins}
+          isSuperuser
+          packageConfigurationProviderPlugins={
+            packageConfigurationProviderPlugins
+          }
+          secrets={secrets}
+          isRerun={false}
+        />
       ),
       {
         defaultValues: {
@@ -332,48 +389,65 @@ describe('create run job fields', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('shows the keep-alive phases once keeping the worker alive is enabled', async () => {
-    const user = userEvent.setup();
-    const { StableFormHarness } = createStableFormHarness(
-      (form) => (
-        <Accordion type='multiple' defaultValue={['analyzer']}>
-          <AnalyzerFields
-            form={form}
-            value='analyzer'
-            onToggle={onToggle}
-            isSuperuser
-            packageCurationProviderPlugins={packageCurationProviderPlugins}
-            packageManagerPlugins={packageManagerPlugins}
-            pluginSecrets={secrets}
-            isRerun={false}
-            permissions={permissions}
-          />
-        </Accordion>
-      ),
-      {
-        defaultValues: {
-          ...formDefaultValues,
-          jobConfigs: {
-            ...formDefaultValues.jobConfigs,
-            analyzer: {
-              ...formDefaultValues.jobConfigs.analyzer,
-              keepAliveWorker: false,
-            },
-          },
+  it('shows the less common analyzer settings behind "More options"', async () => {
+    const { user } = await renderInteractiveAnalyzer();
+
+    const toggle = screen.getByRole('button', { name: 'More options' });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByLabelText('Repository configuration path')).toBeNull();
+
+    await user.click(toggle);
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(
+      screen.getByLabelText('Repository configuration path')
+    ).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: 'Add environment variable' })
+    ).toBeVisible();
+    expect(screen.getByText('Environment configuration')).toBeVisible();
+  });
+
+  it('opens "More options" at first when one of them is set', async () => {
+    await renderInteractiveAnalyzer({
+      ...formDefaultValues,
+      jobConfigs: {
+        ...formDefaultValues.jobConfigs,
+        analyzer: {
+          ...formDefaultValues.jobConfigs.analyzer,
+          environmentVariables: [{ name: 'TOKEN', value: 'secret' }],
         },
-      }
-    );
-    const router = createTestRouter({
-      path: '/organizations/1/products/2/repositories/3',
-      routes: [
-        {
-          path: '/organizations/$orgId/products/$productId/repositories/$repoId',
-          component: StableFormHarness,
-        },
-      ],
+      },
     });
-    await router.load();
-    render(<RouterTestProvider router={router} />);
+
+    expect(
+      screen.getByRole('button', { name: 'More options' })
+    ).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByLabelText('Name')).toHaveValue('TOKEN');
+    expect(
+      screen.getByText('2 package managers · 1 environment variable')
+    ).toBeVisible();
+  });
+
+  it('opens "More options" while a field in it has an error', async () => {
+    const { getForm } = await renderInteractiveAnalyzer();
+
+    act(() => {
+      getForm().setError('jobConfigs.analyzer.repositoryConfigPath', {
+        type: 'custom',
+        message: 'Invalid path.',
+      });
+    });
+
+    expect(
+      screen.getByRole('button', { name: 'More options' })
+    ).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText('Invalid path.')).toBeVisible();
+  });
+
+  it('shows the keep-alive phases once keeping the worker alive is enabled', async () => {
+    const { user } = await renderInteractiveAnalyzer();
+    await user.click(screen.getByRole('button', { name: 'More options' }));
 
     const phases = await screen.findByText('Phases');
     expect(phases.closest('.grid')).toHaveClass('invisible');
@@ -381,5 +455,13 @@ describe('create run job fields', () => {
     await user.click(screen.getByRole('switch', { name: 'Keep worker alive' }));
 
     expect(phases.closest('.grid')).not.toHaveClass('invisible');
+  });
+
+  it('keeps the analyzer switch on', async () => {
+    await renderInteractiveAnalyzer();
+
+    const toggle = screen.getByRole('switch', { name: 'Analyzer' });
+    expect(toggle).toBeChecked();
+    expect(toggle).toBeDisabled();
   });
 });

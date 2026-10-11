@@ -80,7 +80,12 @@ const packageManagerPlugins = [
   }),
 ];
 const permissions = createPermissions();
-const rerun = createOrtRun({ revision: '', path: '', jobConfigs: {} });
+const rerun = createOrtRun({
+  index: 7,
+  revision: '',
+  path: '',
+  jobConfigs: {},
+});
 const secrets = createPluginSecrets();
 const createRunPath =
   '/organizations/1/products/2/repositories/3/create-run' as const;
@@ -163,7 +168,7 @@ const enabledPackageManagers = ['Maven', 'NPM', 'Unmanaged'];
 const showPayload = async (
   user: ReturnType<typeof renderCreateRunForm>['user']
 ) => {
-  await user.click(await screen.findByRole('switch', { name: 'Show payload' }));
+  await user.click(await screen.findByRole('button', { name: 'View request' }));
   return screen.getByLabelText(
     'You can copy this payload to use it when triggering runs via the API or CLI.'
   ) as HTMLTextAreaElement;
@@ -171,12 +176,12 @@ const showPayload = async (
 
 const preview = (textarea: HTMLTextAreaElement) => JSON.parse(textarea.value);
 
-const getJobSwitch = (job: string) => {
-  const trigger = screen.getByRole('button', { name: job });
-  const row = trigger.closest('[data-slot="accordion-item"]')!.parentElement!;
+const getJobSwitch = (job: string) => screen.getByRole('switch', { name: job });
 
-  return within(row).getByRole('switch');
-};
+const missingServerUrl = 'Required option "serverUrl" is missing for "OSV".';
+
+const getErrorSummary = () =>
+  screen.getByRole('region', { name: /to start the run$/ });
 
 describe('CreateRunForm', () => {
   // The form takes the plugin defaults as `values` and keeps dirty values when
@@ -232,7 +237,6 @@ describe('CreateRunForm', () => {
 
     await user.type(screen.getByLabelText('Revision'), 'feature');
     await user.click(getJobSwitch('Advisor'));
-    await user.click(screen.getByRole('button', { name: 'Advisor' }));
     await user.type(screen.getByLabelText(/serverUrl/), 'https://osv.dev');
     await user.click(screen.getByRole('button', { name: 'Add parameter' }));
     await user.type(screen.getAllByLabelText('Key').at(-1)!, 'branch');
@@ -285,8 +289,7 @@ describe('CreateRunForm', () => {
     });
     expect(preview(payload).jobConfigs.scanner).not.toHaveProperty('scanners');
     expect(preview(payload).jobConfigs.advisor).not.toHaveProperty('config');
-    await user.click(screen.getByRole('button', { name: 'Advisor' }));
-    await user.click(screen.getByRole('button', { name: /^OSV/ }));
+    // OSV was expanded when the Advisor was enabled, as its required option was missing.
     expect(screen.getByLabelText(/serverUrl/)).toHaveValue(
       'https://new.example'
     );
@@ -344,18 +347,18 @@ describe('CreateRunForm', () => {
       name: 'Plugins loading...',
     });
     expect(button).toBeDisabled();
-    expect(within(button).queryByText('Creating run...')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Create' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Advisor' })).toBeNull();
+    expect(within(button).queryByText('Starting run...')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Start run' })).toBeNull();
+    expect(screen.queryByRole('switch', { name: 'Advisor' })).toBeNull();
     expect(screen.getByText('Loading available plugins...')).toBeVisible();
-    expect(screen.getByRole('switch', { name: 'Show payload' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'View request' })).toBeDisabled();
 
     await user.type(screen.getByLabelText('Revision'), 'feature');
     await user.click(screen.getByRole('button', { name: 'Swap plugins' }));
     expect(screen.getByLabelText('Revision')).toHaveValue('feature');
     expect(screen.queryByText('Loading available plugins...')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Create' })).toBeEnabled();
-    await user.click(screen.getByRole('button', { name: 'Create' }));
+    expect(screen.getByRole('button', { name: 'Start run' })).toBeEnabled();
+    await user.click(screen.getByRole('button', { name: 'Start run' }));
     expect(onSubmit).toHaveBeenCalledWith(
       expect.objectContaining({
         revision: 'feature',
@@ -392,9 +395,9 @@ describe('CreateRunForm', () => {
     expect(
       await screen.findByText('The available plugins could not be loaded.')
     ).toBeVisible();
-    expect(screen.queryByRole('button', { name: 'Advisor' })).toBeNull();
-    expect(screen.getByRole('switch', { name: 'Show payload' })).toBeDisabled();
-    const button = screen.getByRole('button', { name: 'Create' });
+    expect(screen.queryByRole('switch', { name: 'Advisor' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'View request' })).toBeDisabled();
+    const button = screen.getByRole('button', { name: 'Start run' });
     expect(button).toBeDisabled();
 
     await user.type(screen.getByLabelText('Revision'), 'feature');
@@ -408,10 +411,9 @@ describe('CreateRunForm', () => {
     await user.type(await screen.findByLabelText('Revision'), 'main');
     await user.type(screen.getByLabelText('Path'), 'src');
     await user.click(getJobSwitch('Advisor'));
-    await user.click(screen.getByRole('button', { name: 'Advisor' }));
     await user.type(screen.getByLabelText(/serverUrl/), 'https://osv.dev');
     await user.click(getJobSwitch('Scanner'));
-    await user.click(screen.getByRole('button', { name: 'Create' }));
+    await user.click(screen.getByRole('button', { name: 'Start run' }));
 
     expect(onSubmit).toHaveBeenCalledOnce();
     expect(onSubmit).toHaveBeenCalledWith({
@@ -461,7 +463,7 @@ describe('CreateRunForm', () => {
   it('shows validation errors without submitting an invalid form', async () => {
     const { onSubmit, user } = renderCreateRunForm();
 
-    await user.click(await screen.findByRole('button', { name: 'Create' }));
+    await user.click(await screen.findByRole('button', { name: 'Start run' }));
 
     expect(
       await screen.findByText(
@@ -505,16 +507,14 @@ describe('CreateRunForm', () => {
     await user.type(screen.getAllByLabelText('Value').at(-1)!, 'ort');
     await user.click(getJobSwitch('Advisor'));
     await user.click(screen.getByRole('button', { name: 'Swap plugins' }));
-    await user.click(screen.getByRole('button', { name: 'Advisor' }));
-    // OSV has its default options, so they start collapsed.
-    await user.click(screen.getByRole('button', { name: /^OSV/ }));
+    // OSV was expanded when the Advisor was enabled, as its required option was missing.
     expect(screen.getByLabelText(/serverUrl/)).toHaveValue(
       'https://new.example'
     );
     await user.click(
       screen.getByRole('checkbox', { name: 'Enable New Advisor' })
     );
-    await user.click(screen.getByRole('button', { name: 'Create' }));
+    await user.click(screen.getByRole('button', { name: 'Start run' }));
     expect(onSubmit).toHaveBeenCalledOnce();
     expect(onSubmit).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -542,9 +542,9 @@ describe('CreateRunForm', () => {
       [advisorPlugin, scannerPlugin],
       [changed, scannerPlugin]
     );
-    await screen.findByRole('button', { name: 'Advisor' });
+    await screen.findByRole('switch', { name: 'Advisor' });
     await user.click(getJobSwitch('Advisor'));
-    await user.click(screen.getByRole('button', { name: 'Create' }));
+    await user.click(screen.getByRole('button', { name: 'Start run' }));
     expect(
       await screen.findByText(
         'Required option "serverUrl" is missing for "OSV".'
@@ -558,7 +558,7 @@ describe('CreateRunForm', () => {
     expect(
       screen.queryByText('Required option "serverUrl" is missing for "OSV".')
     ).toBeNull();
-    await user.click(screen.getByRole('button', { name: 'Create' }));
+    await user.click(screen.getByRole('button', { name: 'Start run' }));
     expect(onSubmit).toHaveBeenCalledOnce();
   });
 
@@ -573,9 +573,8 @@ describe('CreateRunForm', () => {
       [advisorPlugin, scannerPlugin],
       [changed, scannerPlugin]
     );
-    await screen.findByRole('button', { name: 'Advisor' });
+    await screen.findByRole('switch', { name: 'Advisor' });
     await user.click(getJobSwitch('Advisor'));
-    await user.click(screen.getByRole('button', { name: 'Advisor' }));
     await user.type(
       screen.getByLabelText(/serverUrl/),
       'https://custom.example'
@@ -584,7 +583,7 @@ describe('CreateRunForm', () => {
     expect(screen.getByLabelText(/serverUrl/)).toHaveValue(
       'https://custom.example'
     );
-    await user.click(screen.getByRole('button', { name: 'Create' }));
+    await user.click(screen.getByRole('button', { name: 'Start run' }));
     expect(onSubmit).toHaveBeenCalledWith(
       expect.objectContaining({
         jobConfigs: expect.objectContaining({
@@ -606,13 +605,13 @@ describe('CreateRunForm', () => {
       [advisorPlugin, scannerPlugin, ...packageManagerPlugins],
       []
     );
-    await screen.findByRole('button', { name: 'Advisor' });
+    await screen.findByRole('switch', { name: 'Advisor' });
     await user.click(getJobSwitch('Advisor'));
     await user.click(getJobSwitch('Scanner'));
     await user.click(
       await screen.findByRole('button', { name: 'Swap plugins' })
     );
-    await user.click(screen.getByRole('button', { name: 'Create' }));
+    await user.click(screen.getByRole('button', { name: 'Start run' }));
     expect(onSubmit).toHaveBeenCalledWith(
       expect.objectContaining({
         jobConfigs: expect.objectContaining({
@@ -688,7 +687,7 @@ describe('CreateRunForm', () => {
     await user.click(
       await screen.findByRole('button', { name: 'Swap plugins' })
     );
-    await user.click(screen.getByRole('button', { name: 'Create' }));
+    await user.click(screen.getByRole('button', { name: 'Start run' }));
     expect(onSubmit).toHaveBeenCalledWith(
       expect.objectContaining({
         jobConfigs: expect.objectContaining({
@@ -717,9 +716,9 @@ describe('CreateRunForm', () => {
   });
 
   it('does not offer the always enabled "Unmanaged" package manager for selection', async () => {
-    const { user } = renderCreateRunForm();
+    renderCreateRunForm();
 
-    await user.click(await screen.findByRole('button', { name: 'Analyzer' }));
+    await screen.findByRole('switch', { name: 'Analyzer' });
 
     const packageManagers = screen
       .getByText('Enabled package managers')
@@ -727,5 +726,165 @@ describe('CreateRunForm', () => {
 
     expect(within(packageManagers).getByText('Maven')).toBeVisible();
     expect(within(packageManagers).queryByText('Unmanaged')).toBeNull();
+  });
+
+  it('lists validation errors with readable labels and focuses the first invalid field', async () => {
+    const { user } = renderCreateRunForm();
+    await user.click(await screen.findByRole('switch', { name: 'Advisor' }));
+    await user.click(screen.getByRole('button', { name: 'Start run' }));
+
+    const summary = await screen.findByRole('region', {
+      name: 'Fix 1 problem to start the run',
+    });
+    expect(within(summary).getByText(missingServerUrl)).toBeVisible();
+    await waitFor(() =>
+      expect(screen.getByLabelText(/serverUrl/)).toHaveFocus()
+    );
+    expect(screen.getByText('1 problem to fix')).toBeVisible();
+
+    // The links in the list move the focus back to the field.
+    await user.click(screen.getByLabelText('Revision'));
+    await user.click(
+      within(summary).getByRole('link', { name: 'Advisor › OSV › serverUrl' })
+    );
+    expect(screen.getByLabelText(/serverUrl/)).toHaveFocus();
+
+    // The section navigation marks the section with the error.
+    const navigation = screen.getByRole('navigation', {
+      name: 'Form sections',
+    });
+    expect(
+      within(navigation).getByRole('link', { name: /^Advisor/ })
+    ).toHaveTextContent('has errors');
+    expect(
+      within(navigation).getByRole('link', { name: /^Scanner/ })
+    ).not.toHaveTextContent('has errors');
+
+    // Fixing the field removes the error from the list.
+    await user.type(screen.getByLabelText(/serverUrl/), 'https://osv.dev');
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('region', { name: /to start the run$/ })
+      ).toBeNull()
+    );
+    expect(
+      within(navigation).getByRole('link', { name: /^Advisor/ })
+    ).not.toHaveTextContent('has errors');
+  });
+
+  it('shows the errors of a disabled job in its section', async () => {
+    const { user } = renderCreateRunForm();
+    expect(
+      within(await screen.findByRole('region', { name: 'Advisor' })).getByText(
+        'Not included in this run'
+      )
+    ).toBeVisible();
+    expect(screen.queryByText('Enabled advisors')).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'Start run' }));
+
+    expect(within(getErrorSummary()).getByText(missingServerUrl)).toBeVisible();
+    expect(screen.getByText('Enabled advisors')).toBeVisible();
+    await waitFor(() =>
+      expect(screen.getByLabelText(/serverUrl/)).toHaveFocus()
+    );
+  });
+
+  it('summarizes the values of each section in its header', async () => {
+    const { user } = renderSwappableForm(
+      [advisorPlugin, scannerPlugin, ...packageManagerPlugins],
+      [],
+      vi.fn(),
+      null
+    );
+    const summaryOf = (name: string) =>
+      within(screen.getByRole('region', { name })).getAllByRole('paragraph')[0];
+
+    await screen.findByRole('region', { name: 'Analyzer' });
+    expect(summaryOf('Source and configuration')).toHaveTextContent(
+      'Default branch'
+    );
+    expect(summaryOf('Configuration parameters')).toHaveTextContent(
+      'No parameters'
+    );
+    expect(summaryOf('Analyzer')).toHaveTextContent('2 package managers');
+    expect(summaryOf('Advisor')).toHaveTextContent('OSV, VulnerableCode');
+    expect(summaryOf('Scanner')).toHaveTextContent('ScanCode');
+    expect(summaryOf('Reporter')).toHaveTextContent(
+      'CycloneDX, SpdxDocument, WebApp'
+    );
+    expect(summaryOf('Notifier')).toHaveTextContent('Not included in this run');
+
+    await user.type(screen.getByLabelText('Revision'), 'release');
+    await user.type(screen.getByLabelText('Path'), 'module');
+    expect(summaryOf('Source and configuration')).toHaveTextContent(
+      'release · Path module'
+    );
+    await user.click(getJobSwitch('Notifier'));
+    expect(summaryOf('Notifier')).toHaveTextContent('No recipients');
+  });
+
+  it('shows the state of each job in the section navigation', async () => {
+    const { user } = renderCreateRunForm();
+    const navigation = await screen.findByRole('navigation', {
+      name: 'Form sections',
+    });
+
+    expect(
+      within(navigation)
+        .getAllByRole('link')
+        .map((link) => link.textContent)
+    ).toEqual([
+      'Source',
+      'Parameters',
+      'Labels',
+      'Analyzer',
+      'AdvisorOff',
+      'ScannerOff',
+      'EvaluatorOff',
+      'ReporterOff',
+      'NotifierOff',
+    ]);
+
+    await user.click(getJobSwitch('Scanner'));
+    expect(
+      within(navigation).getByRole('link', { name: /^Scanner/ })
+    ).toHaveTextContent(/^Scanner$/);
+
+    await user.click(
+      within(navigation).getByRole('link', { name: /^Reporter/ })
+    );
+    expect(screen.getByRole('heading', { name: 'Reporter' })).toHaveFocus();
+  });
+
+  it('notes the run that a rerun copies its configuration from', async () => {
+    renderCreateRunForm();
+
+    const note = await screen.findByText(/Configuration copied from/);
+    expect(within(note).getByRole('link', { name: 'run 7' })).toHaveAttribute(
+      'href',
+      '/organizations/1/products/2/repositories/3/runs/7'
+    );
+    expect(screen.getByText('Based on run 7')).toBeVisible();
+
+    cleanup();
+    renderSwappableForm([advisorPlugin], [], vi.fn(), null);
+    await screen.findByRole('button', { name: 'Start run' });
+    expect(screen.queryByText(/Configuration copied from/)).toBeNull();
+    expect(screen.queryByText(/Based on run/)).toBeNull();
+  });
+
+  it('shows and hides the request from the action bar', async () => {
+    const { user } = renderCreateRunForm();
+    const toggle = await screen.findByRole('button', { name: 'View request' });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('region', { name: 'Request' })).toBeNull();
+
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('region', { name: 'Request' })).toBeVisible();
+
+    await user.click(toggle);
+    expect(screen.queryByRole('region', { name: 'Request' })).toBeNull();
   });
 });

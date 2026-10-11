@@ -17,29 +17,20 @@
  * License-Filename: LICENSE
  */
 
-import { UseFormReturn } from 'react-hook-form';
+import { UseFormReturn, useWatch } from 'react-hook-form';
 
 import { PreconfiguredPluginDescriptor, Secret } from '@/api';
 import { PluginMultiSelectField } from '@/components/form/plugin-multi-select-field';
-import {
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import {
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-} from '@/components/ui/form';
-import { Switch } from '@/components/ui/switch';
 import { CreateRunFormValues } from '@/routes/organizations/$orgId/products/$productId/repositories/$repoId/_repo-layout/create-run/-components';
+import {
+  JobSection,
+  SwitchField,
+} from '@/routes/organizations/$orgId/products/$productId/repositories/$repoId/_repo-layout/create-run/-components/form-section';
+import { KEEP_ALIVE_DESCRIPTION } from '@/routes/organizations/$orgId/products/$productId/repositories/$repoId/_repo-layout/create-run/-components/form-sections';
+import { summarizePlugins } from '@/routes/organizations/$orgId/products/$productId/repositories/$repoId/_repo-layout/create-run/-components/section-summaries';
 
 type ScannerFieldsProps = {
   form: UseFormReturn<CreateRunFormValues>;
-  value: string;
-  onToggle: () => void;
   scannerPlugins: PreconfiguredPluginDescriptor[];
   secrets: Secret[];
   isSuperuser: boolean;
@@ -47,125 +38,60 @@ type ScannerFieldsProps = {
 
 export const ScannerFields = ({
   form,
-  value,
-  onToggle,
   scannerPlugins,
   secrets,
   isSuperuser,
 }: ScannerFieldsProps) => {
+  const scanners = useWatch({
+    control: form.control,
+    name: 'jobConfigs.scanner.scanners',
+  });
+
   return (
-    <div className='flex flex-row items-start gap-4 border-t'>
-      <FormField
+    <JobSection
+      control={form.control}
+      job='scanner'
+      summary={summarizePlugins(
+        scanners,
+        scannerPlugins,
+        'No scanners selected'
+      )}
+    >
+      <SwitchField
         control={form.control}
-        name='jobConfigs.scanner.enabled'
-        render={({ field }) => (
-          <FormItem>
-            <FormControl>
-              <Switch
-                className='mt-3.5'
-                checked={field.value}
-                onCheckedChange={field.onChange}
-              />
-            </FormControl>
-          </FormItem>
-        )}
+        name='jobConfigs.scanner.skipConcluded'
+        label='Skip concluded'
+        description='Skip packages that have a concluded license and authors set (to derive copyrights from).'
       />
-      <AccordionItem value={value} className='min-w-0 flex-1 border-b-0'>
-        <AccordionTrigger
-          onClick={onToggle}
-          className='items-center py-3 text-[0.9375rem] font-semibold hover:no-underline'
-        >
-          <span className='flex items-center gap-2'>
-            <span aria-hidden className='bg-scanner size-2 shrink-0' />
-            Scanner
-          </span>
-        </AccordionTrigger>
-        <AccordionContent className='flex flex-col gap-6'>
-          <FormField
-            control={form.control}
-            name='jobConfigs.scanner.skipConcluded'
-            render={({ field }) => (
-              <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
-                <div className='space-y-0.5'>
-                  <FormLabel>Skip concluded</FormLabel>
-                  <FormDescription>
-                    A flag to indicate whether packages that have a concluded
-                    license and authors set (to derive copyrights from) should
-                    be skipped by the scanner.
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name='jobConfigs.scanner.skipExcluded'
-            render={({ field }) => (
-              <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
-                <div className='space-y-0.5'>
-                  <FormLabel>Skip excluded</FormLabel>
-                  <FormDescription>
-                    A flag to control whether excluded scopes and paths should
-                    by skipped by the scanner.
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <PluginMultiSelectField
-            form={form}
-            name='jobConfigs.scanner.scanners'
-            configName='jobConfigs.scanner.config'
-            scannerScopeName='jobConfigs.scanner.scannerScopes'
-            label='Enabled scanners'
-            description={
-              <>
-                Select the scanners enabled for this run. Use the scope toggle
-                to control whether a scanner runs on projects, packages, or
-                both.
-              </>
-            }
-            plugins={scannerPlugins}
-            secrets={secrets}
-          />
-          {isSuperuser && (
-            <FormField
-              control={form.control}
-              name='jobConfigs.scanner.keepAliveWorker'
-              render={({ field }) => (
-                <FormItem className='mb-4 flex flex-row items-center justify-between rounded-lg border p-4'>
-                  <div className='space-y-0.5'>
-                    <FormLabel>Keep worker alive</FormLabel>
-                    <FormDescription>
-                      A flag to control whether the worker is kept alive for
-                      debugging purposes. This flag only has an effect if the
-                      ORT Server is deployed on Kubernetes.
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          )}
-        </AccordionContent>
-      </AccordionItem>
-    </div>
+      <SwitchField
+        control={form.control}
+        name='jobConfigs.scanner.skipExcluded'
+        label='Skip excluded'
+        description='Skip the scopes and paths that are excluded.'
+      />
+      <PluginMultiSelectField
+        form={form}
+        name='jobConfigs.scanner.scanners'
+        configName='jobConfigs.scanner.config'
+        scannerScopeName='jobConfigs.scanner.scannerScopes'
+        label='Enabled scanners'
+        description={
+          <>
+            Select the scanners for this run; the scope toggle sets whether a
+            scanner runs on projects, packages, or both.
+          </>
+        }
+        plugins={scannerPlugins}
+        secrets={secrets}
+      />
+      {isSuperuser && (
+        <SwitchField
+          control={form.control}
+          name='jobConfigs.scanner.keepAliveWorker'
+          label='Keep worker alive'
+          description={KEEP_ALIVE_DESCRIPTION}
+        />
+      )}
+    </JobSection>
   );
 };
