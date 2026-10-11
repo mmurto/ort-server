@@ -211,7 +211,7 @@ export const RunDetailsBar = ({ className }: RunDetailsBarProps) => {
             )}
           </dl>
         </div>
-        <div className='flex items-center gap-2'>
+        <div className='flex flex-wrap items-center gap-2'>
           <nav aria-label='Runs' className='flex items-center'>
             <Button
               asChild

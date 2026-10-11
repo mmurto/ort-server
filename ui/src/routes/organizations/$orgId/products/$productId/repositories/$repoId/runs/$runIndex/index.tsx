@@ -255,11 +255,18 @@ const RuleViolationsPreview = ({ ortRun, params }: PreviewProps) => {
                 <div className='truncate font-mono text-xs font-medium'>
                   {violation.rule}
                 </div>
-                <div className='text-muted-foreground truncate font-mono text-xs'>
-                  {getPackageIdString(violation, packageIdType) ||
-                    violation.license ||
-                    violation.message}
-                </div>
+                {violation.id || violation.purl ? (
+                  <div className='text-muted-foreground truncate font-mono text-xs'>
+                    {getPackageIdString(
+                      { packageId: violation.id, purl: violation.purl },
+                      packageIdType
+                    )}
+                  </div>
+                ) : (
+                  <div className='text-muted-foreground truncate text-xs'>
+                    {violation.license ?? violation.message}
+                  </div>
+                )}
               </div>
             </li>
           ))}
