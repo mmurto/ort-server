@@ -339,6 +339,26 @@ A compact form appears in run lists: a 96px strip of 6px status-coloured segment
 ### Summary Figures
 A row of figures divided by hairlines: uppercase caption, the number at 32px with a muted "unresolved of N" note, a 4px segmented bar of the breakdown (1px gaps, most severe first, hairline colour when empty), and a 12px muted breakdown line joined by middots. No icons, no card.
 
+## Interaction Patterns
+
+### Details Panel
+A findings list opens one item at a time in a details panel: beside the list from 1024px (the list keeps its main columns; long secondary columns step aside), as a full-height sheet below. A click on the row or Enter opens it, J and K move through the list with the panel following, Esc closes it. The open item lives in the URL (`marked`), so a copied link reopens it. The panel is flat sections under caps labels, never nested accordions.
+
+### Selection and Bulk Actions
+Lists that support bulk actions put a checkbox first. X toggles the selected row, shift-click selects a range, the header box selects the page. A sticky bar ("N selected · action · Clear") appears only while something is checked; bulk work runs item by item with visible progress and lists failures instead of hiding them.
+
+### Command Palette and Shortcuts
+Cmd/Ctrl+K or / opens one search field for organizations, products and repositories in scope, favorites, recent runs, runs by index or ID, and the actions of the current page. ? lists every shortcut. Shortcuts never fire while typing or while a dialog is open.
+
+### Confirmation and Undo
+Changes that take effect at once and are hard to take back (roles, superuser, plugin availability, template scope, deletes) ask in a dialog that names the thing and the change. Forms with unsaved changes ask before leaving. Settings save in place; nothing navigates away on success.
+
+### States
+Loading keeps the page frame and shows progress where the data goes. Errors show inline, with the message and "Try again", never a toast over a blank page. Empty says what is missing and the next step; filters that match nothing say so and offer "Clear filters".
+
+### Runs
+A repository opens on its runs. Rerun starts the same configuration after one confirmation (same commit or latest of the branch); changing the configuration is the secondary path. The run form lists its sections on the side, with each job's state and errors.
+
 ## Do's and Don'ts
 
 ### Do:

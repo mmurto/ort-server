@@ -29,10 +29,29 @@ import { Control, FieldValues, useFormState } from 'react-hook-form';
 export const hasUnsavedChanges = ({
   isDirty,
   isSubmitting,
+  dirtyFields,
 }: {
   isDirty: boolean;
   isSubmitting: boolean;
-}) => isDirty && !isSubmitting;
+  dirtyFields?: unknown;
+}) =>
+  isDirty &&
+  !isSubmitting &&
+  (dirtyFields === undefined || hasDirtyField(dirtyFields));
+
+/**
+ * Whether a field was changed by the user. `isDirty` alone also turns true
+ * when a form fills in values it did not start with, e.g. defaults of plugins
+ * that load after the form, without anything to discard.
+ */
+const hasDirtyField = (dirtyFields: unknown): boolean => {
+  if (dirtyFields === true) return true;
+  if (Array.isArray(dirtyFields)) return dirtyFields.some(hasDirtyField);
+  if (dirtyFields !== null && typeof dirtyFields === 'object') {
+    return Object.values(dirtyFields).some(hasDirtyField);
+  }
+  return false;
+};
 
 /**
  * Block navigation to another page while the form has unsaved changes, and ask whether to discard
