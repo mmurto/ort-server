@@ -249,4 +249,23 @@ describe('command palette', () => {
       expect(screen.queryByRole('dialog', { name: 'Go to' })).toBeNull()
     );
   });
+
+  it('opens the first result with Enter once the results arrive', async () => {
+    const user = userEvent.setup();
+    auth.current = signedInAs('Ada Lovelace');
+    navigate.mockClear();
+    renderHeader();
+
+    await user.click(screen.getByRole('button', { name: 'Go to… (search)' }));
+    const palette = await screen.findByRole('dialog', { name: 'Go to' });
+    await user.type(within(palette).getByRole('combobox'), 'exam');
+    // The organizations are searched on the server after a pause in typing.
+    await within(palette).findByRole('option', { name: /Example Org/ });
+    await user.keyboard('{Enter}');
+
+    expect(navigate).toHaveBeenCalledWith({
+      to: '/organizations/$orgId',
+      params: { orgId: '7' },
+    });
+  });
 });

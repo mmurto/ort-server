@@ -410,8 +410,8 @@ const createColumns = (
               thingName={
                 <>
                   run with index{' '}
-                  <span className='font-bold'>{row.original.index}</span>
-                  from repository{' '}
+                  <span className='font-bold'>{row.original.index}</span> from
+                  repository{' '}
                   <span className='font-bold'>{repository.data.url}</span>
                 </>
               }

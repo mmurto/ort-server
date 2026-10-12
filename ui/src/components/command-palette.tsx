@@ -106,6 +106,7 @@ export function CommandPalette({
   const favorites = useHomeFavorites();
   const recentRuns = useHomeRecentRuns();
   const [query, setQuery] = useState('');
+  const [selectedId, setSelectedId] = useState('');
   const debouncedQuery = useDebounce(query.trim(), 200);
 
   const orgId = params.orgId ? Number(params.orgId) : undefined;
@@ -403,6 +404,16 @@ export function CommandPalette({
     ['Actions', actionEntries],
   ];
 
+  // The highlighted entry. Results that arrive while typing replace the
+  // entries, so the first one is highlighted whenever the highlighted one is
+  // gone, and Enter always has something to open.
+  const entryIds = groups.flatMap(([, entries]) =>
+    entries.map((entry) => entry.id)
+  );
+  const highlighted = entryIds.includes(selectedId)
+    ? selectedId
+    : (entryIds[0] ?? '');
+
   const isLoading =
     organizations.isFetching || products.isFetching || repositories.isFetching;
 
@@ -417,6 +428,8 @@ export function CommandPalette({
         <Command
           shouldFilter={false}
           loop
+          value={highlighted}
+          onValueChange={setSelectedId}
           className='[&_[cmdk-group-heading]]:label-caps [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-1'
         >
           <CommandInput
