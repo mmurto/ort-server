@@ -49,6 +49,7 @@ import {
 import { extractInitials } from '@/helpers/extract-initials.ts';
 import { setCustomFavicon } from '@/helpers/set-custom-favicon';
 import { useUser } from '@/hooks/use-user';
+import { getMatchBreadcrumbs } from '@/lib/route-context';
 import { toastError } from '@/lib/toast';
 
 /** Whether a key event comes from a control the user types into. */
@@ -143,12 +144,12 @@ export const Header = () => {
 
   // Update the document title based on the deepest breadcrumb level currently active.
   useEffect(() => {
-    const organization = organizationMatch?.context.breadcrumbs.organization;
-    const product = productMatch?.context.breadcrumbs.product;
-    const repository = repoMatch?.context.breadcrumbs.repo;
+    const organization = getMatchBreadcrumbs(organizationMatch).organization;
+    const product = getMatchBreadcrumbs(productMatch).product;
+    const repository = getMatchBreadcrumbs(repoMatch).repo;
     // Extract only the repository name from the full URL to show in the title.
     const repoName = repository?.split('/').pop()?.split('.git')[0];
-    const run = runMatch?.context.breadcrumbs.run;
+    const run = getMatchBreadcrumbs(runMatch).run;
     // Use the product name from the database if available and enabled, otherwise use z
     // the default product name which is 'ORT Server'.
     const name =
@@ -218,7 +219,7 @@ export const Header = () => {
             )}
             {repoMatch?.context && (
               <>
-                {productMatch?.context.breadcrumbs.product !== undefined && (
+                {getMatchBreadcrumbs(productMatch).product !== undefined && (
                   <BreadcrumbSeparator />
                 )}
                 <Siblings

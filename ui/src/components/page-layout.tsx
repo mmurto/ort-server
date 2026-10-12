@@ -22,6 +22,7 @@ import { createPortal } from 'react-dom';
 
 import { useRail } from '@/components/rail-context';
 import { Sidebar, SidebarNavProps } from '@/components/sidebar';
+import { getMatchBreadcrumbs } from '@/lib/route-context';
 
 interface PageLayoutProps {
   sections: SidebarNavProps['sections'] | undefined;
@@ -50,7 +51,7 @@ const RailScope = () => {
   for (const scope of SCOPES) {
     const match = matches.find((m) => m.routeId === scope.routeId);
     if (!match) continue;
-    const { breadcrumbs } = match.context;
+    const breadcrumbs = getMatchBreadcrumbs(match);
     const repoName = breadcrumbs.repo
       ?.split('/')
       .pop()
